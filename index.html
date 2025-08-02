@@ -71,19 +71,11 @@
   cursor: pointer;
 }
 #chaosBtn, #lowPerfBtn {
-  position: absolute;
-  top: 10px;
-  z-index: 10000;
-  background: #fff;
-  color: #000;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: bold;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  left: 10px;
 }
-#chaosBtn { right: 10px; }
+#chaosBtn {
+  left: 120px;
+}
 #lowPerfBtn { right: 130px; }
 #musicBtn {
   position: absolute;
@@ -99,7 +91,6 @@
   border-radius: 6px;
   cursor: pointer;
 }
-$1
 #visualizer {
   position: fixed;
   bottom: 0;
@@ -113,9 +104,8 @@ $1
 </style>
 
 </head>
-<body>
-    <button id="chaosBtn">Chaos Mode</button>
-  <button id="lowPerfBtn">Low Perf Mode</button>
+<body><button id="lowPerfBtn">Low Perf Mode</button>
+  <button id="chaosBtn">Chaos Mode <span style='font-size: 10px;'>(epilepsy warning)</span></button>
   <button id="speedBtn" style="left:0; top:0;">Speed Up</button>
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
 
@@ -130,10 +120,14 @@ window.addEventListener('DOMContentLoaded', () => {
       "floater5.jpg",
       "floater6.jpg",
       "floater7.jpg",
-      "floater8.jpg"
+      "floater8.jpg",
+      "floater9.jpg",
+      "floater10.jpg",
+      "floater11.jpg",
+      "floater12.jpg"
     ];
 
-    const texts = ["bark", "barke", "gubbling", "good boye", "sniffa", "shidded"]
+    const texts = ["bark", "barke", "gubbling", "good boye", "sniffa", "shidded","gubb", "gubbing", "i'm gonna gub", "he do be gubbin", "were my salami go", "Gub Gubtaro Pissboy420 Bong or Die", "bork", "aaaAAa", "im gubbing it im gubbing it"]
 
     let speedMultiplier = 2;
 const floaters = [];
