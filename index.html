@@ -147,6 +147,8 @@
   <canvas id="visualizer"></canvas>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
+const isMobile = window.innerWidth < 768;
+const NUM_FLOATERS = isMobile ? 5 : 20;
 const chaosAudio = new Audio('music.mp3');
 chaosAudio.loop = true;
 // restore saved volume or default to 0.5
@@ -435,7 +437,6 @@ function scheduleNextGolden(initial = false) {
     }).catch(err => console.error('Auth Error', err));
 
     // --- Game Logic & Controls (unchanged) ---
-    const NUM_FLOATERS = 20;
     const images = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg','floater9.jpg','floater10.jpg','floater11.jpg','floater12.jpg'];
     const texts = ["bark","barke","gubbling","good boye","sniffa","shidded","gubb","gubbing","i'm gonna gub","he do be gubbin","were my salami go","Gub Gubtaro Pissboy420 Bong or Die","bork","aaaAAa","im gubbing it im gubbing it"];
     let speedMultiplier = 2, numFloaters = NUM_FLOATERS;
