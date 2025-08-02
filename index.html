@@ -94,18 +94,24 @@ const firebaseConfig = {
       // Update leaderboard display
 function updateLeaderboard() {
   db.ref('leaderboard')
-    .orderByChild('score')
     .once('value')
     .then(snap => {
       const list = [];
-      snap.forEach(c => list.push({ user: c.key, score: c.val().score }));
-      list.reverse();
+      snap.forEach(c => {
+        // pull the score (defaulting to 0 if it’s missing)
+        const score = c.val().score || 0;
+        list.push({ user: c.key, score });
+      });
+      // sort descending
+      list.sort((a, b) => b.score - a.score);
+
       document.getElementById('leaderboard').innerHTML =
         '<strong>Leaderboard</strong><br>' +
         list.map((e, i) => `${i + 1}. ${e.user}: ${e.score}`).join('<br>');
     })
     .catch(err => console.error('Failed to load leaderboard:', err));
 }
+
 
 
       // Spawn golden gub and handle clicks
