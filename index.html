@@ -97,6 +97,15 @@
   <div id="perfMenu">
     <div>Speed: <button id="spdDec">-</button><span id="spdVal">2</span><button id="spdInc">+</button></div>
     <div>Images: <button id="imgDec">-</button><span id="imgVal">20</span><button id="imgInc">+</button></div>
+    <label for="volumeSlider" style="margin-top:8px; display:block; color:#fff; font-weight:bold;">
+  Chaos Volume
+</label>
+<input
+  id="volumeSlider"
+  type="range"
+  min="0" max="1" step="0.01"
+  style="width:100%; margin-top:4px;"
+/>
   </div>
   <div id="golden-counter">Golden Gubs This Session: 0</div>
   <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
@@ -112,6 +121,55 @@
   <canvas id="visualizer"></canvas>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
+const chaosAudio = new Audio('music.mp3');
+chaosAudio.loop = true;
+// restore saved volume or default to 0.5
+const stored = parseFloat(localStorage.getItem('gubVolume'));
+chaosAudio.volume = isNaN(stored) ? 0.5 : stored;
+
+      const volumeSlider = document.getElementById('volumeSlider');        // 1a: grab the slider element
+    volumeSlider.value = chaosAudio.volume;                             // 1b: initialize its position
+    volumeSlider.addEventListener('input', () => {                     // 1c: listen for changes
+      chaosAudio.volume = volumeSlider.value;
+      localStorage.setItem('gubVolume', volumeSlider.value);
+    });
+
+    let flashing = false;
+    let musicPlaying = false;
+    
+        // ─── VISUALIZER SETUP ────────────────────────────────────────────────
+    const canvas   = document.getElementById('visualizer');
+    const ctx      = canvas.getContext('2d');
+    function resize(){ canvas.width = window.innerWidth; canvas.height = 100; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Hook the visualizer up to our chaosAudio element
+    const audioCtx   = new (window.AudioContext||window.webkitAudioContext)();
+    const analyser   = audioCtx.createAnalyser();
+    const sourceNode = audioCtx.createMediaElementSource(chaosAudio);
+    sourceNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    analyser.fftSize = 256;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray    = new Uint8Array(bufferLength);
+
+    function drawVis(){
+      requestAnimationFrame(drawVis);
+      analyser.getByteFrequencyData(dataArray);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const barWidth = canvas.width / bufferLength;
+      for(let i=0; i<bufferLength; i++){
+        const h = dataArray[i];
+        ctx.fillStyle = `hsl(${i*3},100%,50%)`;
+        ctx.fillRect(i*barWidth, canvas.height-h, barWidth-1, h);
+      }
+    }
+    drawVis();
+    // ─────────────────────────────────────────────────────────────────────
+
+
 // ─── SPECIAL GUB STYLE ───────────────────────────────────────────────────
 const specialStyle = document.createElement('style');
 specialStyle.textContent = `
@@ -417,32 +475,7 @@ function scheduleNextGolden(initial = false) {
       }
       twitchShown = !twitchShown;
     };
-
-    let flashing = false, musicPlaying = false;
-    const canvas   = document.getElementById('visualizer');
-    const ctx      = canvas.getContext('2d');
-    function resize(){ canvas.width = window.innerWidth; canvas.height = 100; }
-    window.addEventListener('resize', resize);
-    resize();
-    const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray    = new Uint8Array(bufferLength);
-    const audio        = new Audio('music.mp3'); audio.loop = true;
-    const source       = audioCtx.createMediaElementSource(audio);
-    source.connect(analyser); analyser.connect(audioCtx.destination);
-    function drawVis(){
-      requestAnimationFrame(drawVis);
-      analyser.getByteFrequencyData(dataArray);
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      const barWidth = canvas.width / bufferLength;
-      for(let i=0; i<bufferLength; i++){
-        const h = dataArray[i];
-        ctx.fillStyle = `hsl(${i*3},100%,50%)`;
-        ctx.fillRect(i*barWidth, canvas.height-h, barWidth-1, h);
-      }
-    }
-
+   
     const goldenCounterEl = document.getElementById('golden-counter');
     function spawnGolden(){
       const imgSrc = images[Math.floor(Math.random()*images.length)];
@@ -478,14 +511,21 @@ function scheduleNextGolden(initial = false) {
         else
           f.elem.style.animation = `spinmove ${dur}s infinite ${dir} ${ease}`;
       });
-      if(flashing){
-        document.body.style.animation = 'flash 0.1s infinite alternate';
-        if(!musicPlaying){ audioCtx.resume(); audio.play(); drawVis(); musicPlaying = true; }
-      } else {
-        document.body.style.animation = 'none'; document.body.style.background = '#111';
-        floaters.forEach(f => f.elem.style.animation = '');
-        if(musicPlaying){ audio.pause(); musicPlaying = false; }
-      }
+if (flashing) {
+  document.body.style.animation = 'flash 0.1s infinite alternate';
+  if (!musicPlaying) {
+    chaosAudio.play();
+    musicPlaying = true;
+  }
+} else {
+  document.body.style.animation = 'none';
+  document.body.style.background = '#111';
+  floaters.forEach(f => f.elem.style.animation = '');
+  if (musicPlaying) {
+    chaosAudio.pause();
+    musicPlaying = false;
+  }
+}
       updateLabels();
     });
 
