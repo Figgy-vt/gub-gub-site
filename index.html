@@ -23,29 +23,17 @@ body{margin:0;overflow:hidden;background:#111;position:relative;height:100vh;wid
 #twitchPlayer{position:absolute;top:60px;right:10px;width:480px;height:270px;z-index:9000;display:none;box-shadow:0 0 8px #000;border-radius:8px;overflow:hidden;}
 </style>
 <script src="https://embed.twitch.tv/embed/v1.js"></script>
-  <!-- Firebase (only two tiny files) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
 </head>
 <body>
 <div id="btnRow">
   <button id="lowPerfBtn">Settings&nbsp;Menu</button>
   <button id="chaosBtn">Chaos&nbsp;Mode <span style="font-size:10px;">(epilepsy&nbsp;warning)</span></button>
   <button id="twitchBtn">Show&nbsp;Stream</button>
-  <button id="lbBtn">Leaderboard</button>
 </div>
 <button id="speedBtn">Speed&nbsp;Up</button>
 <div id="perfMenu">
   <div>Speed: <button id="spdDec">-</button><span id="spdVal">2</span><button id="spdInc">+</button></div>
   <div>Images: <button id="imgDec">-</button><span id="imgVal">20</span><button id="imgInc">+</button></div>
-</div>
-<div id="lbPanel" style="
-     position:absolute; right:10px; top:60px; background:#222; color:#fff;
-     border:1px solid #555; border-radius:8px; padding:10px;
-     display:none; z-index:9998; font-family:sans-serif;">
-  <h3 style="margin:0 0 6px">Leaderboard</h3>
-  <ol id="lbList" style="margin:0; padding-left:20px;"></ol>
 </div>
 <div id="counter">Score: 0</div>
 <img id="special" alt="Golden" />
@@ -54,24 +42,6 @@ body{margin:0;overflow:hidden;background:#111;position:relative;height:100vh;wid
 <canvas id="visualizer"></canvas>
 <script>
 window.addEventListener('DOMContentLoaded',()=>{
-  /* ---------- Firebase setup ---------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM",
-  authDomain: "gub-leaderboard.firebaseapp.com",
-  databaseURL: "https://gub-leaderboard-default-rtdb.firebaseio.com",
-  projectId: "gub-leaderboard"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-/* Ask for a username once */
-let username = localStorage.getItem('gubUser');
-if (!username) {
-  username = prompt("Pick a username (permanent):");
-  if (!username) username = "Anon" + Math.floor(Math.random()*1000);
-  localStorage.setItem('gubUser', username);
-}
-
 const images=['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg', 'floater9.jpg', 'floater10.jpg', 'floater11.jpg', 'floater12.jpg'];
 const texts=["bark", "barke", "gubbling", "good boye", "sniffa", "shidded","gubb", "gubbing", "i'm gonna gub", "he do be gubbin", "were my salami go", "Gub Gubtaro Pissboy420 Bong or Die", "bork", "aaaAAa", "im gubbing it im gubbing it"];
 let speedMultiplier=2;let numFloaters=20;const floaters=[];
@@ -89,40 +59,11 @@ spdDec.onclick=()=>adjustSpeed(-1);spdInc.onclick=()=>adjustSpeed(1);imgDec.oncl
 const counterEl=document.getElementById('counter');const special=document.getElementById('special');let score=0;
 function spawnSpecial(){const size=80;special.src=images[Math.floor(Math.random()*images.length)];special.style.width=special.style.height=size+'px';special.style.left=Math.random()*(innerWidth-size)+'px';special.style.top=Math.random()*(innerHeight-size)+'px';special.style.filter='sepia(1) saturate(5) hue-rotate(5deg) brightness(1.2) drop-shadow(0 0 8px #ffd700)';special.style.display='block';}
 function scheduleNext(){special.style.display='none';const delay=5000+Math.random()*40000;setTimeout(spawnSpecial,delay);}
-special.onclick = ()=>{
-  score += 1;
-  counterEl.textContent = "Score: " + score;           // <-- shows “Score: X”
-  db.ref("scores/" + username).set(score);             // <-- write to Firebase
-  scheduleNext();
-};
+special.onclick=()=>{score+=1;counterEl.textContent=score;scheduleNext();};
 scheduleNext();
 /* twitch */
 const twitchBtn=document.getElementById('twitchBtn');const twitchBox=document.getElementById('twitchPlayer');let twitchShown=false;function initTwitch(){new Twitch.Embed('twitchPlayer',{width:'100%',height:'100%',channel:'harupi',layout:'video',parent:['gub.cam','www.gub.cam',location.hostname]});}
 twitchBtn.onclick=()=>{if(!twitchShown){twitchBox.style.display='block';if(!twitchBox.dataset.loaded){initTwitch();twitchBox.dataset.loaded='1';}twitchBtn.textContent='Hide Stream';}else{twitchBox.style.display='none';twitchBtn.textContent='Show Stream';}twitchShown=!twitchShown;};
-/* ---------- Leaderboard toggle ---------- */
-const lbBtn   = document.getElementById("lbBtn");
-const lbPanel = document.getElementById("lbPanel");
-const lbList  = document.getElementById("lbList");
-
-lbBtn.onclick = () => {
-  // open or close the panel
-  lbPanel.style.display = lbPanel.style.display === "block" ? "none" : "block";
-
-  if (lbPanel.style.display === "block") {
-    // get top 10 scores (highest first)
-    db.ref("scores")
-      .orderByValue()
-      .limitToLast(10)
-      .once("value", snap => {
-        const rows = [];
-        snap.forEach(s => rows.push([s.key, s.val()])); // key = username
-        rows.reverse();                                // highest → lowest
-        lbList.innerHTML = rows
-          .map(([u, sc]) => `<li>${u}: ${sc}</li>`)
-          .join("");
-      });
-  }
-};
 });
 </script>
 </body>
