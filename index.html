@@ -25,6 +25,7 @@
       position: absolute;
       pointer-events: none;
       z-index: 2;
+      will-change: transform;
     }
 
     .floater img {
@@ -75,7 +76,7 @@
       const elem = document.createElement("div");
       elem.classList.add("floater");
 
-      const size = 60 + Math.random() * 80; // size between 60 and 140px
+      const size = 80 + Math.random() * 320;
       elem.style.width = `${size}px`;
       elem.style.height = `${size}px`;
 
@@ -83,15 +84,23 @@
       img.src = images[Math.floor(Math.random() * images.length)];
       elem.style.top = Math.random() * 100 + "%";
       elem.style.left = Math.random() * 100 + "%";
-      elem.style.transition = `transform ${2 + Math.random() * 3}s linear`;
-      elem.appendChild(img);
       document.body.appendChild(elem);
+      elem.appendChild(img);
 
-      requestAnimationFrame(() => {
+      animateFloater(elem);
+    }
+
+    function animateFloater(elem) {
+      const move = () => {
         const x = (Math.random() - 0.5) * 1000;
         const y = (Math.random() - 0.5) * 1000;
+        const duration = 2 + Math.random() * 3;
+        elem.style.transition = `transform ${duration}s linear`;
         elem.style.transform = `translate(${x}px, ${y}px)`;
-      });
+      };
+
+      move();
+      setInterval(move, 3000);
     }
 
     function createRainbowText() {
