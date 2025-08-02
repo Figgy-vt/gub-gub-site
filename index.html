@@ -57,6 +57,16 @@
   <canvas id="visualizer"></canvas>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
+    // Prompt for username if not stored or invalid
+    const stored = localStorage.getItem('gubUser') || '';
+    if (!stored.trim()) {
+      let uname = '';
+      while (!uname.trim()) {
+        uname = prompt('Enter a username for the leaderboard:') || '';
+      }
+      const safe = uname.trim().replace(/[.#$[\]]/g, '_');
+      localStorage.setItem('gubUser', safe);
+    }
     // --- Leaderboard: Firebase init & prompt ---
     const firebaseConfig = { apiKey:"AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM", authDomain:"gub-leaderboard.firebaseapp.com", databaseURL:"https://gub-leaderboard-default-rtdb.firebaseio.com", projectId:"gub-leaderboard", storageBucket:"gub-leaderboard.appspot.com", messagingSenderId:"851465760203", appId:"1:851465760203:web:1fc30c730a93c0fab25a4e" };
     firebase.initializeApp(firebaseConfig);
@@ -260,3 +270,4 @@
   </script>
 </body>
 </html>
+
