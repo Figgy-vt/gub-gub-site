@@ -9,26 +9,24 @@
       margin: 0;
       overflow: hidden;
       background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       height: 100vh;
-      width: 100vw;
-      position: relative;
     }
 
     #main-gub {
       max-height: 90vh;
       max-width: 90vw;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       z-index: 1;
     }
 
-    .floater {
+    .floater, .rainbow-text {
       position: absolute;
       pointer-events: none;
       z-index: 2;
       will-change: transform;
+      transform: translate(0px, 0px);
     }
 
     .floater img {
@@ -38,24 +36,11 @@
     }
 
     .rainbow-text {
-      position: absolute;
       font-size: 2rem;
       font-weight: bold;
       font-family: sans-serif;
-      animation: rainbow 5s linear infinite, floatText 6s linear infinite alternate;
-      z-index: 3;
+      animation: rainbow 5s linear infinite;
       white-space: nowrap;
-    }
-
-    .version-banner {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: white;
-      font-size: 3rem;
-      font-family: sans-serif;
-      z-index: 999;
     }
 
     @keyframes rainbow {
@@ -66,15 +51,9 @@
       80% { color: blue; }
       100% { color: violet; }
     }
-
-    @keyframes floatText {
-      from { transform: translateY(0px); }
-      to { transform: translateY(-40px); }
-    }
   </style>
 </head>
 <body>
-  <div class="version-banner">test v1</div>
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
 
   <script>
@@ -92,6 +71,19 @@
 
     const texts = ["bark", "barke", "gubbling", "good boye", "sniffa", "shidded"]
 
+    function randomMove(elem) {
+      elem.style.transform = `translate(0px, 0px)`;
+      requestAnimationFrame(() => {
+        const x = (Math.random() - 0.5) * 1000;
+        const y = (Math.random() - 0.5) * 1000;
+        const duration = 2 + Math.random() * 3;
+        elem.style.transition = `transform ${duration}s linear`;
+        elem.style.transform = `translate(${x}px, ${y}px)`;
+
+        setTimeout(() => randomMove(elem), duration * 1000);
+      });
+    }
+
     function createFloater() {
       const elem = document.createElement("div");
       elem.classList.add("floater");
@@ -102,25 +94,10 @@
       img.src = images[Math.floor(Math.random() * images.length)];
       elem.style.top = Math.random() * 100 + "%";
       elem.style.left = Math.random() * 100 + "%";
-      document.body.appendChild(elem);
       elem.appendChild(img);
-      animateFloater(elem);
-    }
+      document.body.appendChild(elem);
 
-    function animateFloater(elem) {
-      const x = (Math.random() - 0.5) * 1000;
-      const y = (Math.random() - 0.5) * 1000;
-      const duration = 2 + Math.random() * 3;
-      elem.style.transition = `transform ${duration}s linear`;
-      elem.style.transform = `translate(${x}px, ${y}px)`;
-
-      setInterval(() => {
-        const newX = (Math.random() - 0.5) * 1000;
-        const newY = (Math.random() - 0.5) * 1000;
-        const newDuration = 2 + Math.random() * 3;
-        elem.style.transition = `transform ${newDuration}s linear`;
-        elem.style.transform = `translate(${newX}px, ${newY}px)`;
-      }, duration * 1000);
+      randomMove(elem);
     }
 
     function createRainbowText() {
@@ -130,6 +107,8 @@
       text.style.top = Math.random() * 100 + "%";
       text.style.left = Math.random() * 100 + "%";
       document.body.appendChild(text);
+
+      randomMove(text);
     }
 
     for (let i = 0; i < NUM_FLOATERS; i++) {
