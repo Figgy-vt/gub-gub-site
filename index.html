@@ -24,7 +24,16 @@
     @keyframes rainbow {0%{color:red;}20%{color:orange;}40%{color:yellow;}60%{color:green;}80%{color:blue;}100%{color:violet;}}
     @media(max-width:768px) {.floater,.rainbow-text{max-width:150px;max-height:150px;}}
 
-    #visualizer    { position:fixed; bottom:0; left:0; right:0; width:100vw; height:100px; z-index:5000; pointer-events:none; }
+    #visualizer {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80vw;
+  height: 100px;
+  z-index: 5000;
+  pointer-events: none;
+}
     #twitchPlayer  { position:absolute; top:50px; right:10px; width:500px; height:300px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
     #golden-counter { position:absolute; top:10px; right:10px; z-index:10000; color:gold; font-family:sans-serif; font-size:20px; font-weight:bold; }
     #leaderboard { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; z-index:10000; }
