@@ -92,16 +92,21 @@ const firebaseConfig = {
       });
 
       // Update leaderboard display
-      function updateLeaderboard() {
-        db.ref('leaderboard').orderByChild('score').limitToLast(5).once('value').then(snap => {
-          const list = [];
-          snap.forEach(c => list.push({ user: c.key, score: c.val().score }));
-          list.reverse();
-          document.getElementById('leaderboard').innerHTML =
-            '<strong>Leaderboard</strong><br>' +
-            list.map((e,i) => `${i+1}. ${e.user}: ${e.score}`).join('<br>');
-        });
-      }
+function updateLeaderboard() {
+  db.ref('leaderboard')
+    .orderByChild('score')
+    .once('value')
+    .then(snap => {
+      const list = [];
+      snap.forEach(c => list.push({ user: c.key, score: c.val().score }));
+      list.reverse();
+      document.getElementById('leaderboard').innerHTML =
+        '<strong>Leaderboard</strong><br>' +
+        list.map((e, i) => `${i + 1}. ${e.user}: ${e.score}`).join('<br>');
+    })
+    .catch(err => console.error('Failed to load leaderboard:', err));
+}
+
 
       // Spawn golden gub and handle clicks
       function spawnGolden() {
