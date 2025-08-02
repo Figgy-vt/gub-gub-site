@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>the gub</title>
   <style>
     body {
@@ -52,7 +52,13 @@
       80% { color: blue; }
       100% { color: violet; }
     }
-  </style>
+  @media (max-width: 768px) {
+  .floater, .rainbow-text {
+    max-width: 150px;
+    max-height: 150px;
+  }
+}
+</style>
 </head>
 <body>
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
@@ -67,14 +73,10 @@
       "floater5.jpg",
       "floater6.jpg",
       "floater7.jpg",
-      "floater8.jpg",
-      "floater9.jpg",
-      "floater10.jpg",
-      "floater11.jpg",
-      "floater12.jpg"
+      "floater8.jpg"
     ];
 
-    const texts = ["bark", "barke", "gubbling", "good boye", "sniffa", "shidded","gubb", "gubbing", "i'm gonna gub", "he do be gubbin", "were my salami go", "Gub Gubtaro Pissboy420 Bong or Die", "bork", "aaaAAa", "im gubbing it im gubbing it"]
+    const texts = ["bark", "barke", "gubbling", "good boye", "sniffa", "shidded"]
 
     const floaters = [];
 
