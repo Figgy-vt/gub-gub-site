@@ -34,7 +34,19 @@
   z-index: 5000;
   pointer-events: none;
 }
-
+    
+#online-users {
+  position: absolute;
+  bottom: 10px;
+  left: 472px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: sans-serif;
+  font-size: 14px;
+  z-index: 10001;
+}
     #twitchPlayer  { position:absolute; top:50px; right:10px; width:500px; height:300px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
     #golden-counter { position:absolute; top:10px; right:10px; z-index:10000; color:gold; font-family:sans-serif; font-size:20px; font-weight:bold; }
     #leaderboard { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; z-index:10000; }
@@ -119,6 +131,9 @@
 />
   </div>
   <div id="golden-counter">Golden Gubs This Session: 0</div>
+  <div id="online-users">
+    Online: …
+  </div>
   <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
   <div id="chat">
   <div id="messages"></div>
@@ -228,6 +243,24 @@ const firebaseConfig = {
     // 3. Authenticate then setup leaderboard
     firebase.auth().signInAnonymously().then(() => {
       const db = firebase.database();
+        // ─── Presence Setup ───────────────────────────────────────────────
+  const presenceRef   = db.ref('.info/connected');
+  const userOnlineRef = db.ref('presence/' + username);
+
+  presenceRef.on('value', snap => {
+    if (snap.val() === true) {
+      userOnlineRef.set(true);
+      userOnlineRef.onDisconnect().remove();
+    }
+  });
+
+  db.ref('presence').on('value', snap => {
+    const users = snap.val() ? Object.keys(snap.val()) : [];
+    document.getElementById('online-users').textContent =
+      'Online: ' + users.join(', ');
+  });
+  // ─────────────────────────────────────────────────────────────────
+
       let sessionCount = 0, globalCount = 0;
 
       // Load or initialize user's score
@@ -439,7 +472,6 @@ function scheduleNextGolden(initial = false) {
     }
     for(let i=0; i<NUM_FLOATERS; i++){ createEntity(false); createEntity(true);}   
     animate();
-
     // Controls
     const settingsBtn = document.getElementById('lowPerfBtn');
     const perfMenu   = document.getElementById('perfMenu');
