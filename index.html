@@ -184,8 +184,11 @@ chaosBtn.addEventListener("click", () => {
     speedMultiplier = 6;
     document.body.style.animation = "flash 0.1s infinite alternate";
     floaters.forEach(f => {
-      f.elem.style.animation = "spinmove 0.5s infinite alternate ease-in-out";
-    });
+  const duration = (0.3 + Math.random() * 0.7).toFixed(2);
+  const direction = Math.random() > 0.5 ? "alternate" : "alternate-reverse";
+  const timing = Math.random() > 0.5 ? "ease-in" : "ease-out";
+  f.elem.style.animation = `spinmove ${duration}s infinite ${direction} ${timing}`;
+});
   } else {
     speedMultiplier = 2;
     document.body.style.animation = "none";
