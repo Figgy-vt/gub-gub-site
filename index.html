@@ -82,18 +82,6 @@
       });
     }
     updateLeaderboard();
-    /*
-      Firebase Realtime Database Rules (set in Console > Database > Rules):
-      {
-        "rules": {
-          "leaderboard": {
-            ".read": true,
-            ".write": "auth != null"
-          }
-        }
-      }
-      Ensure Anonymous Auth is enabled under Console > Authentication.
-    */
     // --- Game Logic ---
     const NUM_FLOATERS = 20;
     const images = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg','floater9.jpg','floater10.jpg','floater11.jpg','floater12.jpg'];
@@ -257,6 +245,18 @@
     styleEl.textContent = `@keyframes flash{0%{background:#111}25%{background:#ff0}50%{background:#0ff}75%{background:#f0f}100%{background:#111}}@keyframes spinmove{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}`;
     document.head.appendChild(styleEl);
   });
+  </script>
+  <script>
+    // Ensure persisted username is sanitized before use in Firebase paths
+    window.addEventListener('DOMContentLoaded', () => {
+      const stored = localStorage.getItem('gubUser');
+      if (stored) {
+        const safe = stored.replace(/[.#$[\]]/g, '_');
+        if (safe !== stored) {
+          localStorage.setItem('gubUser', safe);
+        }
+      }
+    });
   </script>
 </body>
 </html>
