@@ -91,16 +91,15 @@
     }
 
     function animateFloater(elem) {
-      const move = () => {
+      function move() {
         const x = (Math.random() - 0.5) * 1000;
         const y = (Math.random() - 0.5) * 1000;
         const duration = 2 + Math.random() * 3;
         elem.style.transition = `transform ${duration}s linear`;
         elem.style.transform = `translate(${x}px, ${y}px)`;
-      };
-
+        setTimeout(move, duration * 1000);
+      }
       move();
-      setInterval(move, 3000);
     }
 
     function createRainbowText() {
