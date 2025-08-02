@@ -25,20 +25,14 @@
     @media(max-width:768px) {.floater,.rainbow-text{max-width:150px;max-height:150px;}}
 
     #visualizer    { position:fixed; bottom:0; left:0; right:0; width:100vw; height:100px; z-index:5000; pointer-events:none; }
-    /* Enlarged video-only Twitch embed */
     #twitchPlayer  { position:absolute; top:50px; right:10px; width:500px; height:300px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
-
-    /* Session counter for this session */
     #golden-counter { position:absolute; top:10px; right:10px; z-index:10000; color:gold; font-family:sans-serif; font-size:20px; font-weight:bold; }
-
-    /* Leaderboard panel */
     #leaderboard { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; z-index:10000; }
   </style>
   <script src="https://embed.twitch.tv/embed/v1.js"></script>
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>  <!-- Added for Anonymous Auth -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 </head>
 <body>
   <div id="btnRow">
@@ -57,48 +51,98 @@
   <canvas id="visualizer"></canvas>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
-    // Prompt for username if not stored or invalid
-    const stored = localStorage.getItem('gubUser') || '';
-    if (!stored.trim()) {
-      let uname = '';
-      while (!uname.trim()) {
-        uname = prompt('Enter a username for the leaderboard:') || '';
-      }
-      const safe = uname.trim().replace(/[.#$[\]]/g, '_');
-      localStorage.setItem('gubUser', safe);
+    // 1. Prompt & sanitize username
+    let username = (localStorage.getItem('gubUser') || '').trim();
+    if (!username) {
+      do {
+        username = (prompt('Enter a username for the leaderboard:') || '').trim();
+      } while (!username);
+      username = username.replace(/[.#$[\]]/g, '_');
+      localStorage.setItem('gubUser', username);
     }
-    // --- Leaderboard: Firebase init & prompt ---
-    const firebaseConfig = { apiKey:"AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM", authDomain:"gub-leaderboard.firebaseapp.com", databaseURL:"https://gub-leaderboard-default-rtdb.firebaseio.com", projectId:"gub-leaderboard", storageBucket:"gub-leaderboard.appspot.com", messagingSenderId:"851465760203", appId:"1:851465760203:web:1fc30c730a93c0fab25a4e" };
+
+    // 2. Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM",
+      authDomain: "gub-leaderboard.firebaseapp.com",
+      databaseURL: "https://gub-leaderboard-default-rtdb.firebaseio.com",
+      projectId: "gub-leaderboard",
+      storageBucket: "gub-leaderboard.appspot.com",
+      messagingSenderId: "851465760203",
+      appId: "1:851465760203:web:1fc30c730a93c0fab25a4e"
+    };
     firebase.initializeApp(firebaseConfig);
-    // --- Security: enable Anonymous Auth ---
-    firebase.auth().signInAnonymously().catch(err => console.error('Auth Error', err));
-    const db = firebase.database();
-    let sessionCount = 0, globalCount = 0;
-    let username = localStorage.getItem('gubUser');
-    while (!username) { username = prompt('Enter a username for the leaderboard:'); if (username) localStorage.setItem('gubUser', username.trim()); }
 
-    // Load global count without altering session counter
-    db.ref(`leaderboard/${username}/score`).once('value', snap => { globalCount = snap.val() || 0; });
+    // 3. Authenticate then setup leaderboard
+    firebase.auth().signInAnonymously().then(() => {
+      const db = firebase.database();
+      let sessionCount = 0, globalCount = 0;
 
-    // Fetch & render top 5
-    function updateLeaderboard(){
-      db.ref('leaderboard').orderByChild('score').limitToLast(5).once('value', snap => {
-        const list = [];
-        snap.forEach(c => list.push({ user: c.key, score: c.val().score }));
-        list.reverse();
-        document.getElementById('leaderboard').innerHTML =
-          '<strong>Leaderboard</strong><br>' +
-          list.map((e,i) => `${i+1}. ${e.user}: ${e.score}`).join('<br>');
+      // Load or initialize user's score
+      const userRef = db.ref(`leaderboard/${username}/score`);
+      userRef.once('value').then(snap => {
+        globalCount = snap.val() || 0;
+        // Ensure entry exists
+        db.ref(`leaderboard/${username}`).set({ score: globalCount });
+
+        // Populate initial leaderboard and start spawning
+        updateLeaderboard();
+        scheduleNextGolden(true);
       });
-    }
-    updateLeaderboard();
-    // --- Game Logic ---
+
+      // Update leaderboard display
+      function updateLeaderboard() {
+        db.ref('leaderboard').orderByChild('score').limitToLast(5).once('value').then(snap => {
+          const list = [];
+          snap.forEach(c => list.push({ user: c.key, score: c.val().score }));
+          list.reverse();
+          document.getElementById('leaderboard').innerHTML =
+            '<strong>Leaderboard</strong><br>' +
+            list.map((e,i) => `${i+1}. ${e.user}: ${e.score}`).join('<br>');
+        });
+      }
+
+      // Spawn golden gub and handle clicks
+      function spawnGolden() {
+        const el = document.createElement('img');
+        el.src = images[Math.floor(Math.random()*images.length)];
+        el.className = 'floater';
+        const size = 80 + Math.random()*320;
+        el.style.width = el.style.height = size + 'px';
+        el.style.left = `${Math.random()*(window.innerWidth-size)}px`;
+        el.style.top  = `${Math.random()*(window.innerHeight-size)}px`;
+        el.style.zIndex = 10000;
+        el.style.filter = 'sepia(1) hue-rotate(20deg) saturate(5) brightness(1.2)';
+        el.style.border = '2px solid gold';
+        el.style.pointerEvents = 'auto';
+        document.body.appendChild(el);
+        el.addEventListener('click', () => {
+          sessionCount++;
+          globalCount++;
+          goldenCounterEl.textContent = `Golden Gubs: ${sessionCount}`;
+          db.ref(`leaderboard/${username}`).set({ score: globalCount });
+          updateLeaderboard();
+          el.remove();
+          scheduleNextGolden();
+        });
+      }
+
+      function scheduleNextGolden(initial=false) {
+        const min = initial?3000:5000;
+        const max = initial?10000:15000;
+        setTimeout(spawnGolden, min + Math.random()*(max-min));
+      }
+
+      // Expose goldenCounterEl for spawn
+      const goldenCounterEl = document.getElementById('golden-counter');
+    }).catch(err => console.error('Auth Error', err));
+
+    // --- Game Logic & Controls (unchanged) ---
     const NUM_FLOATERS = 20;
     const images = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg','floater9.jpg','floater10.jpg','floater11.jpg','floater12.jpg'];
     const texts = ["bark","barke","gubbling","good boye","sniffa","shidded","gubb","gubbing","i'm gonna gub","he do be gubbin","were my salami go","Gub Gubtaro Pissboy420 Bong or Die","bork","aaaAAa","im gubbing it im gubbing it"];
     let speedMultiplier = 2, numFloaters = NUM_FLOATERS;
     const floaters = [];
-
     function createEntity(isText=false){
       const elem = document.createElement('div');
       const size = 80 + Math.random() * 320;
@@ -270,4 +314,3 @@
   </script>
 </body>
 </html>
-
