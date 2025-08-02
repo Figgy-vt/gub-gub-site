@@ -137,7 +137,7 @@ function updateLeaderboard() {
         el.addEventListener('click', () => {
           sessionCount++;
           globalCount++;
-          goldenCounterEl.textContent = `Golden Gubs: ${sessionCount}`;
+          goldenCounterEl.textContent = `Golden Gubs This Session: ${sessionCount}`;
           db.ref(`leaderboard/${username}`).set({ score: globalCount });
           updateLeaderboard();
           el.remove();
@@ -281,7 +281,7 @@ function updateLeaderboard() {
       el.addEventListener('click', () => {
         sessionCount++;
         globalCount++;
-        goldenCounterEl.textContent = 'Golden Gubs: ' + sessionCount;
+        goldenCounterEl.textContent = 'Golden Gubs This Session: ' + sessionCount;
         db.ref(`leaderboard/${username}`).set({ score: globalCount });
         updateLeaderboard();
         el.remove();
