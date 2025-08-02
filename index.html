@@ -63,16 +63,33 @@
   z-index: 9999;
   background: #fff;
   color: #000;
-  padding: 10px 20px;
-  font-size: 16px;
+  padding: 20px 30px;
+  font-size: 20px;
   font-weight: bold;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
 }
+#chaosBtn, #lowPerfBtn {
+  position: absolute;
+  top: 10px;
+  z-index: 10000;
+  background: #fff;
+  color: #000;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#chaosBtn { right: 10px; }
+#lowPerfBtn { right: 130px; }
 </style>
 </head>
 <body>
+  <button id="chaosBtn">Chaos Mode</button>
+  <button id="lowPerfBtn">Low Perf Mode</button>
   <button id="speedBtn">Speed Up</button>
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
 
@@ -155,6 +172,49 @@ const floaters = [];
   btn.style.left = Math.random() * (window.innerWidth - btn.offsetWidth) + "px";
   btn.style.top = Math.random() * (window.innerHeight - btn.offsetHeight) + "px";
 });
+let flashing = false;
+let lowPerf = false;
+
+const chaosBtn = document.getElementById("chaosBtn");
+const lowPerfBtn = document.getElementById("lowPerfBtn");
+
+chaosBtn.addEventListener("click", () => {
+  flashing = !flashing;
+  if (flashing) {
+    speedMultiplier = 6;
+    document.body.style.animation = "flash 0.1s infinite alternate";
+    floaters.forEach(f => {
+      f.elem.style.animation = "spinmove 0.5s infinite alternate ease-in-out";
+    });
+  } else {
+    speedMultiplier = 2;
+    document.body.style.animation = "none";
+    document.body.style.background = "#111";
+    floaters.forEach(f => {
+      f.elem.style.animation = "none";
+    });
+  }
+});
+
+lowPerfBtn.addEventListener("click", () => {
+  lowPerf = !lowPerf;
+  speedMultiplier = lowPerf ? 1 : 2;
+});
+
+const flashKeyframes = document.createElement("style");
+flashKeyframes.innerHTML = `@keyframes flash {
+  0% { background-color: #111; }
+  25% { background-color: #ff0; }
+  50% { background-color: #0ff; }
+  75% { background-color: #f0f; }
+  100% { background-color: #111; }
+}
+@keyframes spinmove {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}`;
+document.head.appendChild(flashKeyframes);
 </script>
 </body>
 </html>
