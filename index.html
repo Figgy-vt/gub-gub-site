@@ -44,7 +44,7 @@
     <div>Speed: <button id="spdDec">-</button><span id="spdVal">2</span><button id="spdInc">+</button></div>
     <div>Images: <button id="imgDec">-</button><span id="imgVal">20</span><button id="imgInc">+</button></div>
   </div>
-  <div id="golden-counter">Golden Gubs: 0</div>
+  <div id="golden-counter">Golden Gubs This Session: 0</div>
   <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
   <div id="twitchPlayer"></div>
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
@@ -80,16 +80,22 @@ const firebaseConfig = {
       let sessionCount = 0, globalCount = 0;
 
       // Load or initialize user's score
-      const userRef = db.ref(`leaderboard/${username}/score`);
-      userRef.once('value').then(snap => {
-        globalCount = snap.val() || 0;
-        // Ensure entry exists
-        db.ref(`leaderboard/${username}`).set({ score: globalCount });
+const userRef = db.ref(`leaderboard/${username}/score`);
+userRef.once('value').then(snap => {
+  globalCount = snap.val() || 0;
+  // Ensure entry exists
+  db.ref(`leaderboard/${username}`).set({ score: globalCount });
 
-        // Populate initial leaderboard and start spawning
-        updateLeaderboard();
-        scheduleNextGolden(true);
-      });
+  // Populate initial leaderboard
+  updateLeaderboard();
+
+  // Refresh leaderboard every 10 seconds
+  setInterval(updateLeaderboard, 10_000);
+
+  // Start spawning golden gubs
+  scheduleNextGolden(true);
+});
+
 
       // Update leaderboard display
 function updateLeaderboard() {
