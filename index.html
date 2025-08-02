@@ -58,9 +58,22 @@
     max-height: 150px;
   }
 }
+#speedBtn {
+  position: absolute;
+  z-index: 9999;
+  background: #fff;
+  color: #000;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
+  <button id="speedBtn">Speed Up</button>
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
 
   <script>
@@ -78,7 +91,8 @@
 
     const texts = ["bark", "barke", "gubbling", "good boye", "sniffa", "shidded"]
 
-    const floaters = [];
+    let speedMultiplier = 2;
+const floaters = [];
 
     function createEntity(isText = false) {
       const elem = document.createElement("div");
@@ -116,8 +130,8 @@
       for (let i = 0; i < floaters.length; i++) {
         let a = floaters[i];
 
-        a.x += a.vx * 2;
-        a.y += a.vy * 2;
+        a.x += a.vx * speedMultiplier;
+        a.y += a.vy * speedMultiplier;
 
         // bounce off walls only
         if (a.x <= 0 || a.x + a.width >= window.innerWidth) a.vx *= -1;
@@ -135,6 +149,12 @@
     }
 
     animate();
-  </script>
+  document.getElementById("speedBtn").addEventListener("click", () => {
+  speedMultiplier += 1;
+  const btn = document.getElementById("speedBtn");
+  btn.style.left = Math.random() * (window.innerWidth - btn.offsetWidth) + "px";
+  btn.style.top = Math.random() * (window.innerHeight - btn.offsetHeight) + "px";
+});
+</script>
 </body>
 </html>
