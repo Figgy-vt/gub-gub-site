@@ -73,7 +73,13 @@ window.addEventListener('DOMContentLoaded',()=>{
   twitchBtn.addEventListener('click',()=>{
     if(!twitchShown){
       twitchContainer.style.display='block';
-      new Twitch.Embed('twitchPlayer',{width:'100%',height:'100%',channel:'harupi',parent:[location.hostname]});
+      new Twitch.Embed('twitchPlayer', {
+        width: '100%',
+        height: '100%',
+        channel: 'harupi',
+        layout: 'video',
+        parent: ['gub.cam','www.gub.cam', location.hostname]
+      });
       twitchBtn.textContent='Hide Stream';
     }else{
       twitchContainer.innerHTML='';
