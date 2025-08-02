@@ -28,6 +28,41 @@
     #twitchPlayer  { position:absolute; top:50px; right:10px; width:500px; height:300px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
     #golden-counter { position:absolute; top:10px; right:10px; z-index:10000; color:gold; font-family:sans-serif; font-size:20px; font-weight:bold; }
     #leaderboard { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; z-index:10000; }
+    #chat {
+  position: absolute;
+  bottom: 10px;
+  left: 180px;         /* tweak if your leaderboard width changes */
+  width: 300px;
+  max-height: 150px;   /* match leaderboard height or adjust */
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-family: sans-serif;
+  padding: 8px;
+  box-sizing: border-box;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+}
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+#chatForm {
+  display: flex;
+}
+#chatInput {
+  flex: 1;
+  padding: 4px;
+  font-size: 12px;
+}
+#chatForm button {
+  padding: 4px 8px;
+  margin-left: 4px;
+  font-size: 12px;
+}
+
   </style>
   <script src="https://embed.twitch.tv/embed/v1.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -46,6 +81,13 @@
   </div>
   <div id="golden-counter">Golden Gubs This Session: 0</div>
   <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
+  <div id="chat">
+  <div id="messages"></div>
+  <form id="chatForm">
+    <input id="chatInput" type="text" placeholder="Type a message…" autocomplete="off" />
+    <button type="submit">Send</button>
+  </form>
+</div>
   <div id="twitchPlayer"></div>
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
   <canvas id="visualizer"></canvas>
@@ -108,6 +150,41 @@ userRef.once('value').then(snap => {
 
   // Refresh leaderboard every 10 seconds
   setInterval(updateLeaderboard, 10_000);
+
+  // ——— Chat setup ———
+// 1. References to your Firebase “chat” node and DOM elements
+const chatRef    = db.ref('chat');
+const messagesEl = document.getElementById('messages');
+const chatForm   = document.getElementById('chatForm');
+const chatInput  = document.getElementById('chatInput');
+
+// 2. Listen for new chat messages (last 100), append them in order
+chatRef
+  .orderByChild('ts')
+  .limitToLast(100)
+  .on('child_added', snap => {
+    const { user, text, ts } = snap.val();
+    const msgEl = document.createElement('div');
+    // format timestamp as HH:MM:SS
+    const time  = new Date(ts).toLocaleTimeString();
+    msgEl.textContent = `[${time}] ${user}: ${text}`;
+    messagesEl.appendChild(msgEl);
+    // scroll to bottom
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+
+// 3. Hook up the form so sending pushes a new message
+chatForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatRef.push({
+    user: username,    // your sanitized username from localStorage
+    text: text,
+    ts: Date.now()
+  });
+  chatInput.value = '';
+});
 
   // Start spawning golden gubs
   scheduleNextGolden(true);
