@@ -9,15 +9,18 @@
       margin: 0;
       overflow: hidden;
       background: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      position: relative;
       height: 100vh;
+      width: 100vw;
     }
 
     #main-gub {
       max-height: 90vh;
       max-width: 90vw;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       z-index: 1;
     }
 
@@ -25,8 +28,6 @@
       position: absolute;
       pointer-events: none;
       z-index: 2;
-      will-change: transform;
-      transform: translate(0px, 0px);
     }
 
     .floater img {
@@ -66,55 +67,72 @@
       "floater5.jpg",
       "floater6.jpg",
       "floater7.jpg",
-      "floater8.jpg"
+      "floater8.jpg",
+      "floater9.jpg",
+      "floater10.jpg",
+      "floater11.jpg",
+      "floater12.jpg"
     ];
 
     const texts = ["bark", "barke", "gubbling", "good boye", "sniffa", "shidded"]
 
-    function randomMove(elem) {
-      elem.style.transform = `translate(0px, 0px)`;
-      requestAnimationFrame(() => {
-        const x = (Math.random() - 0.5) * 1000;
-        const y = (Math.random() - 0.5) * 1000;
-        const duration = 2 + Math.random() * 3;
-        elem.style.transition = `transform ${duration}s linear`;
-        elem.style.transform = `translate(${x}px, ${y}px)`;
+    const floaters = [];
 
-        setTimeout(() => randomMove(elem), duration * 1000);
-      });
-    }
-
-    function createFloater() {
+    function createEntity(isText = false) {
       const elem = document.createElement("div");
-      elem.classList.add("floater");
       const size = 80 + Math.random() * 320;
       elem.style.width = `${size}px`;
       elem.style.height = `${size}px`;
-      const img = document.createElement("img");
-      img.src = images[Math.floor(Math.random() * images.length)];
-      elem.style.top = Math.random() * 100 + "%";
-      elem.style.left = Math.random() * 100 + "%";
-      elem.appendChild(img);
+      elem.style.top = Math.random() * (window.innerHeight - size) + "px";
+      elem.style.left = Math.random() * (window.innerWidth - size) + "px";
+      elem.style.position = "absolute";
+
+      if (isText) {
+        elem.className = "rainbow-text";
+        elem.textContent = texts[Math.floor(Math.random() * texts.length)];
+      } else {
+        elem.className = "floater";
+        const img = document.createElement("img");
+        img.src = images[Math.floor(Math.random() * images.length)];
+        elem.appendChild(img);
+      }
+
       document.body.appendChild(elem);
 
-      randomMove(elem);
+      floaters.push({
+        elem,
+        x: parseFloat(elem.style.left),
+        y: parseFloat(elem.style.top),
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        width: size,
+        height: size
+      });
     }
 
-    function createRainbowText() {
-      const text = document.createElement("div");
-      text.className = "rainbow-text";
-      text.innerText = texts[Math.floor(Math.random() * texts.length)];
-      text.style.top = Math.random() * 100 + "%";
-      text.style.left = Math.random() * 100 + "%";
-      document.body.appendChild(text);
+    function animate() {
+      for (let i = 0; i < floaters.length; i++) {
+        let a = floaters[i];
 
-      randomMove(text);
+        a.x += a.vx * 2;
+        a.y += a.vy * 2;
+
+        // bounce off walls only
+        if (a.x <= 0 || a.x + a.width >= window.innerWidth) a.vx *= -1;
+        if (a.y <= 0 || a.y + a.height >= window.innerHeight) a.vy *= -1;
+
+        a.elem.style.left = a.x + "px";
+        a.elem.style.top = a.y + "px";
+      }
+      requestAnimationFrame(animate);
     }
 
     for (let i = 0; i < NUM_FLOATERS; i++) {
-      createFloater();
-      createRainbowText();
+      createEntity(false);
+      createEntity(true);
     }
+
+    animate();
   </script>
 </body>
 </html>
