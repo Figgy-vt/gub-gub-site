@@ -23,8 +23,6 @@
 
     .floater {
       position: absolute;
-      width: 50px;
-      height: 50px;
       pointer-events: none;
       z-index: 2;
     }
@@ -76,11 +74,16 @@
     function createFloater() {
       const elem = document.createElement("div");
       elem.classList.add("floater");
+
+      const size = 60 + Math.random() * 80; // size between 60 and 140px
+      elem.style.width = `${size}px`;
+      elem.style.height = `${size}px`;
+
       const img = document.createElement("img");
       img.src = images[Math.floor(Math.random() * images.length)];
       elem.style.top = Math.random() * 100 + "%";
       elem.style.left = Math.random() * 100 + "%";
-      elem.style.transition = `transform ${3 + Math.random() * 5}s linear`;
+      elem.style.transition = `transform ${2 + Math.random() * 3}s linear`;
       elem.appendChild(img);
       document.body.appendChild(elem);
 
