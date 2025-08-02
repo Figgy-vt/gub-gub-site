@@ -1,121 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>the gub</title>
-  <style>
-    body{margin:0;overflow:hidden;background:#111;position:relative;height:100vh;width:100vw;}
-    #main-gub{max-height:90vh;max-width:90vw;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;}
-
-    /* buttons */
-    #chaosBtn,#lowPerfBtn,#speedBtn,#twitchBtn{position:absolute;z-index:9999;background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-family:sans-serif;padding:8px 16px;font-size:14px;top:10px;}
-    #lowPerfBtn{left:10px;}
-    #chaosBtn{left:140px;}
-    #twitchBtn{left:345px;}
-    #speedBtn{padding:20px 30px;font-size:20px;border-radius:10px;}
-
-    .rainbow-text{font-size:2rem;font-weight:bold;font-family:sans-serif;animation:rainbow 5s linear infinite;white-space:nowrap;position:absolute;pointer-events:none;z-index:2;}
-    .floater{position:absolute;pointer-events:none;z-index:2;}
-    .floater img{width:100%;height:100%;object-fit:contain;}
-
-    @keyframes rainbow{0%{color:red;}20%{color:orange;}40%{color:yellow;}60%{color:green;}80%{color:blue;}100%{color:violet;}}
-
-    @media(max-width:768px){.floater,.rainbow-text{max-width:150px;max-height:150px;}}
-
-    #visualizer{position:fixed;bottom:0;left:0;right:0;width:100vw;height:100px;z-index:5000;pointer-events:none;}
-    #twitchPlayer{position:absolute;top:50px;right:10px;width:480px;height:270px;z-index:9000;display:none;box-shadow:0 0 8px #000;border-radius:8px;overflow:hidden;}
-  </style>
-  <script src="https://embed.twitch.tv/embed/v1.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>the gub</title>
+<style>
+body{margin:0;overflow:hidden;background:#111;position:relative;height:100vh;width:100vw;}
+#main-gub{max-height:90vh;max-width:90vw;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;}
+#btnRow{position:absolute;top:10px;left:10px;display:flex;gap:10px;z-index:9999;}
+#btnRow button{background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-family:sans-serif;padding:8px 16px;font-size:14px;}
+#speedBtn{position:absolute;padding:20px 30px;font-size:20px;border-radius:10px;z-index:9999;}
+#perfMenu{position:absolute;top:50px;left:10px;z-index:9998;background:#222;color:#fff;border:1px solid #555;border-radius:6px;padding:8px;display:none;font-family:sans-serif;font-size:14px;}
+#perfMenu button{margin:2px 4px;padding:4px 8px;border:none;border-radius:4px;background:#444;color:#fff;cursor:pointer;}
+#counter{position:absolute;top:10px;right:10px;color:#ffd700;font-family:sans-serif;font-size:24px;z-index:9999;}
+#special{position:absolute;width:80px;height:80px;display:none;cursor:pointer;z-index:9998;filter:drop-shadow(0 0 8px #ffd700);}
+.rainbow-text{font-size:2rem;font-weight:bold;font-family:sans-serif;animation:rainbow 5s linear infinite;white-space:nowrap;position:absolute;pointer-events:none;z-index:2;}
+.floater{position:absolute;pointer-events:none;z-index:2;}
+.floater img{width:100%;height:100%;object-fit:contain;}
+@keyframes rainbow{0%{color:red;}20%{color:orange;}40%{color:yellow;}60%{color:green;}80%{color:blue;}100%{color:violet;}}
+@media(max-width:768px){.floater,.rainbow-text{max-width:150px;max-height:150px;}}
+#visualizer{position:fixed;bottom:0;left:0;right:0;width:100vw;height:100px;z-index:5000;pointer-events:none;}
+#twitchPlayer{position:absolute;top:60px;right:10px;width:480px;height:270px;z-index:9000;display:none;box-shadow:0 0 8px #000;border-radius:8px;overflow:hidden;}
+</style>
+<script src="https://embed.twitch.tv/embed/v1.js"></script>
 </head>
 <body>
-  <button id="lowPerfBtn">Low&nbsp;Perf&nbsp;Mode</button>
+<div id="btnRow">
+  <button id="lowPerfBtn">Settings&nbsp;Menu</button>
   <button id="chaosBtn">Chaos&nbsp;Mode <span style="font-size:10px;">(epilepsy&nbsp;warning)</span></button>
   <button id="twitchBtn">Show&nbsp;Stream</button>
-  <button id="speedBtn">Speed&nbsp;Up</button>
-
-  <div id="twitchPlayer"></div>
-  <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
-  <canvas id="visualizer"></canvas>
-
+</div>
+<button id="speedBtn">Speed&nbsp;Up</button>
+<div id="perfMenu">
+  <div>Speed: <button id="spdDec">-</button><span id="spdVal">2</span><button id="spdInc">+</button></div>
+  <div>Images: <button id="imgDec">-</button><span id="imgVal">20</span><button id="imgInc">+</button></div>
+</div>
+<div id="counter">0</div>
+<img id="special" alt="Golden" />
+<div id="twitchPlayer"></div>
+<img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
+<canvas id="visualizer"></canvas>
 <script>
 window.addEventListener('DOMContentLoaded',()=>{
-  const NUM_FLOATERS=20;
-  const images=['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg'];
-  const texts=['bark','barke','gubbling','good boye','sniffa','shidded'];
-
-  let speedMultiplier=2;
-  const floaters=[];
-  function createEntity(isText=false){
-    const elem=document.createElement('div');
-    const size=80+Math.random()*320;
-    elem.style.width=elem.style.height=size+'px';
-    elem.style.left=Math.random()*(window.innerWidth-size)+'px';
-    elem.style.top=Math.random()*(window.innerHeight-size)+'px';
-    if(isText){elem.className='rainbow-text';elem.textContent=texts[Math.floor(Math.random()*texts.length)];}
-    else{elem.className='floater';const img=document.createElement('img');img.src=images[Math.floor(Math.random()*images.length)];elem.appendChild(img);}    
-    document.body.appendChild(elem);
-    floaters.push({elem,x:parseFloat(elem.style.left),y:parseFloat(elem.style.top),vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,width:size,height:size});
-  }
-  function animate(){
-    floaters.forEach(f=>{f.x+=f.vx*speedMultiplier;f.y+=f.vy*speedMultiplier;if(f.x<=0||f.x+f.width>=window.innerWidth)f.vx*=-1;if(f.y<=0||f.y+f.height>=window.innerHeight)f.vy*=-1;f.elem.style.left=f.x+'px';f.elem.style.top=f.y+'px';});
-    requestAnimationFrame(animate);
-  }
-  for(let i=0;i<NUM_FLOATERS;i++){createEntity(false);createEntity(true);}  
-  animate();
-
-  const speedBtn=document.getElementById('speedBtn');
-  const chaosBtn=document.getElementById('chaosBtn');
-  const lowPerfBtn=document.getElementById('lowPerfBtn');
-  const twitchBtn=document.getElementById('twitchBtn');
-  const twitchContainer=document.getElementById('twitchPlayer');
-  let twitchShown=false;
-  twitchBtn.addEventListener('click',()=>{
-    if(!twitchShown){
-      twitchContainer.style.display='block';
-      new Twitch.Embed('twitchPlayer', {
-        width: '100%',
-        height: '100%',
-        channel: 'harupi',
-        layout: 'video',
-        parent: ['gub.cam','www.gub.cam', location.hostname]
-      });
-      twitchBtn.textContent='Hide Stream';
-    }else{
-      twitchContainer.innerHTML='';
-      twitchContainer.style.display='none';
-      twitchBtn.textContent='Show Stream';
-    }
-    twitchShown=!twitchShown;
-  });
-
-  function placeSpeedBtn(){speedBtn.style.left=Math.random()*(window.innerWidth-speedBtn.offsetWidth)+'px';speedBtn.style.top=Math.random()*(window.innerHeight-speedBtn.offsetHeight)+'px';}
-  placeSpeedBtn();
-  speedBtn.addEventListener('click',()=>{speedMultiplier+=1;placeSpeedBtn();});
-
-  let flashing=false;let lowPerf=false;
-  lowPerfBtn.addEventListener('click',()=>{lowPerf=!lowPerf;speedMultiplier=lowPerf?1:2;});
-
-  const canvas=document.getElementById('visualizer');
-  const ctx=canvas.getContext('2d');
-  function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=100;}
-  window.addEventListener('resize',resizeCanvas);resizeCanvas();
-
-  const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  const analyser=audioCtx.createAnalyser();analyser.fftSize=256;const bufferLength=analyser.frequencyBinCount;const dataArray=new Uint8Array(bufferLength);
-  const audio=new Audio('music.mp3');audio.loop=true;const source=audioCtx.createMediaElementSource(audio);source.connect(analyser);analyser.connect(audioCtx.destination);
-  let musicPlaying=false;let visualizerStarted=false;
-  function drawVisualizer(){if(!visualizerStarted)return;requestAnimationFrame(drawVisualizer);analyser.getByteFrequencyData(dataArray);ctx.clearRect(0,0,canvas.width,canvas.height);const barW=canvas.width/bufferLength;for(let i=0;i<bufferLength;i++){const h=dataArray[i];ctx.fillStyle=`hsl(${i*3},100%,50%)`;ctx.fillRect(i*barW,canvas.height-h,barW-1,h);}}
-
-  chaosBtn.addEventListener('click',()=>{
-    flashing=!flashing;
-    if(flashing){speedMultiplier=6;document.body.style.animation='flash 0.1s infinite alternate';floaters.forEach(f=>{const dur=(0.3+Math.random()*0.7).toFixed(2);const dir=Math.random()>0.5?'alternate':'alternate-reverse';const ease=Math.random()>0.5?'ease-in':'ease-out';f.elem.style.animation=`spinmove ${dur}s infinite ${dir} ${ease}`;});if(!musicPlaying){audioCtx.resume();audio.play();if(!visualizerStarted){visualizerStarted=true;drawVisualizer();}musicPlaying=true;}}
-    else{speedMultiplier=lowPerf?1:2;document.body.style.animation='none';document.body.style.background='#111';floaters.forEach(f=>{f.elem.style.animation='none';});if(musicPlaying){audio.pause();musicPlaying=false;}}
-  });
-
-  const style=document.createElement('style');
-  style.textContent='@keyframes flash{0%{background:#111}25%{background:#ff0}50%{background:#0ff}75%{background:#f0f}100%{background:#111}}@keyframes spinmove{0%{transform:scale(1)rotate(0deg)}50%{transform:scale(1.2)rotate(180deg)}100%{transform:scale(1)rotate(360deg)}}';
-  document.head.appendChild(style);
+const images=['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg', 'floater9.jpg', 'floater10.jpg', 'floater11.jpg', 'floater12.jpg'];
+const texts=["bark", "barke", "gubbling", "good boye", "sniffa", "shidded","gubb", "gubbing", "i'm gonna gub", "he do be gubbin", "were my salami go", "Gub Gubtaro Pissboy420 Bong or Die", "bork", "aaaAAa", "im gubbing it im gubbing it"];
+let speedMultiplier=2;let numFloaters=20;const floaters=[];
+function createEntity(isText=false){const e=document.createElement('div');const s=80+Math.random()*320;e.style.width=e.style.height=s+'px';e.style.left=Math.random()*(innerWidth-s)+'px';e.style.top=Math.random()*(innerHeight-s)+'px';if(isText){e.className='rainbow-text';e.textContent=texts[Math.floor(Math.random()*texts.length)];}else{e.className='floater';const i=document.createElement('img');i.src=images[Math.floor(Math.random()*images.length)];e.appendChild(i);}document.body.appendChild(e);floaters.push({elem:e,x:parseFloat(e.style.left),y:parseFloat(e.style.top),vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,width:s,height:s,isText});}
+function removeEntity(){const f=floaters.pop();if(f)f.elem.remove();}
+for(let i=0;i<numFloaters;i++){createEntity(false);createEntity(true);}requestAnimationFrame(function anim(){floaters.forEach(f=>{f.x+=f.vx*speedMultiplier;f.y+=f.vy*speedMultiplier;if(f.x<=0||f.x+f.width>=innerWidth)f.vx*=-1;if(f.y<=0||f.y+f.height>=innerHeight)f.vy*=-1;f.elem.style.left=f.x+'px';f.elem.style.top=f.y+'px';});requestAnimationFrame(anim);});
+const speedBtn=document.getElementById('speedBtn');function placeSpeedBtn(){speedBtn.style.left=Math.random()*(innerWidth-speedBtn.offsetWidth)+'px';speedBtn.style.top=Math.random()*(innerHeight-speedBtn.offsetHeight)+'px';}placeSpeedBtn();speedBtn.addEventListener('click',()=>{speedMultiplier+=1;spdVal.textContent=speedMultiplier;placeSpeedBtn();});
+const menu=document.getElementById('perfMenu');lowPerfBtn.onclick=()=>{menu.style.display=menu.style.display==='block'?'none':'block';};
+function updateLabels(){spdVal.textContent=speedMultiplier;imgVal.textContent=numFloaters;}
+function adjustSpeed(d){speedMultiplier=Math.max(1,speedMultiplier+d);updateLabels();}
+function adjustImages(d){const newVal=Math.max(2,numFloaters+d);if(newVal===numFloaters)return;if(d>0){for(let i=0;i<d;i++){createEntity(false);createEntity(true);} }else{for(let i=0;i<-d;i++){removeEntity();removeEntity();}}
+numFloaters=newVal;updateLabels();}
+spdDec.onclick=()=>adjustSpeed(-1);spdInc.onclick=()=>adjustSpeed(1);imgDec.onclick=()=>adjustImages(-2);imgInc.onclick=()=>adjustImages(2);updateLabels();
+/* counter + special image */
+const counterEl=document.getElementById('counter');const special=document.getElementById('special');let score=0;
+function spawnSpecial(){const size=80;special.src=images[Math.floor(Math.random()*images.length)];special.style.width=special.style.height=size+'px';special.style.left=Math.random()*(innerWidth-size)+'px';special.style.top=Math.random()*(innerHeight-size)+'px';special.style.filter='sepia(1) saturate(5) hue-rotate(5deg) brightness(1.2) drop-shadow(0 0 8px #ffd700)';special.style.display='block';}
+function scheduleNext(){special.style.display='none';const delay=5000+Math.random()*40000;setTimeout(spawnSpecial,delay);}
+special.onclick=()=>{score+=1;counterEl.textContent=score;scheduleNext();};
+scheduleNext();
+/* twitch */
+const twitchBtn=document.getElementById('twitchBtn');const twitchBox=document.getElementById('twitchPlayer');let twitchShown=false;function initTwitch(){new Twitch.Embed('twitchPlayer',{width:'100%',height:'100%',channel:'harupi',layout:'video',parent:['gub.cam','www.gub.cam',location.hostname]});}
+twitchBtn.onclick=()=>{if(!twitchShown){twitchBox.style.display='block';if(!twitchBox.dataset.loaded){initTwitch();twitchBox.dataset.loaded='1';}twitchBtn.textContent='Hide Stream';}else{twitchBox.style.display='none';twitchBtn.textContent='Show Stream';}twitchShown=!twitchShown;};
 });
 </script>
 </body>
