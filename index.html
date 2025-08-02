@@ -8,14 +8,11 @@
     body { margin:0; overflow:hidden; background:#111; position:relative; height:100vh; width:100vw; }
     #main-gub { max-height:90vh; max-width:90vw; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; }
 
-    /* top-left button row */
+    /* Top-left button row */
     #btnRow { position:absolute; top:10px; left:10px; display:flex; gap:5px; z-index:9999; }
     #btnRow button { background:#fff; color:#000; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-family:sans-serif; padding:8px 16px; font-size:14px; }
 
-    /* speed button */
-    #speedBtn { position:absolute; top:10px; right:10px; background:#fff; color:#000; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-family:sans-serif; padding:20px 30px; font-size:20px; z-index:9999; }
-
-    /* performance menu */
+    /* Performance menu */
     #perfMenu { position:absolute; top:50px; left:10px; z-index:9998; background:#222; color:#fff; border:1px solid #555; border-radius:6px; padding:8px; display:none; font-family:sans-serif; font-size:14px; }
     #perfMenu button { margin:2px 4px; padding:4px 8px; border:none; border-radius:4px; background:#444; color:#fff; cursor:pointer; }
 
@@ -28,10 +25,10 @@
     @media(max-width:768px) { .floater, .rainbow-text { max-width:150px; max-height:150px; } }
 
     #visualizer   { position:fixed; bottom:0; left:0; right:0; width:100vw; height:100px; z-index:5000; pointer-events:none; }
-    #twitchPlayer { position:absolute; top:50px; right:10px; width:320px; height:180px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
+    #twitchPlayer { position:absolute; top:50px; right:10px; width:450px; height:254px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
 
-    /* golden gubs counter */
-    #golden-counter { position:absolute; top:10px; right:200px; z-index:10000; color:gold; font-family:sans-serif; font-size:20px; font-weight:bold; }
+    /* Golden gubs counter */
+    #golden-counter { position:absolute; top:10px; right:10px; z-index:10000; color:gold; font-family:sans-serif; font-size:20px; font-weight:bold; }
   </style>
   <script src="https://embed.twitch.tv/embed/v1.js"></script>
 </head>
@@ -42,8 +39,6 @@
     <button id="chaosBtn">Chaos Mode <span style="font-size:10px;">(epilepsy warning)</span></button>
     <button id="twitchBtn">Show Stream</button>
   </div>
-  <!-- Speed button top-right -->
-  <button id="speedBtn">Speed Up</button>
 
   <!-- Settings panel -->
   <div id="perfMenu">
@@ -58,147 +53,215 @@
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
   <canvas id="visualizer"></canvas>
 
-<script>
-window.addEventListener('DOMContentLoaded',()=>{
-  const NUM_FLOATERS = 20;
-  const images = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg', 'floater9.jpg', 'floater10.jpg', 'floater11.jpg', 'floater12.jpg'];
-  const texts = ["bark","barke","gubbling","good boye","sniffa","shidded","gubb","gubbing","i'm gonna gub","he do be gubbin","were my salami go","Gub Gubtaro Pissboy420 Bong or Die","bork","aaaAAa","im gubbing it im gubbing it"];
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const NUM_FLOATERS = 20;
+    const images = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg','floater9.jpg','floater10.jpg','floater11.jpg','floater12.jpg'];
+    const texts = ["bark","barke","gubbling","good boye","sniffa","shidded","gubb","gubbing","i'm gonna gub","he do be gubbin","were my salami go","Gub Gubtaro Pissboy420 Bong or Die","bork","aaaAAa","im gubbing it im gubbing it"];
 
-  let speedMultiplier = 2;
-  let numFloaters = NUM_FLOATERS;
-  let goldenCount = 0;
-  const floaters = [];
+    let speedMultiplier = 2;
+    let numFloaters = NUM_FLOATERS;
+    let goldenCount = 0;
+    const floaters = [];
 
-  function createEntity(isText=false){
-    const elem = document.createElement('div');
-    const size = 80 + Math.random()*320;
-    elem.style.width = elem.style.height = size+'px';
-    elem.style.left = Math.random()*(window.innerWidth-size)+'px';
-    elem.style.top = Math.random()*(window.innerHeight-size)+'px';
-    if(isText){
-      elem.className = 'rainbow-text';
-      elem.textContent = texts[Math.floor(Math.random()*texts.length)];
-    } else {
-      elem.className = 'floater';
-      const img = document.createElement('img'); img.src = images[Math.floor(Math.random()*images.length)];
-      elem.appendChild(img);
+    function createEntity(isText = false) {
+      const elem = document.createElement('div');
+      const size = 80 + Math.random() * 320;
+      elem.style.width = elem.style.height = size + 'px';
+      elem.style.left = Math.random() * (window.innerWidth - size) + 'px';
+      elem.style.top  = Math.random() * (window.innerHeight - size) + 'px';
+      if (isText) {
+        elem.className = 'rainbow-text';
+        elem.textContent = texts[Math.floor(Math.random() * texts.length)];
+      } else {
+        elem.className = 'floater';
+        const img = document.createElement('img');
+        img.src = images[Math.floor(Math.random() * images.length)];
+        elem.appendChild(img);
+      }
+      document.body.appendChild(elem);
+      floaters.push({
+        elem,
+        x: parseFloat(elem.style.left),
+        y: parseFloat(elem.style.top),
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        width: size,
+        height: size
+      });
     }
-    document.body.appendChild(elem);
-    floaters.push({elem, x:parseFloat(elem.style.left), y:parseFloat(elem.style.top), vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2, width:size, height:size});
-  }
 
-  function removeEntity(){ const f = floaters.pop(); if(f) f.elem.remove(); }
+    function removeEntity() {
+      const f = floaters.pop();
+      if (f) f.elem.remove();
+    }
 
-  function animate(){
-    floaters.forEach(f=>{
-      f.x += f.vx * speedMultiplier;
-      f.y += f.vy * speedMultiplier;
-      if(f.x <= 0 || f.x+f.width >= window.innerWidth) f.vx *= -1;
-      if(f.y <= 0 || f.y+f.height >= window.innerHeight) f.vy *= -1;
-      f.elem.style.left = f.x+'px';
-      f.elem.style.top = f.y+'px';
+    function animate() {
+      floaters.forEach(f => {
+        f.x += f.vx * speedMultiplier;
+        f.y += f.vy * speedMultiplier;
+        if (f.x <= 0 || f.x + f.width >= window.innerWidth) f.vx *= -1;
+        if (f.y <= 0 || f.y + f.height >= window.innerHeight) f.vy *= -1;
+        f.elem.style.left = f.x + 'px';
+        f.elem.style.top  = f.y + 'px';
+      });
+      requestAnimationFrame(animate);
+    }
+
+    for (let i = 0; i < NUM_FLOATERS; i++) {
+      createEntity(false);
+      createEntity(true);
+    }
+    animate();
+
+    // Controls
+    const settingsBtn = document.getElementById('lowPerfBtn');
+    const perfMenu   = document.getElementById('perfMenu');
+    const spdDec     = document.getElementById('spdDec');
+    const spdInc     = document.getElementById('spdInc');
+    const imgDec     = document.getElementById('imgDec');
+    const imgInc     = document.getElementById('imgInc');
+    const spdVal     = document.getElementById('spdVal');
+    const imgVal     = document.getElementById('imgVal');
+
+    settingsBtn.addEventListener('click', () => {
+      perfMenu.style.display = perfMenu.style.display === 'block' ? 'none' : 'block';
     });
-    requestAnimationFrame(animate);
-  }
 
-  for(let i=0;i<NUM_FLOATERS;i++){ createEntity(false); createEntity(true); }
-  animate();
-
-  // Controls
-  const settingsBtn = document.getElementById('lowPerfBtn');
-  const perfMenu = document.getElementById('perfMenu');
-  const spdDec = document.getElementById('spdDec');
-  const spdInc = document.getElementById('spdInc');
-  const imgDec = document.getElementById('imgDec');
-  const imgInc = document.getElementById('imgInc');
-  const spdVal = document.getElementById('spdVal');
-  const imgVal = document.getElementById('imgVal');
-
-  settingsBtn.addEventListener('click',()=>{
-    perfMenu.style.display = perfMenu.style.display==='block'?'none':'block';
-  });
-
-  function updateLabels(){
-    spdVal.textContent=speedMultiplier;
-    imgVal.textContent=numFloaters;
-  }
-  function adjustSpeed(d){ speedMultiplier = Math.max(1, speedMultiplier+d); updateLabels(); }
-  function adjustImages(d){
-    const newVal = Math.max(2, numFloaters+d);
-    if(newVal===numFloaters) return;
-    if(d>0){ for(let i=0;i<d;i++){ createEntity(false); createEntity(true); }}
-    else { for(let i=0;i<-d;i++){ removeEntity(); removeEntity(); }}
-    numFloaters = newVal;
-    updateLabels();
-  }
-
-  spdDec.onclick = ()=>adjustSpeed(-1);
-  spdInc.onclick = ()=>adjustSpeed(1);
-  imgDec.onclick = ()=>adjustImages(-2);
-  imgInc.onclick = ()=>adjustImages(2);
-  updateLabels();
-
-  const speedBtn = document.getElementById('speedBtn');
-  const chaosBtn = document.getElementById('chaosBtn');
-  const twitchBtn = document.getElementById('twitchBtn');
-  const twitchContainer = document.getElementById('twitchPlayer');
-  let twitchShown = false;
-
-  twitchBtn.addEventListener('click',()=>{
-    if(!twitchShown){
-      twitchContainer.style.display = 'block';
-      new Twitch.Embed('twitchPlayer',{width:'100%',height:'100%',channel:'harupi',parent:[location.hostname]});
-      twitchBtn.textContent = 'Hide Stream';
-    } else {
-      twitchContainer.innerHTML = '';
-      twitchContainer.style.display = 'none';
-      twitchBtn.textContent = 'Show Stream';
+    function updateLabels() {
+      spdVal.textContent = speedMultiplier;
+      imgVal.textContent = numFloaters;
     }
-    twitchShown = !twitchShown;
+    function adjustSpeed(d) {
+      speedMultiplier = Math.max(1, speedMultiplier + d);
+      updateLabels();
+    }
+    function adjustImages(d) {
+      const newVal = Math.max(2, numFloaters + d);
+      if (newVal === numFloaters) return;
+      if (d > 0) {
+        for (let i = 0; i < d; i++) { createEntity(false); createEntity(true); }
+      } else {
+        for (let i = 0; i < -d; i++) { removeEntity(); removeEntity(); }
+      }
+      numFloaters = newVal;
+      updateLabels();
+    }
+
+    spdDec.onclick = () => adjustSpeed(-1);
+    spdInc.onclick = () => adjustSpeed(1);
+    imgDec.onclick = () => adjustImages(-2);
+    imgInc.onclick = () => adjustImages(2);
+    updateLabels();
+
+    const chaosBtn  = document.getElementById('chaosBtn');
+    const twitchBtn = document.getElementById('twitchBtn');
+    const twitchBox = document.getElementById('twitchPlayer');
+    let twitchShown = false;
+
+    twitchBtn.addEventListener('click', () => {
+      if (!twitchShown) {
+        twitchBox.style.display = 'block';
+        new Twitch.Embed('twitchPlayer', { width: '100%', height: '100%', channel: 'harupi', parent: [location.hostname] });
+        twitchBtn.textContent = 'Hide Stream';
+      } else {
+        twitchBox.innerHTML = '';
+        twitchBox.style.display = 'none';
+        twitchBtn.textContent = 'Show Stream';
+      }
+      twitchShown = !twitchShown;
+    });
+
+    // Golden gubs mini-game
+    const goldenCounterEl = document.getElementById('golden-counter');
+
+    function spawnGolden() {
+      const imgSrc = images[Math.floor(Math.random() * images.length)];
+      const el = document.createElement('img'); el.src = imgSrc;
+      el.className = 'floater';
+      const size = 80 + Math.random() * 320;
+      el.style.width = el.style.height = size + 'px';
+      el.style.left = Math.random() * (window.innerWidth - size) + 'px';
+      el.style.top  = Math.random() * (window.innerHeight - size) + 'px';
+      el.style.zIndex = 10000;
+      el.style.filter = 'sepia(1) hue-rotate(20deg) saturate(5) brightness(1.2)';
+      el.style.border = '2px solid gold';
+      el.style.pointerEvents = 'auto';
+      document.body.appendChild(el);
+      el.addEventListener('click', () => {
+        goldenCount++;
+        goldenCounterEl.textContent = 'Golden Gubs: ' + goldenCount;
+        el.remove();
+        scheduleNextGolden();
+      });
+    }
+
+    function scheduleNextGolden(initial = false) {
+      const min = initial ? 3000 : 5000;
+      const max = initial ? 10000 : 15000;
+      setTimeout(spawnGolden, min + Math.random() * (max - min));
+    }
+    scheduleNextGolden(true);
+
+    // Visual & audio for chaos
+    const canvas = document.getElementById('visualizer');
+    const ctx    = canvas.getContext('2d');
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = 100; }
+    window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const audio = new Audio('music.mp3'); audio.loop = true;
+    const source = audioCtx.createMediaElementSource(audio);
+    source.connect(analyser); analyser.connect(audioCtx.destination);
+
+    function drawVisualizer() {
+      requestAnimationFrame(drawVisualizer);
+      analyser.getByteFrequencyData(dataArray);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const barWidth = canvas.width / bufferLength;
+      for (let i = 0; i < bufferLength; i++) {
+        const h = dataArray[i];
+        ctx.fillStyle = `hsl(${i*3},100%,50%)`;
+        ctx.fillRect(i*barWidth, canvas.height - h, barWidth-1, h);
+      }
+    }
+
+    let flashing = false;
+    let musicPlaying = false;
+
+    chaosBtn.addEventListener('click', () => {
+      flashing = !flashing;
+      if (flashing) {
+        speedMultiplier = 6;
+        document.body.style.animation = 'flash 0.1s infinite alternate';
+        floaters.forEach(f => {
+          const dur = (0.3 + Math.random()*0.7).toFixed(2);
+          const dir = Math.random() > 0.5 ? 'alternate' : 'alternate-reverse';
+          const ease= Math.random() > 0.5 ? 'ease-in' : 'ease-out';
+          f.elem.style.animation = `spinmove ${dur}s infinite ${dir} ${ease}`;
+        });
+        if (!musicPlaying) {
+          audioCtx.resume(); audio.play();
+          drawVisualizer(); musicPlaying = true;
+        }
+      } else {
+        speedMultiplier = 2;
+        document.body.style.animation = 'none'; document.body.style.background = '#111';
+        floaters.forEach(f => { f.elem.style.animation = 'none'; });
+        if (musicPlaying) { audio.pause(); musicPlaying = false; }
+      }
+      updateLabels();
+    });
+
+    // Append keyframes
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `@keyframes flash{0%{background:#111}25%{background:#ff0}50%{background:#0ff}75%{background:#f0f}100%{background:#111}}` +
+                          `@keyframes spinmove{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}`;
+    document.head.appendChild(styleEl);
   });
-
-  function placeSpeedBtn(){
-    speedBtn.style.left = Math.random()*(window.innerWidth-speedBtn.offsetWidth)+'px';
-    speedBtn.style.top  = Math.random()*(window.innerHeight-speedBtn.offsetHeight)+'px';
-  }
-  placeSpeedBtn();
-  speedBtn.addEventListener('click',()=>{ speedMultiplier+=1; placeSpeedBtn(); updateLabels(); });
-
-  // Golden gubs mini-game
-  const goldenCounterEl = document.getElementById('golden-counter');
-  function spawnGolden(){
-    const imgSrc = images[Math.floor(Math.random()*images.length)];
-    const el = document.createElement('img');
-    el.src = imgSrc;
-    el.className = 'floater';
-    const size = 80 + Math.random()*320;
-    el.style.width = el.style.height = size+'px';
-    el.style.left = Math.random()*(window.innerWidth-size)+'px';
-    el.style.top  = Math.random()*(window.innerHeight-size)+'px';
-    el.style.zIndex = 10000;
-    el.style.filter = 'sepia(1) hue-rotate(20deg) saturate(5) brightness(1.2)';
-    el.style.border = '2px solid gold';
-    el.style.pointerEvents = 'auto';
-    document.body.appendChild(el);
-    el.addEventListener('click', ()=>{ goldenCount++; goldenCounterEl.textContent = 'Golden Gubs: ' + goldenCount; el.remove(); scheduleNextGolden(); });
-  }
-
-  function scheduleNextGolden(initial=false){ const min = initial ? 3000 : 5000; const max = initial ? 10000 : 15000; setTimeout(spawnGolden, min + Math.random()*(max-min)); }
-  scheduleNextGolden(true);
-
-  let flashing=false;
-  let musicPlaying=false;
-  let visualizerStarted=false;
-
-  const canvas = document.getElementById('visualizer'); const ctx = canvas.getContext('2d');
-  function resizeCanvas(){ canvas.width=window.innerWidth; canvas.height=100; }
-  window.addEventListener('resize',resizeCanvas); resizeCanvas();
-
-  var audioCtx=new (window.AudioContext||window.webkitAudioContext)(); var analyser=audioCtx.createAnalyser(); analyser.fftSize=256;
-  var bufferLength=analyser.frequencyBinCount; var dataArray=new Uint8Array(bufferLength);
-  var audio=new Audio('music.mp3'); audio.loop=true; var source=audioCtx.createMediaElementSource(audio);
-  source.connect(analyser); analyser.connect(audioCtx.destination);
-
-  function drawVisualizer(){ if(!visualizerStarted) return; requestAnimationFrame(drawVisualizer); analyser.getByteFrequencyData(dataArray); ctx.clearRect(0,0,canvas.width,canvas.height); const barWidth=canvas.width/bufferLength; for(let i=0;i<bufferLength;i++){ const h=dataArray[i]; ctx.fillStyle=`hsl(${i*3},100%,50%)`; ctx.fillRect(i*barWidth,canvas.height-h,barWidth-1,h);} }
-
-  chaosBtn.addEventListener('click',()=>{ flashing=!flashing; if(flashing){ speedMultiplier=6; document.body.style.animation='flash 0.1s infinite alternate'; floaters.forEach(f=>{ const dur=(0.3+Math.random()*0.7).toFixed(2); const dir=Math.random()>0.5?'alternate':'alternate-reverse'; const ease=Math.random()>0
+  </script>
+</body>
+</html>
