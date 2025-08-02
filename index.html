@@ -126,6 +126,10 @@ specialStyle.textContent = `
     color: white;
     text-align: center;
     text-shadow: 0 0 5px black;
+    outline: none;
+  }
+    .special-gub:focus {
+    outline: none;        /* ← ensure no outline even when focused */
   }
 `;
 document.head.appendChild(specialStyle);   
