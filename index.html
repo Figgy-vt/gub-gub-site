@@ -272,7 +272,6 @@ const firebaseConfig = {
       });
     }
     function scheduleNextGolden(initial=false){ const min=initial?3000:5000, max=initial?10000:15000; setTimeout(spawnGolden, min + Math.random()*(max-min)); }
-    scheduleNextGolden(true);
 
     chaosBtn.addEventListener('click', () => {
       flashing = !flashing;
