@@ -163,22 +163,58 @@ function updateLeaderboard() {
       }
       // ─── SPECIAL GUB SPAWNER ───────────────────────────────────────────────
 function spawnSpecialGub() {
-  const size = 100 + Math.random() * 300;
-  const el = document.createElement('div');
-  el.className = 'special-gub';
-  el.style.width = el.style.height = size + 'px';
-  el.style.left = `${Math.random()*(window.innerWidth-size)}px`;
-  el.style.top  = `${Math.random()*(window.innerHeight-size)}px`;
-  el.innerHTML = `<div style="line-height:${size}px;">SPESHAL GUB</div>`;
-  document.body.appendChild(el);
+  // 1. pick the exact same random image
+  const imgSrc = images[Math.floor(Math.random() * images.length)];
 
-  el.addEventListener('click', () => {
+  // 2. container for image + label
+  const container = document.createElement('div');
+  container.className = 'floater special-gub';
+  const size = 80 + Math.random() * 320;
+  container.style.width  = size + 'px';
+  container.style.height = size + 'px';
+  container.style.left   = `${Math.random()*(window.innerWidth-size)}px`;
+  container.style.top    = `${Math.random()*(window.innerHeight-size)}px`;
+
+  // 3. the image element itself
+  const img = document.createElement('img');
+  img.src           = imgSrc;
+  img.style.width   = '100%';
+  img.style.height  = '100%';
+  img.style.objectFit = 'contain';
+  // orange-ify it
+  img.style.filter  = 'hue-rotate(30deg) saturate(3) brightness(1.3)';
+  container.appendChild(img);
+
+  // 4. overlay the label
+  const label = document.createElement('div');
+  label.textContent = 'SPESHAL GUB';
+  Object.assign(label.style, {
+    position:      'absolute',
+    top:           '0',
+    left:          '0',
+    width:         '100%',
+    height:        '100%',
+    display:       'flex',
+    alignItems:    'center',
+    justifyContent:'center',
+    fontFamily:    'sans-serif',
+    fontWeight:    'bold',
+    color:         'white',
+    textShadow:    '0 0 5px black',
+    pointerEvents: 'none'
+  });
+  container.appendChild(label);
+
+  document.body.appendChild(container);
+
+  // 5. click handler awards +5
+  container.addEventListener('click', () => {
     sessionCount += 5;
     globalCount  += 5;
     goldenCounterEl.textContent = `Golden Gubs This Session: ${sessionCount}`;
     db.ref(`leaderboard/${username}`).set({ score: globalCount });
     updateLeaderboard();
-    el.remove();
+    container.remove();
     scheduleNextGolden();
   });
 }
