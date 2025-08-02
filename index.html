@@ -85,15 +85,32 @@
 }
 #chaosBtn { right: 10px; }
 #lowPerfBtn { right: 130px; }
+#musicBtn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10000;
+  background: #fff;
+  color: #000;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+$1
 </style>
+
 </head>
 <body>
-  <button id="chaosBtn">Chaos Mode</button>
+    <button id="chaosBtn">Chaos Mode</button>
   <button id="lowPerfBtn">Low Perf Mode</button>
-  <button id="speedBtn">Speed Up</button>
+  <button id="speedBtn" style="left:0; top:0;">Speed Up</button>
   <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
 
   <script>
+window.addEventListener('DOMContentLoaded', () => {
     const NUM_FLOATERS = 20;
     const images = [
       "floater1.jpg",
@@ -166,7 +183,10 @@ const floaters = [];
     }
 
     animate();
-  document.getElementById("speedBtn").addEventListener("click", () => {
+  const speedBtn = document.getElementById("speedBtn");
+speedBtn.style.left = Math.random() * (window.innerWidth - speedBtn.offsetWidth) + "px";
+speedBtn.style.top = Math.random() * (window.innerHeight - speedBtn.offsetHeight) + "px";
+speedBtn.addEventListener("click", () => {
   speedMultiplier += 1;
   const btn = document.getElementById("speedBtn");
   btn.style.left = Math.random() * (window.innerWidth - btn.offsetWidth) + "px";
@@ -179,6 +199,15 @@ const chaosBtn = document.getElementById("chaosBtn");
 const lowPerfBtn = document.getElementById("lowPerfBtn");
 
 chaosBtn.addEventListener("click", () => {
+  if (!musicPlaying) {
+    audioCtx.resume();
+    audio.play();
+    drawVisualizer();
+    musicPlaying = true;
+  } else {
+    audio.pause();
+    musicPlaying = false;
+  }
   flashing = !flashing;
   if (flashing) {
     speedMultiplier = 6;
@@ -218,6 +247,39 @@ flashKeyframes.innerHTML = `@keyframes flash {
   100% { transform: scale(1) rotate(360deg); }
 }`;
 document.head.appendChild(flashKeyframes);
+const canvas = document.getElementById("visualizer");
+const ctx = canvas.getContext("2d");
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const analyser = audioCtx.createAnalyser();
+const audio = new Audio("music.mp3");
+const source = audioCtx.createMediaElementSource(audio);
+source.connect(analyser);
+analyser.connect(audioCtx.destination);
+analyser.fftSize = 256;
+
+const bufferLength = analyser.frequencyBinCount;
+const dataArray = new Uint8Array(bufferLength);
+
+function drawVisualizer() {
+  requestAnimationFrame(drawVisualizer);
+
+  analyser.getByteFrequencyData(dataArray);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const barWidth = canvas.width / bufferLength;
+  for (let i = 0; i < bufferLength; i++) {
+    const barHeight = dataArray[i];
+    const hue = i * 3;
+    ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+    ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 1, barHeight);
+  }
+}
+audio.loop = true;
+let musicPlaying = false;
+
+
+});
 </script>
-</body>
+<canvas id="visualizer"></canvas>
+
 </html>
