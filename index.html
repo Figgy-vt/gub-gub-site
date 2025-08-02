@@ -559,28 +559,29 @@ function scheduleNextGolden(initial = false) {
     }
     function scheduleNextGolden(initial=false){ const min=initial?3000:5000, max=initial?10000:15000; setTimeout(spawnGolden, min + Math.random()*(max-min)); }
 
-    chaosBtn.addEventListener('click', () => {
+chaosBtn.addEventListener('click', () => {
   flashing = !flashing;
 
   floaters.forEach(f => {
     const dur  = (0.3 + Math.random() * 0.7).toFixed(2);
     const dir  = Math.random() > 0.5 ? 'alternate' : 'alternate-reverse';
     const ease = Math.random() > 0.5 ? 'ease-in'   : 'ease-out';
-    if (f.elem.classList.contains('rainbow-text')) {
-      f.elem.style.animation = `rainbow 5s linear infinite, spinmove ${dur}s infinite ${dir} ${ease}`;
+    if (flashing) {
+      // turn ON chaos: add animations
+      if (f.elem.classList.contains('rainbow-text')) {
+        f.elem.style.animation = `rainbow 5s linear infinite, spinmove ${dur}s infinite ${dir} ${ease}`;
+      } else {
+        f.elem.style.animation = `spinmove ${dur}s infinite ${dir} ${ease}`;
+      }
     } else {
-      f.elem.style.animation = `spinmove ${dur}s infinite ${dir} ${ease}`;
+      // turn OFF chaos: remove any animation
+      f.elem.style.animation = '';
     }
   });
 
   if (flashing) {
     document.body.style.animation = 'flash 0.1s infinite alternate';
-
-    // Unlock audio context on mobile
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     if (!musicPlaying) {
       chaosAudio.play().catch(() => {});
       musicPlaying = true;
@@ -590,9 +591,9 @@ function scheduleNextGolden(initial = false) {
     chaosAudio.pause();
     musicPlaying = false;
   }
-
   updateLabels();
 });
+
     const styleEl = document.createElement('style');
     styleEl.textContent = `@keyframes flash{0%{background:#111}25%{background:#ff0}50%{background:#0ff}75%{background:#f0f}100%{background:#111}}@keyframes spinmove{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}`;
     document.head.appendChild(styleEl);
