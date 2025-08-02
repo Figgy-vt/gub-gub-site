@@ -51,6 +51,23 @@
   <canvas id="visualizer"></canvas>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
+// ─── SPECIAL GUB STYLE ───────────────────────────────────────────────────
+const specialStyle = document.createElement('style');
+specialStyle.textContent = `
+  .special-gub {
+    position: absolute;
+    filter: hue-rotate(30deg) saturate(3) brightness(1.3);
+    border: 4px dashed orange;
+    pointer-events: auto;
+    z-index: 10001;
+    font-family: sans-serif;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    text-shadow: 0 0 5px black;
+  }
+`;
+document.head.appendChild(specialStyle);   
     // 1. Prompt & sanitize username
     let username = (localStorage.getItem('gubUser') || '').trim();
     if (!username) {
@@ -144,13 +161,37 @@ function updateLeaderboard() {
           scheduleNextGolden();
         });
       }
+      // ─── SPECIAL GUB SPAWNER ───────────────────────────────────────────────
+function spawnSpecialGub() {
+  const size = 100 + Math.random() * 300;
+  const el = document.createElement('div');
+  el.className = 'special-gub';
+  el.style.width = el.style.height = size + 'px';
+  el.style.left = `${Math.random()*(window.innerWidth-size)}px`;
+  el.style.top  = `${Math.random()*(window.innerHeight-size)}px`;
+  el.innerHTML = `<div style="line-height:${size}px;">SPESHAL GUB</div>`;
+  document.body.appendChild(el);
 
-      function scheduleNextGolden(initial=false) {
-        const min = initial?3000:5000;
-        const max = initial?10000:15000;
-        setTimeout(spawnGolden, min + Math.random()*(max-min));
-      }
+  el.addEventListener('click', () => {
+    sessionCount += 5;
+    globalCount  += 5;
+    goldenCounterEl.textContent = `Golden Gubs This Session: ${sessionCount}`;
+    db.ref(`leaderboard/${username}`).set({ score: globalCount });
+    updateLeaderboard();
+    el.remove();
+    scheduleNextGolden();
+  });
+}
 
+      // ─── UPDATED SCHEDULER ──────────────────────────────────────────────────
+function scheduleNextGolden(initial = false) {
+  const min = initial ? 3000 : 5000;
+  const max = initial ? 10000 : 15000;
+  setTimeout(() => {
+    if (Math.random() < 0.2) spawnSpecialGub();
+    else                 spawnGolden();
+  }, min + Math.random() * (max - min));
+}
       // Expose goldenCounterEl for spawn
       const goldenCounterEl = document.getElementById('golden-counter');
     }).catch(err => console.error('Auth Error', err));
