@@ -23,12 +23,12 @@
 
     @keyframes rainbow {0%{color:red;}20%{color:orange;}40%{color:yellow;}60%{color:green;}80%{color:blue;}100%{color:violet;}}
     @keyframes pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.1); } 
-  100% { transform: scale(1); }
+  0%   { transform: translate(-50%, -50%) scale(1); }
+  50%  { transform: translate(-50%, -50%) scale(1.1); }
+  100% { transform: translate(-50%, -50%) scale(1); }
 }
 .pop-effect {
-  animation: pop 50ms ease-in-out 1;  
+  animation: pop 0.15s ease-out both;
 }
 
 #main-gub {
@@ -470,7 +470,7 @@ function scheduleNextGolden(initial = false) {
         db.ref(`leaderboard/${username}`).set({ score: globalCount });
         updateLeaderboard();
         mainGub.classList.add('pop-effect');
-        setTimeout(() => mainGub.classList.remove('pop-effect'), 50);
+        setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
       });
  
     }).catch(err => console.error('Auth Error', err));
