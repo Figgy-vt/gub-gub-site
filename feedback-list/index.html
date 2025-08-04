@@ -84,6 +84,12 @@
             });
             commentInput.value = '';
           };
+          commentInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commentSubmit.click();
+            }
+          });
 
           const deleteBtn = div.querySelector('.delete');
           if (isFiggy) {
