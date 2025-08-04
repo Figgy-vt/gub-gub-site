@@ -519,15 +519,22 @@ function scheduleNextGolden(initial = false) {
       }
       // main gub handler
 const mainGub = document.getElementById('main-gub');
+let popTimeout;
+
       mainGub.addEventListener('click', () => {
         sessionCount++;
         globalCount++;
         renderCounter();
         db.ref(`leaderboard/${username}`).set({ score: globalCount });
         updateLeaderboard();
+
+        mainGub.classList.remove('pop-effect');
+        void mainGub.offsetWidth;
         mainGub.classList.add('pop-effect');
-        setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
-      });  
+
+        clearTimeout(popTimeout);
+        popTimeout = setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
+      });
  // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
     const shopItems = [
       { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 1   },
