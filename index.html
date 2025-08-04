@@ -601,13 +601,13 @@ let popTimeout;
       });
  // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
     const shopItems = [
-      { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 2   },
-      { id: 'guberator',     name: 'Guberator', cost: 500, rate: 10   },
-      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 40 },
-      { id: 'gubsolar',    name: 'Solar Gub Panels', cost: 10000, rate: 200 },
-      { id: 'gubfactory',       name: 'Gubactory',    cost: 50000, rate: 1000 },
-      { id: 'gubhydro',      name: 'Hydro Gub Plant',   cost: 250000, rate: 5000 },
-      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    cost: 1000000, rate: 20000 }
+      { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 60 },
+      { id: 'guberator',     name: 'Guberator', cost: 500, rate: 300 },
+      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 1200 },
+      { id: 'gubsolar',    name: 'Solar Gub Panels', cost: 10000, rate: 6000 },
+      { id: 'gubfactory',       name: 'Gubactory',    cost: 50000, rate: 30000 },
+      { id: 'gubhydro',      name: 'Hydro Gub Plant',   cost: 250000, rate: 150000 },
+      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    cost: 1000000, rate: 600000 }
     ];
     const shopRef = db.ref(`shop/${uid}`);
     const owned = { passiveMaker:0, guberator:0, gubmill:0, gubsolar:0, gubfactory:0, gubhydro:0, gubnuclear:0 };
