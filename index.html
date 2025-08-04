@@ -669,7 +669,9 @@ let popTimeout;
     const owned = { passiveMaker:0, guberator:0, gubmill:0, gubsolar:0, gubfactory:0, gubhydro:0, gubnuclear:0 };
 
     // Continuous passive income ticker so purchasing items doesn't pause income
+
     const PASSIVE_TICK_MS = 50; // update counter 20x per second for extra responsiveness
+
     let passiveRatePerSec = 0;
 
     setInterval(() => {
