@@ -449,7 +449,8 @@ firebase.auth().signInAnonymously().then(() => {
   const versionRef = db.ref('config/version');
   versionRef.on('value', snap => {
     const serverVersion = snap.val();
-    if (serverVersion !== CLIENT_VERSION) {
+    // Only force a reload when the server has a version and it differs from the client
+    if (serverVersion && serverVersion !== CLIENT_VERSION) {
       const warn = document.createElement('div');
       warn.textContent = 'Site updated - reloading...';
       warn.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;font-size:24px;padding:20px;z-index:100000;';
