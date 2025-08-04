@@ -275,7 +275,7 @@
     <div id="chat">
       <div id="messages"></div>
       <form id="chatForm">
-        <input id="chatInput" type="text" placeholder="Type a message…" autocomplete="off" />
+        <input id="chatInput" type="text" placeholder="Type a message…" autocomplete="off" maxlength="200" />
         <button type="submit">Send</button>
       </form>
     </div>
@@ -369,14 +369,18 @@ specialStyle.textContent = `
     outline: none;        /* ← ensure no outline even when focused */
   }
 `;
-document.head.appendChild(specialStyle);   
+document.head.appendChild(specialStyle);
+    // Sanitize usernames (letters, numbers, underscore; max 20 chars)
+    function sanitizeUsername(name) {
+      return (name || '').replace(/[^A-Za-z0-9_]/g, '').slice(0, 20);
+    }
+
     // 1. Prompt & sanitize username
-    let username = (localStorage.getItem('gubUser') || '').trim();
-    if (!username) {
+    let username = sanitizeUsername(localStorage.getItem('gubUser'));
+    if (!username || username.length < 3) {
       do {
-        username = (prompt('Enter a username for the leaderboard:') || '').trim();
-      } while (!username);
-      username = username.replace(/[.#$[\]]/g, '_');
+        username = sanitizeUsername(prompt('Enter a username for the leaderboard:'));
+      } while (!username || username.length < 3);
       localStorage.setItem('gubUser', username);
     }
 
@@ -400,29 +404,29 @@ firebase.auth().signInAnonymously().then(() => {
 
         // ─── Presence Setup ───────────────────────────────────────────────
   const presenceRef   = db.ref('.info/connected');
-  const userOnlineRef = db.ref('presence/' + username);
+  const userOnlineRef = db.ref('presence/' + uid);
 
   presenceRef.on('value', snap => {
     if (snap.val() === true) {
-      userOnlineRef.set(true);
+      userOnlineRef.set(username);
       userOnlineRef.onDisconnect().remove();
     }
   });
 
   const presenceListRef = db.ref('presence');
   const onlineUsersEl   = document.getElementById('online-users');
-  const onlineUsers     = new Set();
+  const onlineUsers     = new Map();
   const MAX_DISPLAY     = 20;
 
   function renderOnlineUsers() {
-    const arr  = Array.from(onlineUsers);
+    const arr  = Array.from(onlineUsers.values());
     const list = arr.slice(0, MAX_DISPLAY).join(', ');
     const more = arr.length > MAX_DISPLAY ? ` (+${arr.length - MAX_DISPLAY} more)` : '';
     onlineUsersEl.textContent = `Online (${arr.length}): ${list}${more}`;
   }
 
   presenceListRef.on('child_added', snap => {
-    onlineUsers.add(snap.key);
+    onlineUsers.set(snap.key, sanitizeUsername(snap.val()));
     renderOnlineUsers();
   });
 
@@ -441,7 +445,7 @@ firebase.auth().signInAnonymously().then(() => {
         if (scoreDirty && currentScore !== lastSentScore) {
           scoreDirty = false;
           lastSentScore = currentScore;
-          db.ref(`leaderboard/${username}`).set({ score: currentScore });
+          db.ref(`leaderboard/${uid}`).set({ username, score: currentScore });
         }
       }, 1000);
 
@@ -455,13 +459,13 @@ firebase.auth().signInAnonymously().then(() => {
       }
 
       // Load or initialize user's score
-const userRef = db.ref(`leaderboard/${username}/score`);
+const userRef = db.ref(`leaderboard/${uid}/score`);
 userRef.once('value').then(snap => {
   globalCount = snap.val() || 0;
   displayedCount = globalCount;
   renderCounter();
   // Ensure entry exists
-  db.ref(`leaderboard/${username}`).set({ score: globalCount });
+  db.ref(`leaderboard/${uid}`).set({ username, score: globalCount });
   lastSentScore = Math.floor(globalCount);
 
 // Real-time leaderboard updates (top 10 only)
@@ -471,12 +475,21 @@ db.ref('leaderboard')
   .on('value', snap => {
     const list = [];
     snap.forEach(child => {
-      list.push({ user: child.key, score: child.val().score || 0 });
+      const data = child.val() || {};
+      list.push({ user: sanitizeUsername(data.username || ''), score: data.score || 0 });
     });
     list.sort((a, b) => b.score - a.score);
-    document.getElementById('leaderboard').innerHTML =
-      '<strong>Leaderboard (Top 10)</strong><br>' +
-      list.map((e, i) => `${i+1}. ${e.user}: ${abbreviateNumber(e.score)}`).join('<br>');
+    const lbEl = document.getElementById('leaderboard');
+    lbEl.innerHTML = '';
+    const title = document.createElement('strong');
+    title.textContent = 'Leaderboard (Top 10)';
+    lbEl.appendChild(title);
+    lbEl.appendChild(document.createElement('br'));
+    list.forEach((e, i) => {
+      const line = document.createElement('div');
+      line.textContent = `${i+1}. ${e.user}: ${abbreviateNumber(e.score)}`;
+      lbEl.appendChild(line);
+    });
   });
 
   // ——— Chat setup ———
@@ -536,6 +549,7 @@ async function emoteHTML(text) {
 
 // 2. Listen for new chat messages (last 50), append them in order
 const CHAT_MESSAGE_LIMIT = 50;
+const MAX_CHAT_LENGTH = 200;
 chatRef
   .orderByChild('ts')
   .limitToLast(CHAT_MESSAGE_LIMIT)
@@ -560,12 +574,12 @@ chatRef
 // 3. Hook up the form so sending pushes a new message
 chatForm.addEventListener('submit', e => {
   e.preventDefault();
-  const text = chatInput.value.trim();
+  const text = chatInput.value.trim().slice(0, MAX_CHAT_LENGTH);
   if (!text) return;
   chatRef.push({
-    user: username,    // your sanitized username from localStorage
-    text: text,
-    ts: Date.now()
+    user: username,
+    text,
+    ts: firebase.database.ServerValue.TIMESTAMP
   });
   chatInput.value = '';
 });
@@ -979,11 +993,11 @@ chaosBtn.addEventListener('click', () => {
   });
   </script>
   <script>
-    // Ensure persisted username is sanitized before use in Firebase paths
+    // Ensure persisted username remains sanitized
     window.addEventListener('DOMContentLoaded', () => {
       const stored = localStorage.getItem('gubUser');
       if (stored) {
-        const safe = stored.replace(/[.#$[\]]/g, '_');
+        const safe = sanitizeUsername(stored);
         if (safe !== stored) {
           localStorage.setItem('gubUser', safe);
         }
