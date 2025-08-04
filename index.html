@@ -425,6 +425,14 @@ firebase.auth().signInAnonymously().then(() => {
   // ─────────────────────────────────────────────────────────────────
 
       let sessionCount = 0, globalCount = 0;
+      let scoreDirty = false;
+      function queueScoreUpdate(){ scoreDirty = true; }
+      setInterval(() => {
+        if (scoreDirty) {
+          scoreDirty = false;
+          db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
+        }
+      }, 1000);
 
       // Load or initialize user's score
 const userRef = db.ref(`leaderboard/${username}/score`);
@@ -491,29 +499,6 @@ chatForm.addEventListener('submit', e => {
 });
 
 
-      // Update leaderboard display
-function updateLeaderboard() {
-  db.ref('leaderboard')
-    .once('value')
-    .then(snap => {
-      const list = [];
-      snap.forEach(c => {
-        // pull the score (defaulting to 0 if it’s missing)
-        const score = c.val().score || 0;
-        list.push({ user: c.key, score });
-      });
-      // sort descending
-      list.sort((a, b) => b.score - a.score);
-
-      document.getElementById('leaderboard').innerHTML =
-        '<strong>Leaderboard</strong><br>' +
-        list.map((e, i) => `${i + 1}. ${e.user}: ${e.score}`).join('<br>');
-    })
-    .catch(err => console.error('Failed to load leaderboard:', err));
-}
-
-
-
       // Spawn golden gub and handle clicks
       function spawnGolden() {
         const el = document.createElement('img');
@@ -532,8 +517,7 @@ function updateLeaderboard() {
           sessionCount +=15;
           globalCount +=15;
           renderCounter();
-          db.ref(`leaderboard/${username}`).set({ score: globalCount });
-          updateLeaderboard();
+          queueScoreUpdate();
 
           const plusOne = document.createElement('div');
           plusOne.textContent = '+15';
@@ -598,8 +582,7 @@ function spawnSpecialGub() {
     sessionCount += 50;
     globalCount  += 50;
     renderCounter();
-    db.ref(`leaderboard/${username}`).set({ score: globalCount });
-    updateLeaderboard();
+    queueScoreUpdate();
 
     const plusOne = document.createElement('div');
     plusOne.textContent = '+50';
@@ -643,8 +626,7 @@ let popTimeout;
         sessionCount++;
         globalCount++;
         renderCounter();
-        db.ref(`leaderboard/${username}`).set({ score: globalCount });
-        updateLeaderboard();
+        queueScoreUpdate();
 
         const plusOne = document.createElement('div');
         plusOne.textContent = '+1';
@@ -680,12 +662,12 @@ let popTimeout;
       shopItems.forEach(item => {
         const perMinute = owned[item.id] * item.rate;
         if (perMinute > 0) {
-          const interval = 60_000 / perMinute;
+          const increment = perMinute / 60;
           passiveTimers[item.id] = setInterval(() => {
-            globalCount++;
+            globalCount += increment;
             renderCounter();
-            db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
-          }, interval);
+            queueScoreUpdate();
+          }, 1000);
         }
       });
     }
@@ -717,7 +699,7 @@ shopItems.forEach(item => {
       document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
       renderCounter();
       db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
-      db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
+      queueScoreUpdate();
       updatePassiveIncome();
     }
   });
