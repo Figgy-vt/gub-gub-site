@@ -220,6 +220,7 @@
     <div>Speed: <button id="spdDec">-</button><span id="spdVal">2</span><button id="spdInc">+</button></div>
     <div>Images: <button id="imgDec">-</button><span id="imgVal">20</span><button id="imgInc">+</button></div>
     <div><button id="moveToggle">Pause Movement</button></div>
+    <div><button id="qualityBtn">High Quality: Off</button></div>
     <label for="volumeSlider" style="margin-top:8px; display:block; color:#fff; font-weight:bold;">
   Chaos Volume
 </label>
@@ -649,7 +650,10 @@ shopRef.once('value').then(snapshot => {
     }).catch(err => console.error('Auth Error', err));
 
     // --- Game Logic & Controls (unchanged) ---
-    const images = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg','floater9.jpg','floater10.jpg','floater11.jpg','floater12.jpg','floater13.jpg','floater14.jpg','floater15.jpg','floater16.jpg','floater17.png','floater18.jpg'];
+    const highImages = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg','floater9.jpg','floater10.jpg','floater11.jpg','floater12.jpg','floater13.jpg','floater14.jpg','floater15.jpg','floater16.jpg','floater17.png','floater18.jpg'];
+    const lowImages  = ['low_floater1.jpg','low_floater2.jpg','low_floater3.jpg','floater4.png','low_floater5.jpg','low_floater6.jpg','low_floater7.jpg','low_floater8.jpg','low_floater9.jpg','low_floater10.jpg','low_floater11.jpg','low_floater12.jpg','low_floater13.jpg','low_floater14.jpg','low_floater15.jpg','low_floater16.jpg','low_floater17.jpg','low_floater18.jpg'];
+    let useHighQuality = localStorage.getItem('gubHighQuality') === 'true';
+    let images = useHighQuality ? highImages : lowImages;
     const texts = ["bark","barke","gubbling","good boye","sniffa","shidded","gubb","gubbing","i'm gonna gub","he do be gubbin","were my salami go","Gub Gubtaro Pissboy420 Bong or Die","bork","aaaAAa","im gubbing it im gubbing it", "bug", "lil gublets", "FUCKYOU BAILEY", "ish true ish true", "gub needs the funny 3 numbers on the back of ur credit card"];
     let speedMultiplier = 2, numFloaters = NUM_FLOATERS;
     const floaters = [];
@@ -659,17 +663,19 @@ shopRef.once('value').then(snapshot => {
       elem.style.width = elem.style.height = size + 'px';
       elem.style.left = Math.random() * (window.innerWidth - size) + 'px';
       elem.style.top  = Math.random() * (window.innerHeight - size) + 'px';
+      let imgIdx = null;
       if(isText){
         elem.className = 'rainbow-text';
         elem.textContent = texts[Math.floor(Math.random()*texts.length)];
       } else {
         elem.className = 'floater';
         const img = document.createElement('img');
-        img.src = images[Math.floor(Math.random()*images.length)];
+        imgIdx = Math.floor(Math.random()*images.length);
+        img.src = images[imgIdx];
         elem.appendChild(img);
       }
       document.body.appendChild(elem);
-      floaters.push({ elem, x: parseFloat(elem.style.left), y: parseFloat(elem.style.top), vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, width: size, height: size });
+      floaters.push({ elem, x: parseFloat(elem.style.left), y: parseFloat(elem.style.top), vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, width: size, height: size, isText, imgIdx });
     }
     function removeEntity(){ const f = floaters.pop(); if(f) f.elem.remove(); }
     function animate(){
@@ -695,9 +701,23 @@ shopRef.once('value').then(snapshot => {
     const spdVal     = document.getElementById('spdVal');
     const imgVal     = document.getElementById('imgVal');
     const moveToggle = document.getElementById('moveToggle');
+    const qualityBtn = document.getElementById('qualityBtn');
 
     let movementPaused = false;
     let storedSpeed = speedMultiplier;
+    qualityBtn.textContent = useHighQuality ? 'High Quality: On' : 'High Quality: Off';
+    qualityBtn.onclick = () => {
+      useHighQuality = !useHighQuality;
+      localStorage.setItem('gubHighQuality', useHighQuality);
+      images = useHighQuality ? highImages : lowImages;
+      qualityBtn.textContent = useHighQuality ? 'High Quality: On' : 'High Quality: Off';
+      floaters.forEach(f => {
+        if(!f.isText && f.imgIdx !== null){
+          const img = f.elem.querySelector('img');
+          img.src = images[f.imgIdx];
+        }
+      });
+    };
 
     settingsBtn.onclick = () => { perfMenu.style.display = perfMenu.style.display==='block' ? 'none' : 'block'; };
     function updateLabels(){ spdVal.textContent = speedMultiplier; imgVal.textContent = numFloaters; }
