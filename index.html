@@ -401,10 +401,26 @@ firebase.auth().signInAnonymously().then(() => {
     }
   });
 
-  db.ref('presence').on('value', snap => {
-    const users = snap.val() ? Object.keys(snap.val()) : [];
-    document.getElementById('online-users').textContent =
-      'Online: ' + users.join(', ');
+  const presenceListRef = db.ref('presence');
+  const onlineUsersEl   = document.getElementById('online-users');
+  const onlineUsers     = new Set();
+  const MAX_DISPLAY     = 20;
+
+  function renderOnlineUsers() {
+    const arr  = Array.from(onlineUsers);
+    const list = arr.slice(0, MAX_DISPLAY).join(', ');
+    const more = arr.length > MAX_DISPLAY ? ` (+${arr.length - MAX_DISPLAY} more)` : '';
+    onlineUsersEl.textContent = `Online (${arr.length}): ${list}${more}`;
+  }
+
+  presenceListRef.on('child_added', snap => {
+    onlineUsers.add(snap.key);
+    renderOnlineUsers();
+  });
+
+  presenceListRef.on('child_removed', snap => {
+    onlineUsers.delete(snap.key);
+    renderOnlineUsers();
   });
   // ─────────────────────────────────────────────────────────────────
 
@@ -418,18 +434,21 @@ userRef.once('value').then(snap => {
   renderCounter();
   // Ensure entry exists
   db.ref(`leaderboard/${username}`).set({ score: globalCount });
-  
-// Real-time leaderboard updates
-db.ref('leaderboard').on('value', snap => {
-  const list = [];
-  snap.forEach(child => {
-    list.push({ user: child.key, score: child.val().score || 0 });
+
+// Real-time leaderboard updates (top 10 only)
+db.ref('leaderboard')
+  .orderByChild('score')
+  .limitToLast(10)
+  .on('value', snap => {
+    const list = [];
+    snap.forEach(child => {
+      list.push({ user: child.key, score: child.val().score || 0 });
+    });
+    list.sort((a, b) => b.score - a.score);
+    document.getElementById('leaderboard').innerHTML =
+      '<strong>Leaderboard (Top 10)</strong><br>' +
+      list.map((e, i) => `${i+1}. ${e.user}: ${e.score}`).join('<br>');
   });
-  list.sort((a, b) => b.score - a.score);
-  document.getElementById('leaderboard').innerHTML =
-    '<strong>Leaderboard</strong><br>' +
-    list.map((e, i) => `${i+1}. ${e.user}: ${e.score}`).join('<br>');
-});
 
   // ——— Chat setup ———
 // 1. References to your Firebase “chat” node and DOM elements
@@ -438,10 +457,11 @@ const messagesEl = document.getElementById('messages');
 const chatForm   = document.getElementById('chatForm');
 const chatInput  = document.getElementById('chatInput');
 
-// 2. Listen for new chat messages (last 100), append them in order
+// 2. Listen for new chat messages (last 50), append them in order
+const CHAT_MESSAGE_LIMIT = 50;
 chatRef
   .orderByChild('ts')
-  .limitToLast(100)
+  .limitToLast(CHAT_MESSAGE_LIMIT)
   .on('child_added', snap => {
     const { user, text, ts } = snap.val();
     const msgEl = document.createElement('div');
