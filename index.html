@@ -435,7 +435,7 @@ firebase.auth().signInAnonymously().then(() => {
           lastSentScore = currentScore;
           db.ref(`leaderboard/${username}`).set({ score: currentScore });
         }
-      }, 5000);
+      }, 1000);
 
       // Load or initialize user's score
 const userRef = db.ref(`leaderboard/${username}/score`);
