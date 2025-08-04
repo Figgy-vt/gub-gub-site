@@ -739,11 +739,11 @@ function updateSuggestions() {
 
 chatInput.addEventListener('input', updateSuggestions);
 chatInput.addEventListener('keydown', e => {
-  if (e.key === 'Tab' && mentionSuggestions.style.display === 'block') {
+  if ((e.key === 'Tab' || e.key === ' ') && mentionSuggestions.style.display === 'block') {
     e.preventDefault();
     const first = mentionSuggestions.firstChild;
     if (first) {
-      const name = first.textContent;
+      const name = first.textContent + ' ';
       const cursor = chatInput.selectionStart;
       const textBefore = chatInput.value.slice(0, cursor);
       const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
@@ -760,7 +760,7 @@ chatInput.addEventListener('keydown', e => {
 mentionSuggestions.addEventListener('mousedown', e => {
   if (e.target && e.target.tagName === 'DIV') {
     e.preventDefault();
-    const name = e.target.textContent;
+    const name = e.target.textContent + ' ';
     const cursor = chatInput.selectionStart;
     const textBefore = chatInput.value.slice(0, cursor);
     const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
