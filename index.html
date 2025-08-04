@@ -212,6 +212,10 @@
   margin-left: 4px;
   font-size: 12px;
 }
+.chat-emote {
+  height: 1em;
+  vertical-align: middle;
+}
 #upgradePlaceholder {
   display: flex;
   align-items: center;
@@ -482,19 +486,89 @@ const messagesEl = document.getElementById('messages');
 const chatForm   = document.getElementById('chatForm');
 const chatInput  = document.getElementById('chatInput');
 
+// 7TV emotes
+const emoteMap = {};
+const HARUPI_SET = '01H6Q79JP80007TK4TYM94A0B4';
+fetch(`https://7tv.io/v3/emote-sets/${HARUPI_SET}`)
+  .then(r => r.json())
+  .then(d => {
+    d.emotes.forEach(e => {
+      const url = `https:${e.data.host.url}/2x.webp`;
+      emoteMap[e.name] = url;
+      emoteMap[e.name.toLowerCase()] = url;
+    });
+  });
+
+async function getEmoteURL(name) {
+  if (emoteMap[name]) return emoteMap[name];
+  const lower = name.toLowerCase();
+  if (emoteMap[lower]) return emoteMap[lower];
+  try {
+    const res = await fetch('https://7tv.io/v3/gql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: 'query($query:String!){emotes(query:$query,limit:1){items{name host{url}}}}',
+        variables: { query: name }
+      })
+    });
+    const data = await res.json();
+    const item = data?.data?.emotes?.items?.[0];
+    if (item) {
+      const url = `https:${item.host.url}/2x.webp`;
+      emoteMap[item.name] = url;
+      emoteMap[item.name.toLowerCase()] = url;
+      return url;
+    }
+  } catch (err) {
+    // ignore network errors
+  }
+  return null;
+}
+
+function escapeHTML(str) {
+  return str.replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[c]));
+}
+
+async function emoteHTML(text) {
+  let safe = escapeHTML(text);
+  const regex = /:([A-Za-z0-9_]+):/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(safe)) !== null) {
+    parts.push(safe.slice(lastIndex, match.index));
+    const name = match[1];
+    const url = await getEmoteURL(name);
+    if (url) {
+      parts.push(`<img class="chat-emote" alt="${name}" src="${url}">`);
+    } else {
+      parts.push(match[0]);
+    }
+    lastIndex = regex.lastIndex;
+  }
+  parts.push(safe.slice(lastIndex));
+  return parts.join('');
+}
+
 // 2. Listen for new chat messages (last 50), append them in order
 const CHAT_MESSAGE_LIMIT = 50;
 chatRef
   .orderByChild('ts')
   .limitToLast(CHAT_MESSAGE_LIMIT)
-  .on('child_added', snap => {
+  .on('child_added', async snap => {
     const { user, text, ts } = snap.val();
     const msgEl = document.createElement('div');
-    // format timestamp as HH:MM:SS
     const time  = new Date(ts).toLocaleTimeString();
-    msgEl.textContent = `[${time}] ${user}: ${text}`;
+    const processed = await emoteHTML(text);
+    msgEl.innerHTML = `[${time}] ${user}: ${processed}`;
     messagesEl.appendChild(msgEl);
-    // scroll to bottom
     messagesEl.scrollTop = messagesEl.scrollHeight;
   });
 
