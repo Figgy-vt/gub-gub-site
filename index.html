@@ -601,13 +601,13 @@ let popTimeout;
       });
  // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
     const shopItems = [
-      { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 1   },
-      { id: 'guberator',     name: 'Guberator', cost: 500, rate: 5   },
-      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 20 },
-      { id: 'gubsolar',    name: 'Solar Gub Panels', cost: 10000, rate: 100 },
-      { id: 'gubfactory',       name: 'Gubactory',    cost: 50000, rate: 500 },
-      { id: 'gubhydro',      name: 'Hydro Gub Plant',   cost: 250000, rate: 2500 },
-      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    cost: 1000000, rate: 10000 }
+      { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 2   },
+      { id: 'guberator',     name: 'Guberator', cost: 500, rate: 10   },
+      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 40 },
+      { id: 'gubsolar',    name: 'Solar Gub Panels', cost: 10000, rate: 200 },
+      { id: 'gubfactory',       name: 'Gubactory',    cost: 50000, rate: 1000 },
+      { id: 'gubhydro',      name: 'Hydro Gub Plant',   cost: 250000, rate: 5000 },
+      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    cost: 1000000, rate: 20000 }
     ];
     const shopRef = db.ref(`shop/${uid}`);
     const owned = { passiveMaker:0, guberator:0, gubmill:0, gubsolar:0, gubfactory:0, gubhydro:0, gubnuclear:0 };
@@ -855,7 +855,7 @@ chaosBtn.addEventListener('click', () => {
     });
   </script>
   <div id="discordWrapper">
-    <span id="versionNumber">v0.1</span>
+    <span id="versionNumber">v0.1.1</span>
     <a id="discordBtn" href="https://discord.gg/nutpit" target="_blank" rel="noopener">Discord</a>
   </div>
 </body>
