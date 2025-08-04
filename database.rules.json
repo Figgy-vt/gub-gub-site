@@ -1,8 +1,8 @@
 {
   "rules": {
     "leaderboard": {
+      ".read": true,
       "$uid": {
-        ".read": true,
         ".write": "auth != null && auth.uid === $uid",
         "username": {
           ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
