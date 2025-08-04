@@ -1,0 +1,48 @@
+{
+  "rules": {
+    "leaderboard": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === $uid",
+        "username": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
+        },
+        "score": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        }
+      }
+    },
+    "presence": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === $uid && newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
+      }
+    },
+    "chat": {
+      ".read": true,
+      "$msg": {
+        ".write": "auth != null && newData.hasChildren(['user','text','ts'])",
+        "user": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "ts": {
+          ".validate": "newData.isNumber()"
+        }
+      },
+      ".indexOn": ["ts"]
+    },
+    "shop": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$item": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        }
+      }
+    }
+  }
+}
+
