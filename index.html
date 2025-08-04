@@ -66,6 +66,28 @@
   cursor: pointer;
 }
 
+#upgradePlaceholder {
+  position: absolute;
+  top: 40px;
+  right: 130px;
+  z-index: 10000;
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: bold;
+  font-family: sans-serif;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+#upgradePlaceholder img {
+  height: 20px;
+  width: 20px;
+  margin-right: 8px;
+}
+
 #shopPanel {
   position: absolute;
   top: 90px;
@@ -177,6 +199,10 @@
     <button id="lowPerfBtn">Settings Menu</button>
     <button id="chaosBtn">Chaos Mode <span style="font-size:10px;">(epilepsy warning)</span></button>
     <button id="twitchBtn">Show Stream</button>
+  </div>
+  <div id="upgradePlaceholder">
+    <img src="gub_wicked.png" alt="Upgrades icon" />
+    Upgrades (coming soon...)
   </div>
 <button id="shopBtn">Shop</button>
 
@@ -546,10 +572,14 @@ let popTimeout;
     const shopItems = [
       { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 1   },
       { id: 'guberator',     name: 'Guberator', cost: 500, rate: 5   },
-      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 20 }
+      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 20 },
+      { id: 'gubfactory',    name: 'Gub Factory', cost: 10000, rate: 100 },
+      { id: 'gubtown',       name: 'Gubtown',    cost: 50000, rate: 500 },
+      { id: 'gubverse',      name: 'Gubverse',   cost: 250000, rate: 2500 },
+      { id: 'gubgods',       name: 'Gubgods',    cost: 1000000, rate: 10000 }
     ];
     const shopRef = db.ref(`shop/${uid}`);
-    const owned = { passiveMaker:0, guberator:0, gubmill:0 };
+    const owned = { passiveMaker:0, guberator:0, gubmill:0, gubfactory:0, gubtown:0, gubverse:0, gubgods:0 };
     const passiveTimers = {};
 
     function updatePassiveIncome() {
