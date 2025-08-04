@@ -48,6 +48,15 @@
         }
       }
     },
+    "shop_v2": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$item": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        }
+      }
+    },
     "config": {
       ".read": true,
       ".write": false
