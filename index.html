@@ -14,21 +14,7 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <style>
     body { margin:0; overflow:hidden; background:#111; position:relative; height:100vh; width:100vw; }
-    #gub-wrapper { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; }
-    #main-gub { max-height:90vh; max-width:90vw; display:block; }
-    #clickMe {
-      position:absolute;
-      top:0;
-      left:50%;
-      transform:translate(-50%, -100%);
-      color:#fff;
-      font-family:sans-serif;
-      font-weight:bold;
-      font-size:3rem;
-      pointer-events:none;
-      display:none;
-      white-space:nowrap;
-    }
+    #main-gub { max-height:90vh; max-width:90vw; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1; }
 
     
     #btnRow { position:absolute; top:10px; left:10px; display:flex; gap:5px; z-index:9999; }
@@ -259,10 +245,7 @@
   </form>
 </div>
   <div id="twitchPlayer"></div>
-  <div id="gub-wrapper">
-    <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
-    <div id="clickMe">click me</div>
-  </div>
+  <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
   <canvas id="visualizer"></canvas>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
@@ -576,15 +559,9 @@ function scheduleNextGolden(initial = false) {
       }
       // main gub handler
 const mainGub = document.getElementById('main-gub');
-const clickMe = document.getElementById('clickMe');
-if (!sessionStorage.getItem('gubClicked')) {
-  clickMe.style.display = 'block';
-}
 let popTimeout;
 
       mainGub.addEventListener('click', () => {
-        clickMe.style.display = 'none';
-        sessionStorage.setItem('gubClicked', 'true');
         sessionCount++;
         globalCount++;
         renderCounter();
