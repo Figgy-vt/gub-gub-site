@@ -831,7 +831,7 @@ let popTimeout;
       { id: 'gubquantum',    name: 'Quantum Gub Computer', baseCost: 5000000, rate: 3000000 },
       { id: 'gubai',        name: 'GUB AI', caption: '(be careful of gubnet...)', baseCost: 25000000, rate: 15000000 }
     ];
-    const shopRef = db.ref(`shop/${uid}`);
+    const shopRef = db.ref(`shop_v2/${uid}`);
     const owned = {
       passiveMaker:0,
       guberator:0,
@@ -943,7 +943,7 @@ shopItems.forEach(item => {
       spendGubs(cost);
       owned[item.id] += quantity;
       document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
-      db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
+      db.ref(`shop_v2/${uid}/${item.id}`).set(owned[item.id]);
       updatePassiveIncome();
       updateCostDisplay();
     }
