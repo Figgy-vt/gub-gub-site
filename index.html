@@ -426,11 +426,14 @@ firebase.auth().signInAnonymously().then(() => {
 
       let sessionCount = 0, globalCount = 0;
       let scoreDirty = false;
+      let lastSentScore = 0;
       function queueScoreUpdate(){ scoreDirty = true; }
       setInterval(() => {
-        if (scoreDirty) {
+        const currentScore = Math.floor(globalCount);
+        if (scoreDirty && currentScore !== lastSentScore) {
           scoreDirty = false;
-          db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
+          lastSentScore = currentScore;
+          db.ref(`leaderboard/${username}`).set({ score: currentScore });
         }
       }, 1000);
 
@@ -442,6 +445,7 @@ userRef.once('value').then(snap => {
   renderCounter();
   // Ensure entry exists
   db.ref(`leaderboard/${username}`).set({ score: globalCount });
+  lastSentScore = Math.floor(globalCount);
 
 // Real-time leaderboard updates (top 10 only)
 db.ref('leaderboard')
@@ -655,21 +659,19 @@ let popTimeout;
     ];
     const shopRef = db.ref(`shop/${uid}`);
     const owned = { passiveMaker:0, guberator:0, gubmill:0, gubsolar:0, gubfactory:0, gubhydro:0, gubnuclear:0 };
-    const passiveTimers = {};
+    let passiveInterval = null;
 
     function updatePassiveIncome() {
-      Object.values(passiveTimers).forEach(clearInterval);
-      shopItems.forEach(item => {
-        const perMinute = owned[item.id] * item.rate;
-        if (perMinute > 0) {
-          const increment = perMinute / 60;
-          passiveTimers[item.id] = setInterval(() => {
-            globalCount += increment;
-            renderCounter();
-            queueScoreUpdate();
-          }, 1000);
-        }
-      });
+      if (passiveInterval) clearInterval(passiveInterval);
+      const perMinuteTotal = shopItems.reduce((sum, item) => sum + owned[item.id] * item.rate, 0);
+      if (perMinuteTotal > 0) {
+        const increment = perMinuteTotal / 60;
+        passiveInterval = setInterval(() => {
+          globalCount += increment;
+          renderCounter();
+          queueScoreUpdate();
+        }, 1000);
+      }
     }
 
 const shopBtn       = document.getElementById('shopBtn');
@@ -713,7 +715,7 @@ shopRef.once('value').then(snapshot => {
   });
   updatePassiveIncome();
 });
-    // passive income timers are handled per item
+    // passive income handled via a single interval
     // ──────────────────────────────────────────────────────────────────────
       
     }).catch(err => console.error('Auth Error', err));
