@@ -800,7 +800,7 @@ let popTimeout;
         popTimeout = setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
       });
  // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
-    const COST_MULTIPLIER = 1.5; // exponential cost scaling factor
+    const COST_MULTIPLIER = 1.15; // smoother exponential cost scaling factor
     const shopItems = [
       { id: 'passiveMaker', name: 'The Gub', baseCost: 100, rate: 60 },
       { id: 'guberator',     name: 'Guberator', baseCost: 500, rate: 300 },
@@ -808,10 +808,22 @@ let popTimeout;
       { id: 'gubsolar',    name: 'Solar Gub Panels', baseCost: 10000, rate: 6000 },
       { id: 'gubfactory',       name: 'Gubactory',    baseCost: 50000, rate: 30000 },
       { id: 'gubhydro',      name: 'Hydro Gub Plant',   baseCost: 250000, rate: 150000 },
-      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    baseCost: 1000000, rate: 600000 }
+      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    baseCost: 1000000, rate: 600000 },
+      { id: 'gubquantum',    name: 'Quantum Gub Computer', baseCost: 5000000, rate: 3000000 },
+      { id: 'gubai',        name: 'GUB AI', caption: '(be careful of gubnet...)', baseCost: 25000000, rate: 15000000 }
     ];
     const shopRef = db.ref(`shop/${uid}`);
-    const owned = { passiveMaker:0, guberator:0, gubmill:0, gubsolar:0, gubfactory:0, gubhydro:0, gubnuclear:0 };
+    const owned = {
+      passiveMaker:0,
+      guberator:0,
+      gubmill:0,
+      gubsolar:0,
+      gubfactory:0,
+      gubhydro:0,
+      gubnuclear:0,
+      gubquantum:0,
+      gubai:0
+    };
 
     // Continuous passive income ticker so purchasing items doesn't pause income
     const PASSIVE_TICK_MS = 100; // update counter 10x per second for responsiveness
@@ -872,13 +884,14 @@ shopBtn.addEventListener('click', () => {
 shopItems.forEach(item => {
   const div = document.createElement('div');
   div.innerHTML = `
-    <strong>${item.name}</strong><br>
+    <strong>${item.name}</strong>${item.caption ? ` <span style="color:red;font-size:0.8em;">${item.caption}</span>` : ''}<br>
     Cost: <span id="cost-${item.id}"></span> Gubs<br>
-    Rate: ${item.rate} Gubs/min<br>
+    Rate: ${abbreviateNumber(item.rate)} Gubs/min<br>
     Owned: <span id="owned-${item.id}">0</span><br>
     <button id="buy-${item.id}">Buy</button>
     <button id="buy-${item.id}-x10">x10</button>
     <button id="buy-${item.id}-x100">x100</button>
+    <button id="buy-${item.id}-all">All</button>
     <hr style="border-color:#444">
   `;
   shopContainer.appendChild(div);
@@ -886,6 +899,7 @@ shopItems.forEach(item => {
   const buy1   = div.querySelector(`#buy-${item.id}`);
   const buy10  = div.querySelector(`#buy-${item.id}-x10`);
   const buy100 = div.querySelector(`#buy-${item.id}-x100`);
+  const buyAll = div.querySelector(`#buy-${item.id}-all`);
   const costSpan = div.querySelector(`#cost-${item.id}`);
 
   function currentCost() {
@@ -901,7 +915,7 @@ shopItems.forEach(item => {
   }
 
   function updateCostDisplay() {
-    costSpan.textContent = currentCost();
+    costSpan.textContent = abbreviateNumber(currentCost());
   }
 
   function attemptPurchase(quantity) {
@@ -916,9 +930,25 @@ shopItems.forEach(item => {
     }
   }
 
+  function maxAffordable() {
+    let qty = 0;
+    let accumulated = 0;
+    while (true) {
+      const next = Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id] + qty));
+      if (accumulated + next > globalCount) break;
+      accumulated += next;
+      qty++;
+    }
+    return qty;
+  }
+
   buy1.addEventListener('click',   () => attemptPurchase(1));
   buy10.addEventListener('click',  () => attemptPurchase(10));
   buy100.addEventListener('click', () => attemptPurchase(100));
+  buyAll.addEventListener('click', () => {
+    const qty = maxAffordable();
+    if (qty > 0) attemptPurchase(qty);
+  });
   updateCostDisplay();
 });
 
@@ -929,7 +959,7 @@ shopRef.once('value').then(snapshot => {
     document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
     const costSpan = document.getElementById(`cost-${item.id}`);
     if (costSpan) {
-      costSpan.textContent = Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]));
+      costSpan.textContent = abbreviateNumber(Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id])));
     }
   });
   updatePassiveIncome();
