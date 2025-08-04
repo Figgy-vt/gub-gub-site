@@ -243,6 +243,15 @@
   width: 100%;
   height: 80px;
 }
+#feedbackCounter {
+  font-size: 12px;
+  text-align: right;
+}
+#feedbackAnonLabel {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
 #feedbackModal button {
   margin-top: 6px;
 }
@@ -1033,6 +1042,13 @@ shopRef.once('value').then(snapshot => {
   const feedbackInput = document.getElementById('feedbackInput');
   const feedbackSubmit = document.getElementById('feedbackSubmit');
   const feedbackSee = document.getElementById('feedbackSee');
+  const feedbackAnon = document.getElementById('feedbackAnon');
+  const feedbackCounter = document.getElementById('feedbackCounter');
+
+  feedbackInput.addEventListener('input', () => {
+    const remaining = 200 - feedbackInput.value.length;
+    feedbackCounter.textContent = `${remaining} characters remaining`;
+  });
 
   feedbackBtn.addEventListener('click', () => {
     feedbackModal.style.display = feedbackModal.style.display === 'block' ? 'none' : 'block';
@@ -1046,12 +1062,15 @@ shopRef.once('value').then(snapshot => {
   feedbackSubmit.addEventListener('click', () => {
     const text = feedbackInput.value.trim();
     if (!text) return;
+    const who = feedbackAnon.checked ? 'Anon' : username;
     db.ref('feedback').push({
-      user: username,
+      user: who,
       text,
       ts: Date.now()
     });
     feedbackInput.value = '';
+    feedbackAnon.checked = false;
+    feedbackCounter.textContent = '200 characters remaining';
     feedbackModal.style.display = 'none';
   });
 
@@ -1238,7 +1257,9 @@ chaosBtn.addEventListener('click', () => {
     });
   </script>
   <div id="feedbackModal">
-    <textarea id="feedbackInput" placeholder="Your suggestion"></textarea>
+    <textarea id="feedbackInput" placeholder="Your suggestion (max 200 chars)" maxlength="200"></textarea>
+    <div id="feedbackCounter">200 characters remaining</div>
+    <label id="feedbackAnonLabel"><input type="checkbox" id="feedbackAnon"> Send anonymously</label>
     <button id="feedbackSee">See Feedback</button>
     <button id="feedbackSubmit">Send</button>
   </div>

@@ -5,11 +5,18 @@
   <title>Feedback</title>
   <style>
     body { font-family: sans-serif; background:#111; color:#fff; padding:20px; }
-    .suggestion { background: rgba(255,255,255,0.1); padding:10px; margin-bottom:10px; border-radius:6px; }
+    .suggestion { background: rgba(255,255,255,0.1); padding:10px; margin-bottom:10px; border-radius:6px; position:relative; }
     .meta { font-size:12px; color:#ccc; margin-top:4px; }
     .votes { margin-top:6px; }
     .votes button { margin-right:5px; }
     .votes .active { font-weight:bold; }
+    .delete { position:absolute; top:5px; right:5px; background:none; border:none; color:#f44; cursor:pointer; }
+    .comments { margin-top:6px; padding-left:10px; }
+    .comment { margin-top:4px; }
+    .comment .meta { font-size:12px; color:#ccc; }
+    .commentForm { margin-top:6px; }
+    .commentForm input { width:80%; }
+    .commentForm button { width:18%; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -33,6 +40,11 @@
     firebase.auth().signInAnonymously().then(() => {
       const db = firebase.database();
       const uid = firebase.auth().currentUser.uid;
+      function sanitizeUsername(name) {
+        return (name || '').replace(/[^A-Za-z0-9_]/g, '').slice(0,20);
+      }
+      const username = sanitizeUsername(localStorage.getItem('gubUser')) || 'Anon';
+      const isFiggy = username.toLowerCase() === 'figgy';
       const listEl = document.getElementById('list');
       const feedbackRef = db.ref('feedback');
 
@@ -46,13 +58,51 @@
           div.id = 'fb-' + id;
           div.className = 'suggestion';
           div.innerHTML = `
+            <button class="delete" style="display:none">✖</button>
             <div class="text"></div>
             <div class="meta"></div>
             <div class="votes">
               <button class="up">+1 (<span class="upCount">0</span>)</button>
               <button class="down">-1 (<span class="downCount">0</span>)</button>
+            </div>
+            <div class="comments"></div>
+            <div class="commentForm">
+              <input class="commentInput" placeholder="Add comment" maxlength="200">
+              <button class="commentSubmit">Post</button>
             </div>`;
           listEl.appendChild(div);
+
+          const commentInput = div.querySelector('.commentInput');
+          const commentSubmit = div.querySelector('.commentSubmit');
+          commentSubmit.onclick = () => {
+            const text = commentInput.value.trim();
+            if (!text) return;
+            db.ref(`feedback/${id}/comments`).push({
+              user: username,
+              text,
+              ts: Date.now()
+            });
+            commentInput.value = '';
+          };
+
+          const deleteBtn = div.querySelector('.delete');
+          if (isFiggy) {
+            deleteBtn.style.display = 'block';
+            deleteBtn.onclick = () => {
+              if (confirm('Delete this suggestion?')) {
+                db.ref(`feedback/${id}`).remove();
+              }
+            };
+          }
+
+          db.ref(`feedback/${id}/comments`).on('child_added', snap => {
+            const c = snap.val();
+            const commentsDiv = div.querySelector('.comments');
+            const el = document.createElement('div');
+            el.className = 'comment';
+            el.innerHTML = `<div>${c.text}</div><div class="meta">${c.user} - ${new Date(c.ts).toLocaleString()}</div>`;
+            commentsDiv.appendChild(el);
+          });
         }
         div.querySelector('.text').textContent = data.text;
         div.querySelector('.meta').textContent = `${data.user} - ${new Date(data.ts).toLocaleString()}`;
