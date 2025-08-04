@@ -43,6 +43,40 @@
     top: 60px !important; /* push it down under the btnRow (which sits at 10px + ~40px height) */
   }
 }
+ 
+#shopBtn {
+  position: absolute;
+  top: 40px;
+  right: 10px;
+  z-index: 10000;
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: bold;
+  font-family: sans-serif;
+  cursor: pointer;
+}
+
+#shopPanel {
+  position: absolute;
+  top: 90px;
+  right: 10px;
+  display: none;
+  background: #222;
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+  z-index: 10000;
+}
+  #shopPanel h4 {
+  font-size: 2rem;    /* makes it roughly 32px tall */
+  font-weight: bold;  /* extra emphasis */
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
 
     #visualizer {
   position: fixed;
@@ -137,6 +171,13 @@
     <button id="chaosBtn">Chaos Mode <span style="font-size:10px;">(epilepsy warning)</span></button>
     <button id="twitchBtn">Show Stream</button>
   </div>
+<button id="shopBtn">Shop</button>
+
+  <div id="shopPanel">
+    <h4>Shop</h4>
+    <div id="shopItemsContainer"></div>
+  </div>
+
   <div id="perfMenu">
     <div>Speed: <button id="spdDec">-</button><span id="spdVal">2</span><button id="spdInc">+</button></div>
     <div>Images: <button id="imgDec">-</button><span id="imgVal">20</span><button id="imgInc">+</button></div>
@@ -150,7 +191,7 @@
   style="width:100%; margin-top:4px;"
 />
   </div>
-  <div id="golden-counter">Gubs This Session: 0</div>
+  <div id="golden-counter">Gubs: 0</div>
   <div id="online-users">
     Online: …
   </div>
@@ -270,8 +311,10 @@ const firebaseConfig = {
     firebase.initializeApp(firebaseConfig);
 
     // 3. Authenticate then setup leaderboard
-    firebase.auth().signInAnonymously().then(() => {
-      const db = firebase.database();
+firebase.auth().signInAnonymously().then(() => {
+  const db  = firebase.database();
+  const uid = firebase.auth().currentUser.uid;
+
         // ─── Presence Setup ───────────────────────────────────────────────
   const presenceRef   = db.ref('.info/connected');
   const userOnlineRef = db.ref('presence/' + username);
@@ -296,14 +339,22 @@ const firebaseConfig = {
 const userRef = db.ref(`leaderboard/${username}/score`);
 userRef.once('value').then(snap => {
   globalCount = snap.val() || 0;
+
+  renderCounter();
   // Ensure entry exists
   db.ref(`leaderboard/${username}`).set({ score: globalCount });
-
-  // Populate initial leaderboard
-  updateLeaderboard();
-
-  // Refresh leaderboard every 10 seconds
-  setInterval(updateLeaderboard, 10_000);
+  
+// Real-time leaderboard updates
+db.ref('leaderboard').on('value', snap => {
+  const list = [];
+  snap.forEach(child => {
+    list.push({ user: child.key, score: child.val().score || 0 });
+  });
+  list.sort((a, b) => b.score - a.score);
+  document.getElementById('leaderboard').innerHTML =
+    '<strong>Leaderboard</strong><br>' +
+    list.map((e, i) => `${i+1}. ${e.user}: ${e.score}`).join('<br>');
+});
 
   // ——— Chat setup ———
 // 1. References to your Firebase “chat” node and DOM elements
@@ -385,7 +436,7 @@ function updateLeaderboard() {
         el.addEventListener('click', () => {
           sessionCount +=15;
           globalCount +=15;
-          goldenCounterEl.textContent = `Gubs This Session: ${sessionCount}`;
+          renderCounter();
           db.ref(`leaderboard/${username}`).set({ score: globalCount });
           updateLeaderboard();
           el.remove();
@@ -442,7 +493,7 @@ function spawnSpecialGub() {
   container.addEventListener('click', () => {
     sessionCount += 50;
     globalCount  += 50;
-    goldenCounterEl.textContent = `Gubs This Session: ${sessionCount}`;
+    renderCounter();
     db.ref(`leaderboard/${username}`).set({ score: globalCount });
     updateLeaderboard();
     container.remove();
@@ -450,7 +501,7 @@ function spawnSpecialGub() {
   });
 }
 
-      // ─── UPDATED SCHEDULER ──────────────────────────────────────────────────
+      // ─── UPDATED SCHEDULER ──────────────────
 function scheduleNextGolden(initial = false) {
   const min = initial ? 3000 : 5000;
   const max = initial ? 10000 : 15000;
@@ -461,18 +512,82 @@ function scheduleNextGolden(initial = false) {
 }
       // Expose goldenCounterEl for spawn
       const goldenCounterEl = document.getElementById('golden-counter');
-
-      const mainGub = document.getElementById('main-gub');
+      
+      function renderCounter() {
+        goldenCounterEl.textContent = 'Gubs: ' + Math.floor(globalCount);
+      }
+      // main gub handler
+const mainGub = document.getElementById('main-gub');
       mainGub.addEventListener('click', () => {
         sessionCount++;
         globalCount++;
-        goldenCounterEl.textContent = `Gubs This Session: ${sessionCount}`;
+        renderCounter();
         db.ref(`leaderboard/${username}`).set({ score: globalCount });
         updateLeaderboard();
         mainGub.classList.add('pop-effect');
         setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
-      });
- 
+      });  
+ // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
+    const shopItems = [
+      { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 1   },
+      { id: 'guberator',     name: 'Guberator', cost: 500, rate: 5   },
+      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 20 }
+    ];
+    const shopRef = db.ref(`shop/${uid}`);
+    const owned = { passiveMaker:0, guberator:0, gubmill:0 };
+    let totalRate = 0;
+
+const shopBtn       = document.getElementById('shopBtn');
+const shopPanel     = document.getElementById('shopPanel');
+const shopContainer = document.getElementById('shopItemsContainer');
+
+shopBtn.addEventListener('click', () => {
+  shopPanel.style.display = shopPanel.style.display === 'block' ? 'none' : 'block';
+});
+
+shopItems.forEach(item => {
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <strong>${item.name}</strong><br>
+    Cost: ${item.cost} Gubs<br>
+    Rate: ${item.rate} Gubs/min<br>
+    Owned: <span id="owned-${item.id}">0</span><br>
+    <button id="buy-${item.id}">Buy</button>
+    <hr style="border-color:#444">
+  `;
+  shopContainer.appendChild(div);
+
+  div.querySelector(`#buy-${item.id}`).addEventListener('click', () => {
+    if (globalCount >= item.cost) {
+      globalCount -= item.cost;
+      totalRate   += item.rate;
+      owned[item.id] += 1;
+      document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
+      renderCounter();
+      db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
+      db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
+    }
+  });
+});
+  
+shopRef.once('value').then(snapshot => {
+  const stored = snapshot.val() || {};
+  shopItems.forEach(item => {
+    owned[item.id] = stored[item.id] || 0;
+    document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
+  });
+  totalRate = shopItems.reduce((sum, it) => sum + owned[it.id] * it.rate, 0);
+});
+    // passive income timer
+    setInterval(()=>{
+      if (totalRate > 0) {
+        globalCount += totalRate;
+        renderCounter();
+        db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
+      }
+    }, 60_000);
+    // ──────────────────────────────────────────────────────────────────────
+      
     }).catch(err => console.error('Auth Error', err));
 
     // --- Game Logic & Controls (unchanged) ---
@@ -559,29 +674,7 @@ function scheduleNextGolden(initial = false) {
       twitchShown = !twitchShown;
     };
    
-    const goldenCounterEl = document.getElementById('golden-counter');
-    function spawnGolden(){
-      const imgSrc = images[Math.floor(Math.random()*images.length)];
-      const el     = document.createElement('img'); el.src = imgSrc; el.className = 'floater';
-      const size = 80 + Math.random()*320; el.style.width = el.style.height = size+'px';
-      el.style.left = Math.random()*(window.innerWidth-size)+'px';
-      el.style.top  = Math.random()*(window.innerHeight-size)+'px';
-      el.style.zIndex = 10000;
-      el.style.filter = 'sepia(1) hue-rotate(20deg) saturate(5) brightness(1.2)';
-      el.style.border = '2px solid gold';
-      el.style.pointerEvents = 'auto';
-      document.body.appendChild(el);
-      el.addEventListener('click', () => {
-        sessionCount++;
-        globalCount++;
-        goldenCounterEl.textContent = 'Gubs This Session: ' + sessionCount;
-        db.ref(`leaderboard/${username}`).set({ score: globalCount });
-        updateLeaderboard();
-        el.remove();
-        scheduleNextGolden();
-      });
-    }
-    function scheduleNextGolden(initial=false){ const min=initial?3000:5000, max=initial?10000:15000; setTimeout(spawnGolden, min + Math.random()*(max-min)); }
+
 
 chaosBtn.addEventListener('click', () => {
   flashing = !flashing;
