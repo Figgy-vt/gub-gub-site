@@ -2,8 +2,12 @@
   "rules": {
     "leaderboard": {
       ".read": true,
+      ".write": false
+    },
+    "leaderboard_v2": {
+      ".read": true,
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('leaderboard').child(auth.uid).child('username').val() === 'figgy')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('leaderboard_v2').child(auth.uid).child('username').val() === 'figgy')",
         "username": {
           ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
         },
@@ -42,6 +46,10 @@
           ".validate": "newData.isNumber() && newData.val() >= 0"
         }
       }
+    },
+    "config": {
+      ".read": true,
+      ".write": false
     }
   }
 }
