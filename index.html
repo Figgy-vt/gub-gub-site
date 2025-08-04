@@ -83,11 +83,15 @@
   }
 }
  
-#shopBtn {
+#topRight {
   position: absolute;
   top: 40px;
   right: 10px;
+  display: flex;
+  gap: 10px;
   z-index: 10001;
+}
+#topRight button {
   background: #fff;
   color: #000;
   border: none;
@@ -98,6 +102,7 @@
   font-size: 16px;
   cursor: pointer;
 }
+#adminBtn { display: none; }
 
 
 #shopPanel {
@@ -116,6 +121,28 @@
   font-weight: bold;  /* extra emphasis */
   margin-top: 0;
   margin-bottom: 0.5em;
+}
+
+#adminPanel {
+  position: absolute;
+  top: 90px;
+  right: 10px;
+  display: none;
+  background: #222;
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+  z-index: 10001;
+}
+#adminPanel h4 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+#adminPanel input {
+  width: 150px;
+  margin-bottom: 4px;
 }
 
 
@@ -244,7 +271,10 @@
     <button id="chaosBtn">Chaos Mode <span style="font-size:10px;">(epilepsy warning)</span></button>
     <button id="twitchBtn">Show Stream</button>
   </div>
-<button id="shopBtn">Shop</button>
+<div id="topRight">
+  <button id="adminBtn">Admin</button>
+  <button id="shopBtn">Shop</button>
+</div>
 
   <div id="shopPanel">
     <h4>Shop</h4>
@@ -253,6 +283,14 @@
       Upgrades (coming soon...)
     </div>
     <div id="shopItemsContainer"></div>
+  </div>
+
+  <div id="adminPanel">
+    <h4>Admin</h4>
+    <input id="adminUsername" type="text" placeholder="Username" />
+    <input id="adminScore" type="number" placeholder="New Score" />
+    <button id="adminUpdate">Update</button>
+    <button id="adminDelete">Delete</button>
   </div>
 
   <div id="perfMenu">
@@ -483,6 +521,8 @@ firebase.auth().signInAnonymously().then(() => {
           const v = s.val();
           if (typeof v === 'number') {
             globalCount = displayedCount = v;
+            lastSentScore = Math.floor(v);
+            scoreDirty = false;
             renderCounter();
           }
         });
@@ -790,6 +830,39 @@ let popTimeout;
 const shopBtn       = document.getElementById('shopBtn');
 const shopPanel     = document.getElementById('shopPanel');
 const shopContainer = document.getElementById('shopItemsContainer');
+const adminBtn      = document.getElementById('adminBtn');
+const adminPanel    = document.getElementById('adminPanel');
+const adminUser     = document.getElementById('adminUsername');
+const adminScore    = document.getElementById('adminScore');
+const adminUpdate   = document.getElementById('adminUpdate');
+const adminDelete   = document.getElementById('adminDelete');
+
+if (username.toLowerCase() === 'figgy') {
+  adminBtn.style.display = 'block';
+}
+
+adminBtn.addEventListener('click', () => {
+  adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
+});
+
+adminUpdate.addEventListener('click', () => {
+  const target = sanitizeUsername(adminUser.value);
+  const score  = parseInt(adminScore.value, 10);
+  if (!target || isNaN(score)) return;
+  db.ref('leaderboard').orderByChild('username').equalTo(target).once('value').then(snap => {
+    snap.forEach(child => {
+      child.ref.update({ score });
+    });
+  });
+});
+
+adminDelete.addEventListener('click', () => {
+  const target = sanitizeUsername(adminUser.value);
+  if (!target) return;
+  db.ref('leaderboard').orderByChild('username').equalTo(target).once('value').then(snap => {
+    snap.forEach(child => child.ref.remove());
+  });
+});
 
 shopBtn.addEventListener('click', () => {
   shopPanel.style.display = shopPanel.style.display === 'block' ? 'none' : 'block';
