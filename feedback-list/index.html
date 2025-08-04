@@ -44,7 +44,7 @@
         return (name || '').replace(/[^A-Za-z0-9_]/g, '').slice(0,20);
       }
       const username = sanitizeUsername(localStorage.getItem('gubUser')) || 'Anon';
-      const isFiggy = username.toLowerCase() === 'figgy';
+      const isAdmin = ['figgy', 'harupi'].includes(username.toLowerCase());
       const listEl = document.getElementById('list');
       const feedbackRef = db.ref('feedback');
 
@@ -92,7 +92,7 @@
           });
 
           const deleteBtn = div.querySelector('.delete');
-          if (isFiggy) {
+          if (isAdmin) {
             deleteBtn.style.display = 'block';
             deleteBtn.onclick = () => {
               if (confirm('Delete this suggestion?')) {
