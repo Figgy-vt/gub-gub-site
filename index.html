@@ -442,12 +442,12 @@ firebase.auth().signInAnonymously().then(() => {
       }, 1000);
 
       function abbreviateNumber(num){
-        if(num < 1000) return String(num);
+        if(num < 1000) return num.toFixed(2);
         const units = ['', 'k', 'm', 'b', 't', 'quad', 'quin', 'sext', 'sept', 'octi', 'noni', 'deci'];
         let idx = Math.floor(Math.log10(num) / 3);
         if(idx >= units.length) idx = units.length - 1;
         const scaled = num / Math.pow(1000, idx);
-        return parseFloat(scaled.toFixed(2)).toString() + units[idx];
+        return scaled.toFixed(2) + units[idx];
       }
 
       // Load or initialize user's score
