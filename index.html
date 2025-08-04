@@ -499,31 +499,12 @@ fetch(`https://7tv.io/v3/emote-sets/${HARUPI_SET}`)
     });
   });
 
+// Only allow emotes from Harupi's set; no global fallback
 async function getEmoteURL(name) {
   if (emoteMap[name]) return emoteMap[name];
   const lower = name.toLowerCase();
   if (emoteMap[lower]) return emoteMap[lower];
-  try {
-    const res = await fetch('https://7tv.io/v3/gql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: 'query($query:String!){emotes(query:$query,limit:1){items{name host{url}}}}',
-        variables: { query: name }
-      })
-    });
-    const data = await res.json();
-    const item = data?.data?.emotes?.items?.[0];
-    if (item) {
-      const url = `https:${item.host.url}/2x.webp`;
-      emoteMap[item.name] = url;
-      emoteMap[item.name.toLowerCase()] = url;
-      return url;
-    }
-  } catch (err) {
-    // ignore network errors
-  }
-  return null;
+  return null; // unknown emote: do not fetch from global set
 }
 
 function escapeHTML(str) {
