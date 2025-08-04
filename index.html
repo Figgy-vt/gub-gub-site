@@ -703,19 +703,30 @@ shopItems.forEach(item => {
     Rate: ${item.rate} Gubs/min<br>
     Owned: <span id="owned-${item.id}">0</span><br>
     <button id="buy-${item.id}">Buy</button>
+    <button id="buy-${item.id}-x10">x10</button>
+    <button id="buy-${item.id}-x100">x100</button>
     <hr style="border-color:#444">
   `;
   shopContainer.appendChild(div);
 
-  div.querySelector(`#buy-${item.id}`).addEventListener('click', () => {
-    if (globalCount >= item.cost) {
-      spendGubs(item.cost);
-      owned[item.id] += 1;
+  const buy1   = div.querySelector(`#buy-${item.id}`);
+  const buy10  = div.querySelector(`#buy-${item.id}-x10`);
+  const buy100 = div.querySelector(`#buy-${item.id}-x100`);
+
+  function attemptPurchase(quantity) {
+    const totalCost = item.cost * quantity;
+    if (globalCount >= totalCost) {
+      spendGubs(totalCost);
+      owned[item.id] += quantity;
       document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
       db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
       updatePassiveIncome();
     }
-  });
+  }
+
+  buy1.addEventListener('click',   () => attemptPurchase(1));
+  buy10.addEventListener('click',  () => attemptPurchase(10));
+  buy100.addEventListener('click', () => attemptPurchase(100));
 });
   
 shopRef.once('value').then(snapshot => {
