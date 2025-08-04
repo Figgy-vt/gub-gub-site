@@ -441,6 +441,15 @@ firebase.auth().signInAnonymously().then(() => {
         }
       }, 1000);
 
+      function abbreviateNumber(num){
+        if(num < 1000) return String(num);
+        const units = ['', 'k', 'm', 'b', 't', 'quad', 'quin', 'sext', 'sept', 'octi', 'noni', 'deci'];
+        let idx = Math.floor(Math.log10(num) / 3);
+        if(idx >= units.length) idx = units.length - 1;
+        const scaled = num / Math.pow(1000, idx);
+        return parseFloat(scaled.toFixed(2)).toString() + units[idx];
+      }
+
       // Load or initialize user's score
 const userRef = db.ref(`leaderboard/${username}/score`);
 userRef.once('value').then(snap => {
@@ -463,7 +472,7 @@ db.ref('leaderboard')
     list.sort((a, b) => b.score - a.score);
     document.getElementById('leaderboard').innerHTML =
       '<strong>Leaderboard (Top 10)</strong><br>' +
-      list.map((e, i) => `${i+1}. ${e.user}: ${e.score}`).join('<br>');
+      list.map((e, i) => `${i+1}. ${e.user}: ${abbreviateNumber(e.score)}`).join('<br>');
   });
 
   // ——— Chat setup ———
