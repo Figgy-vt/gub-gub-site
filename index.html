@@ -562,14 +562,20 @@ const CHAT_MESSAGE_LIMIT = 50;
 chatRef
   .orderByChild('ts')
   .limitToLast(CHAT_MESSAGE_LIMIT)
-  .on('child_added', async snap => {
+  .on('child_added', snap => {
     const { user, text, ts } = snap.val();
     const msgEl = document.createElement('div');
     const time  = new Date(ts).toLocaleTimeString();
-    const processed = await emoteHTML(text);
-    msgEl.innerHTML = `[${time}] ${user}: ${processed}`;
+    // Append the message immediately to preserve order, then replace
+    // any emote codes asynchronously once they are resolved.
+    msgEl.innerHTML = `[${time}] ${user}: ${escapeHTML(text)}`;
     messagesEl.appendChild(msgEl);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+    emoteHTML(text).then(processed => {
+      msgEl.innerHTML = `[${time}] ${user}: ${processed}`;
+    }).catch(() => {
+      // If emote lookup fails, keep the plain text message.
+    });
   });
 
 // 3. Hook up the form so sending pushes a new message
