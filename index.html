@@ -508,12 +508,21 @@ function updateLeaderboard() {
         el.style.border = '2px solid white';
         el.style.pointerEvents = 'auto';
         document.body.appendChild(el);
-        el.addEventListener('click', () => {
+        el.addEventListener('click', (e) => {
           sessionCount +=15;
           globalCount +=15;
           renderCounter();
           db.ref(`leaderboard/${username}`).set({ score: globalCount });
           updateLeaderboard();
+
+          const plusOne = document.createElement('div');
+          plusOne.textContent = '+15';
+          plusOne.className = 'plus-one';
+          plusOne.style.left = `${e.clientX}px`;
+          plusOne.style.top = `${e.clientY}px`;
+          document.body.appendChild(plusOne);
+          setTimeout(() => plusOne.remove(), 1000);
+
           el.remove();
           scheduleNextGolden();
         });
@@ -564,13 +573,22 @@ function spawnSpecialGub() {
 
   document.body.appendChild(container);
 
-  // 5. click handler awards +5
-  container.addEventListener('click', () => {
+  // 5. click handler awards +50
+  container.addEventListener('click', (e) => {
     sessionCount += 50;
     globalCount  += 50;
     renderCounter();
     db.ref(`leaderboard/${username}`).set({ score: globalCount });
     updateLeaderboard();
+
+    const plusOne = document.createElement('div');
+    plusOne.textContent = '+50';
+    plusOne.className = 'plus-one';
+    plusOne.style.left = `${e.clientX}px`;
+    plusOne.style.top = `${e.clientY}px`;
+    document.body.appendChild(plusOne);
+    setTimeout(() => plusOne.remove(), 1000);
+
     container.remove();
     scheduleNextGolden();
   });
