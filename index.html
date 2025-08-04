@@ -214,6 +214,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-functions-compat.js"></script>
 </head>
 <body>
   <div id="btnRow">
@@ -370,23 +371,25 @@ const firebaseConfig = {
     firebase.initializeApp(firebaseConfig);
 
     // 3. Authenticate then setup leaderboard
-firebase.auth().signInAnonymously().then(() => {
-  const db  = firebase.database();
-  const uid = firebase.auth().currentUser.uid;
+  firebase.auth().signInAnonymously().then(() => {
+    const db  = firebase.database();
+    const uid = firebase.auth().currentUser.uid;
+    const fn  = firebase.functions();
+    const incrementScore = fn.httpsCallable('incrementScore');
 
         // ─── Presence Setup ───────────────────────────────────────────────
   const presenceRef   = db.ref('.info/connected');
-  const userOnlineRef = db.ref('presence/' + username);
+  const userOnlineRef = db.ref('presence/' + uid);
 
   presenceRef.on('value', snap => {
     if (snap.val() === true) {
-      userOnlineRef.set(true);
+      userOnlineRef.set(username);
       userOnlineRef.onDisconnect().remove();
     }
   });
 
   db.ref('presence').on('value', snap => {
-    const users = snap.val() ? Object.keys(snap.val()) : [];
+    const users = snap.val() ? Object.values(snap.val()) : [];
     document.getElementById('online-users').textContent =
       'Online: ' + users.join(', ');
   });
@@ -395,20 +398,21 @@ firebase.auth().signInAnonymously().then(() => {
       let sessionCount = 0, globalCount = 0;
 
       // Load or initialize user's score
-const userRef = db.ref(`leaderboard/${username}/score`);
+  const userRef = db.ref(`leaderboard/${uid}/score`);
 userRef.once('value').then(snap => {
   globalCount = snap.val() || 0;
 
   renderCounter();
-  // Ensure entry exists
-  db.ref(`leaderboard/${username}`).set({ score: globalCount });
+    // Ensure entry exists
+    db.ref(`leaderboard/${uid}`).set({ score: globalCount, name: username });
   
 // Real-time leaderboard updates
 db.ref('leaderboard').on('value', snap => {
-  const list = [];
-  snap.forEach(child => {
-    list.push({ user: child.key, score: child.val().score || 0 });
-  });
+    const list = [];
+    snap.forEach(child => {
+      const val = child.val() || {};
+      list.push({ user: val.name || child.key, score: val.score || 0 });
+    });
   list.sort((a, b) => b.score - a.score);
   document.getElementById('leaderboard').innerHTML =
     '<strong>Leaderboard</strong><br>' +
@@ -461,11 +465,12 @@ function updateLeaderboard() {
     .once('value')
     .then(snap => {
       const list = [];
-      snap.forEach(c => {
-        // pull the score (defaulting to 0 if it’s missing)
-        const score = c.val().score || 0;
-        list.push({ user: c.key, score });
-      });
+        snap.forEach(c => {
+          const val = c.val() || {};
+          const score = val.score || 0;
+          const name = val.name || c.key;
+          list.push({ user: name, score });
+        });
       // sort descending
       list.sort((a, b) => b.score - a.score);
 
@@ -492,15 +497,15 @@ function updateLeaderboard() {
         el.style.border = '2px solid white';
         el.style.pointerEvents = 'auto';
         document.body.appendChild(el);
-        el.addEventListener('click', () => {
-          sessionCount +=15;
-          globalCount +=15;
-          renderCounter();
-          db.ref(`leaderboard/${username}`).set({ score: globalCount });
-          updateLeaderboard();
-          el.remove();
-          scheduleNextGolden();
-        });
+          el.addEventListener('click', () => {
+            sessionCount +=15;
+            globalCount +=15;
+            renderCounter();
+            incrementScore({ amount: 15 }).catch(console.error);
+            updateLeaderboard();
+            el.remove();
+            scheduleNextGolden();
+          });
       }
       // ─── SPECIAL GUB SPAWNER ───────────────────────────────────────────────
 function spawnSpecialGub() {
@@ -552,9 +557,9 @@ function spawnSpecialGub() {
   container.addEventListener('click', () => {
     sessionCount += 50;
     globalCount  += 50;
-    renderCounter();
-    db.ref(`leaderboard/${username}`).set({ score: globalCount });
-    updateLeaderboard();
+      renderCounter();
+      incrementScore({ amount: 50 }).catch(console.error);
+      updateLeaderboard();
     container.remove();
     scheduleNextGolden();
   });
@@ -583,14 +588,14 @@ if (!sessionStorage.getItem('gubClicked')) {
 }
 let popTimeout;
 
-      mainGub.addEventListener('click', () => {
-        clickMe.style.display = 'none';
-        sessionStorage.setItem('gubClicked', 'true');
-        sessionCount++;
-        globalCount++;
-        renderCounter();
-        db.ref(`leaderboard/${username}`).set({ score: globalCount });
-        updateLeaderboard();
+        mainGub.addEventListener('click', () => {
+          clickMe.style.display = 'none';
+          sessionStorage.setItem('gubClicked', 'true');
+          sessionCount++;
+          globalCount++;
+          renderCounter();
+          incrementScore({ amount: 1 }).catch(console.error);
+          updateLeaderboard();
 
         mainGub.classList.remove('pop-effect');
         void mainGub.offsetWidth;
@@ -618,12 +623,12 @@ let popTimeout;
       shopItems.forEach(item => {
         const perMinute = owned[item.id] * item.rate;
         if (perMinute > 0) {
-          const interval = 60_000 / perMinute;
-          passiveTimers[item.id] = setInterval(() => {
-            globalCount++;
-            renderCounter();
-            db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
-          }, interval);
+            const interval = 60_000 / perMinute;
+            passiveTimers[item.id] = setInterval(() => {
+              globalCount++;
+              renderCounter();
+              incrementScore({ amount: 1 }).catch(console.error);
+            }, interval);
         }
       });
     }
@@ -654,9 +659,9 @@ shopItems.forEach(item => {
       owned[item.id] += 1;
       document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
       renderCounter();
-      db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
-      db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
-      updatePassiveIncome();
+        db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
+        incrementScore({ amount: -item.cost }).catch(console.error);
+        updatePassiveIncome();
     }
   });
 });

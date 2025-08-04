@@ -1,0 +1,26 @@
+{
+  "rules": {
+    "presence": {
+      ".read": true,
+      ".write": true
+    },
+    "leaderboard": {
+      ".read": true,
+      ".indexOn": ["score"],
+      "$uid": {
+        ".write": "auth != null && $uid === auth.uid"
+      }
+    },
+    "chat": {
+      ".read": true,
+      ".write": "auth != null",
+      ".indexOn": ["ts"]
+    },
+    "shop": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && $uid === auth.uid"
+      }
+    }
+  }
+}
