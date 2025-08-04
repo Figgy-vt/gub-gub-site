@@ -667,7 +667,7 @@ shopRef.once('value').then(snapshot => {
       updateLabels();
     }
     function adjustImages(d){
-      const newVal = Math.max(2, numFloaters + d);
+      const newVal = Math.max(0, numFloaters + d);
       if(newVal !== numFloaters){
         if(d>0) for(let i=0; i<d; i++){ createEntity(false); createEntity(true); }
         else     for(let i=0; i<-d; i++){ removeEntity(); removeEntity(); }
