@@ -181,6 +181,7 @@
   <div id="perfMenu">
     <div>Speed: <button id="spdDec">-</button><span id="spdVal">2</span><button id="spdInc">+</button></div>
     <div>Images: <button id="imgDec">-</button><span id="imgVal">20</span><button id="imgInc">+</button></div>
+    <div><button id="moveToggle">Pause Movement</button></div>
     <label for="volumeSlider" style="margin-top:8px; display:block; color:#fff; font-weight:bold;">
   Chaos Volume
 </label>
@@ -636,10 +637,21 @@ shopRef.once('value').then(snapshot => {
     const imgInc     = document.getElementById('imgInc');
     const spdVal     = document.getElementById('spdVal');
     const imgVal     = document.getElementById('imgVal');
+    const moveToggle = document.getElementById('moveToggle');
+
+    let movementPaused = false;
+    let storedSpeed = speedMultiplier;
 
     settingsBtn.onclick = () => { perfMenu.style.display = perfMenu.style.display==='block' ? 'none' : 'block'; };
     function updateLabels(){ spdVal.textContent = speedMultiplier; imgVal.textContent = numFloaters; }
-    function adjustSpeed(d){ speedMultiplier = Math.max(1, speedMultiplier + d); updateLabels(); }
+    function adjustSpeed(d){
+      if(movementPaused){
+        storedSpeed = Math.max(1, storedSpeed + d);
+      } else {
+        speedMultiplier = Math.max(1, speedMultiplier + d);
+      }
+      updateLabels();
+    }
     function adjustImages(d){
       const newVal = Math.max(2, numFloaters + d);
       if(newVal !== numFloaters){
@@ -653,6 +665,18 @@ shopRef.once('value').then(snapshot => {
     spdInc.onclick = () => adjustSpeed(1);
     imgDec.onclick = () => adjustImages(-2);
     imgInc.onclick = () => adjustImages(2);
+    moveToggle.onclick = () => {
+      if(!movementPaused){
+        storedSpeed = speedMultiplier;
+        speedMultiplier = 0;
+        moveToggle.textContent = 'Resume Movement';
+      } else {
+        speedMultiplier = storedSpeed;
+        moveToggle.textContent = 'Pause Movement';
+      }
+      movementPaused = !movementPaused;
+      updateLabels();
+    };
     updateLabels();
 
     // Twitch & Chaos Mode
