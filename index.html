@@ -213,7 +213,7 @@
   font-size: 14px;
 }
 .chat-emote {
-  height: 1em;
+  height: 1.5em;
   vertical-align: middle;
 }
 #upgradePlaceholder {
@@ -538,23 +538,19 @@ function escapeHTML(str) {
 
 async function emoteHTML(text) {
   let safe = escapeHTML(text);
-  const regex = /:([A-Za-z0-9_]+):/g;
-  const parts = [];
-  let lastIndex = 0;
-  let match;
-  while ((match = regex.exec(safe)) !== null) {
-    parts.push(safe.slice(lastIndex, match.index));
-    const name = match[1];
-    const url = await getEmoteURL(name);
-    if (url) {
-      parts.push(`<img class="chat-emote" alt="${name}" src="${url}">`);
-    } else {
-      parts.push(match[0]);
+  const tokens = safe.split(/(\s+)/);
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (/^\s+$/.test(token)) continue;
+    const stripped = token.replace(/^:|:$/g, '');
+    if (/^[A-Za-z0-9_]+$/.test(stripped)) {
+      const url = await getEmoteURL(stripped);
+      if (url) {
+        tokens[i] = `<img class="chat-emote" alt="${stripped}" src="${url}">`;
+      }
     }
-    lastIndex = regex.lastIndex;
   }
-  parts.push(safe.slice(lastIndex));
-  return parts.join('');
+  return tokens.join('');
 }
 
 // 2. Listen for new chat messages (last 50), append them in order
