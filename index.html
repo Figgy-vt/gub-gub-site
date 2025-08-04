@@ -245,6 +245,11 @@
 }
 #feedbackModal button {
   margin-top: 6px;
+}
+#feedbackSee {
+  float: left;
+}
+#feedbackSubmit {
   float: right;
 }
 
@@ -1027,9 +1032,15 @@ shopRef.once('value').then(snapshot => {
   const feedbackModal = document.getElementById('feedbackModal');
   const feedbackInput = document.getElementById('feedbackInput');
   const feedbackSubmit = document.getElementById('feedbackSubmit');
+  const feedbackSee = document.getElementById('feedbackSee');
 
   feedbackBtn.addEventListener('click', () => {
     feedbackModal.style.display = feedbackModal.style.display === 'block' ? 'none' : 'block';
+  });
+
+  feedbackSee.addEventListener('click', () => {
+    window.open('feedback-list/', '_blank');
+    feedbackModal.style.display = 'none';
   });
 
   feedbackSubmit.addEventListener('click', () => {
@@ -1228,6 +1239,7 @@ chaosBtn.addEventListener('click', () => {
   </script>
   <div id="feedbackModal">
     <textarea id="feedbackInput" placeholder="Your suggestion"></textarea>
+    <button id="feedbackSee">See Feedback</button>
     <button id="feedbackSubmit">Send</button>
   </div>
   <div id="discordWrapper">
