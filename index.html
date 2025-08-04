@@ -424,7 +424,7 @@ firebase.auth().signInAnonymously().then(() => {
   });
   // ─────────────────────────────────────────────────────────────────
 
-      let sessionCount = 0, globalCount = 0;
+      let sessionCount = 0, globalCount = 0, displayedCount = 0;
       let scoreDirty = false;
       let lastSentScore = 0;
       function queueScoreUpdate(){ scoreDirty = true; }
@@ -441,7 +441,7 @@ firebase.auth().signInAnonymously().then(() => {
 const userRef = db.ref(`leaderboard/${username}/score`);
 userRef.once('value').then(snap => {
   globalCount = snap.val() || 0;
-
+  displayedCount = globalCount;
   renderCounter();
   // Ensure entry exists
   db.ref(`leaderboard/${username}`).set({ score: globalCount });
@@ -519,9 +519,7 @@ chatForm.addEventListener('submit', e => {
         document.body.appendChild(el);
         el.addEventListener('click', (e) => {
           sessionCount +=15;
-          globalCount +=15;
-          renderCounter();
-          queueScoreUpdate();
+          gainGubs(15);
 
           const plusOne = document.createElement('div');
           plusOne.textContent = '+15';
@@ -584,9 +582,7 @@ function spawnSpecialGub() {
   // 5. click handler awards +50
   container.addEventListener('click', (e) => {
     sessionCount += 50;
-    globalCount  += 50;
-    renderCounter();
-    queueScoreUpdate();
+    gainGubs(50);
 
     const plusOne = document.createElement('div');
     plusOne.textContent = '+50';
@@ -612,9 +608,23 @@ function scheduleNextGolden(initial = false) {
 }
       // Expose goldenCounterEl for spawn
       const goldenCounterEl = document.getElementById('golden-counter');
-      
+
       function renderCounter() {
-        goldenCounterEl.textContent = 'Gubs: ' + Math.floor(globalCount);
+        goldenCounterEl.textContent = 'Gubs: ' + Math.floor(displayedCount);
+      }
+
+      function gainGubs(amount) {
+        globalCount += amount;
+        displayedCount += amount;
+        renderCounter();
+        queueScoreUpdate();
+      }
+
+      function spendGubs(amount) {
+        globalCount -= amount;
+        displayedCount -= amount;
+        renderCounter();
+        queueScoreUpdate();
       }
       // main gub handler
 const mainGub = document.getElementById('main-gub');
@@ -628,9 +638,7 @@ let popTimeout;
         clickMe.style.display = 'none';
         sessionStorage.setItem('gubClicked', 'true');
         sessionCount++;
-        globalCount++;
-        renderCounter();
-        queueScoreUpdate();
+        gainGubs(1);
 
         const plusOne = document.createElement('div');
         plusOne.textContent = '+1';
@@ -667,9 +675,7 @@ let popTimeout;
       if (perMinuteTotal > 0) {
         const increment = perMinuteTotal / 60;
         passiveInterval = setInterval(() => {
-          globalCount += increment;
-          renderCounter();
-          queueScoreUpdate();
+          gainGubs(increment);
         }, 1000);
       }
     }
@@ -696,12 +702,10 @@ shopItems.forEach(item => {
 
   div.querySelector(`#buy-${item.id}`).addEventListener('click', () => {
     if (globalCount >= item.cost) {
-      globalCount -= item.cost;
+      spendGubs(item.cost);
       owned[item.id] += 1;
       document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
-      renderCounter();
       db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
-      queueScoreUpdate();
       updatePassiveIncome();
     }
   });
