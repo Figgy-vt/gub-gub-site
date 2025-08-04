@@ -458,41 +458,61 @@ firebase.auth().signInAnonymously().then(() => {
         return scaled.toFixed(2) + units[idx];
       }
 
-      // Load or initialize user's score
-const userRef = db.ref(`leaderboard/${uid}/score`);
-userRef.once('value').then(snap => {
-  globalCount = snap.val() || 0;
-  displayedCount = globalCount;
-  renderCounter();
-  // Ensure entry exists
-  db.ref(`leaderboard/${uid}`).set({ username, score: globalCount });
-  lastSentScore = Math.floor(globalCount);
+      // Load or initialize user's score, migrating any legacy username entries
+      const userRef = db.ref(`leaderboard/${uid}/score`);
+      userRef.once('value').then(async snap => {
+        if (snap.exists()) {
+          globalCount = snap.val() || 0;
+        } else {
+          // Try to migrate from old username-based key
+          const legacyRef = db.ref(`leaderboard/${username}/score`);
+          const legacySnap = await legacyRef.once('value');
+          globalCount = legacySnap.val() || 0;
+          if (legacySnap.exists()) {
+            await legacyRef.parent.remove();
+          }
+        }
+        displayedCount = globalCount;
+        renderCounter();
+        db.ref(`leaderboard/${uid}`).set({ username, score: globalCount });
+        lastSentScore = Math.floor(globalCount);
+
+        // Keep local score in sync with external/manual updates
+        userRef.on('value', s => {
+          const v = s.val();
+          if (typeof v === 'number') {
+            globalCount = displayedCount = v;
+            renderCounter();
+          }
+        });
 
 // Real-time leaderboard updates (top 10 only)
-db.ref('leaderboard')
-  .orderByChild('score')
-  .limitToLast(10)
-  .on('value', snap => {
-    const list = [];
-    snap.forEach(child => {
-      const data = child.val() || {};
-      list.push({ user: sanitizeUsername(data.username || ''), score: data.score || 0 });
+  db.ref('leaderboard')
+    .orderByChild('score')
+    .limitToLast(10)
+    .on('value', snap => {
+      const list = [];
+      snap.forEach(child => {
+        const data = child.val() || {};
+        list.push({ user: sanitizeUsername(data.username || ''), score: data.score || 0 });
+      });
+      list.sort((a, b) => b.score - a.score);
+      const lbEl = document.getElementById('leaderboard');
+      lbEl.innerHTML = '';
+      const title = document.createElement('strong');
+      title.textContent = 'Leaderboard (Top 10)';
+      lbEl.appendChild(title);
+      lbEl.appendChild(document.createElement('br'));
+      list.forEach((e, i) => {
+        const line = document.createElement('div');
+        line.textContent = `${i+1}. ${e.user}: ${abbreviateNumber(e.score)}`;
+        lbEl.appendChild(line);
+      });
     });
-    list.sort((a, b) => b.score - a.score);
-    const lbEl = document.getElementById('leaderboard');
-    lbEl.innerHTML = '';
-    const title = document.createElement('strong');
-    title.textContent = 'Leaderboard (Top 10)';
-    lbEl.appendChild(title);
-    lbEl.appendChild(document.createElement('br'));
-    list.forEach((e, i) => {
-      const line = document.createElement('div');
-      line.textContent = `${i+1}. ${e.user}: ${abbreviateNumber(e.score)}`;
-      lbEl.appendChild(line);
-    });
-  });
 
-  // ——— Chat setup ———
+      });
+
+      // ——— Chat setup ———
 // 1. References to your Firebase “chat” node and DOM elements
 const chatRef    = db.ref('chat');
 const messagesEl = document.getElementById('messages');
