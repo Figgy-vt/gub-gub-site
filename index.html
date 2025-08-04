@@ -800,14 +800,15 @@ let popTimeout;
         popTimeout = setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
       });
  // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
+    const COST_MULTIPLIER = 1.5; // exponential cost scaling factor
     const shopItems = [
-      { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 60 },
-      { id: 'guberator',     name: 'Guberator', cost: 500, rate: 300 },
-      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 1200 },
-      { id: 'gubsolar',    name: 'Solar Gub Panels', cost: 10000, rate: 6000 },
-      { id: 'gubfactory',       name: 'Gubactory',    cost: 50000, rate: 30000 },
-      { id: 'gubhydro',      name: 'Hydro Gub Plant',   cost: 250000, rate: 150000 },
-      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    cost: 1000000, rate: 600000 }
+      { id: 'passiveMaker', name: 'The Gub', baseCost: 100, rate: 60 },
+      { id: 'guberator',     name: 'Guberator', baseCost: 500, rate: 300 },
+      { id: 'gubmill',       name: 'Gubmill',   baseCost: 2000, rate: 1200 },
+      { id: 'gubsolar',    name: 'Solar Gub Panels', baseCost: 10000, rate: 6000 },
+      { id: 'gubfactory',       name: 'Gubactory',    baseCost: 50000, rate: 30000 },
+      { id: 'gubhydro',      name: 'Hydro Gub Plant',   baseCost: 250000, rate: 150000 },
+      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    baseCost: 1000000, rate: 600000 }
     ];
     const shopRef = db.ref(`shop/${uid}`);
     const owned = { passiveMaker:0, guberator:0, gubmill:0, gubsolar:0, gubfactory:0, gubhydro:0, gubnuclear:0 };
@@ -872,7 +873,7 @@ shopItems.forEach(item => {
   const div = document.createElement('div');
   div.innerHTML = `
     <strong>${item.name}</strong><br>
-    Cost: ${item.cost} Gubs<br>
+    Cost: <span id="cost-${item.id}"></span> Gubs<br>
     Rate: ${item.rate} Gubs/min<br>
     Owned: <span id="owned-${item.id}">0</span><br>
     <button id="buy-${item.id}">Buy</button>
@@ -885,28 +886,51 @@ shopItems.forEach(item => {
   const buy1   = div.querySelector(`#buy-${item.id}`);
   const buy10  = div.querySelector(`#buy-${item.id}-x10`);
   const buy100 = div.querySelector(`#buy-${item.id}-x100`);
+  const costSpan = div.querySelector(`#cost-${item.id}`);
+
+  function currentCost() {
+    return Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]));
+  }
+
+  function totalCost(quantity) {
+    let cost = 0;
+    for (let i = 0; i < quantity; i++) {
+      cost += Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id] + i));
+    }
+    return cost;
+  }
+
+  function updateCostDisplay() {
+    costSpan.textContent = currentCost();
+  }
 
   function attemptPurchase(quantity) {
-    const totalCost = item.cost * quantity;
-    if (globalCount >= totalCost) {
-      spendGubs(totalCost);
+    const cost = totalCost(quantity);
+    if (globalCount >= cost) {
+      spendGubs(cost);
       owned[item.id] += quantity;
       document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
       db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
       updatePassiveIncome();
+      updateCostDisplay();
     }
   }
 
   buy1.addEventListener('click',   () => attemptPurchase(1));
   buy10.addEventListener('click',  () => attemptPurchase(10));
   buy100.addEventListener('click', () => attemptPurchase(100));
+  updateCostDisplay();
 });
-  
+
 shopRef.once('value').then(snapshot => {
   const stored = snapshot.val() || {};
   shopItems.forEach(item => {
     owned[item.id] = stored[item.id] || 0;
     document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
+    const costSpan = document.getElementById(`cost-${item.id}`);
+    if (costSpan) {
+      costSpan.textContent = Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]));
+    }
   });
   updatePassiveIncome();
 });
