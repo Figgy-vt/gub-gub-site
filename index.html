@@ -42,7 +42,7 @@
   cursor: pointer; /* show it’s clickable */
 }
     @media (max-width: 768px) {
-  #discordBtn {
+  #discordWrapper {
     bottom: 170px !important;   /* move it up above the chat */
     right: 10px !important;     /* keep it flush to the right edge */
   }
@@ -112,10 +112,21 @@
     #twitchPlayer  { position:absolute; top:50px; right:10px; width:500px; height:300px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
     #golden-counter { position:absolute; top:10px; right:10px; z-index:10000; color:white; font-family:sans-serif; font-size:20px; font-weight:bold; }
     #leaderboard { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; z-index:10000; }
-    #discordBtn {
+    #discordWrapper {
   position: absolute;
   bottom: 10px;
   right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10000;
+}
+    #versionNumber {
+  color: #fff;
+  font-family: sans-serif;
+  font-size: 12px;
+}
+    #discordBtn {
   background: #7289da;
   color: white;
   border: none;
@@ -125,7 +136,6 @@
   font-size: 14px;
   cursor: pointer;
   text-decoration: none;
-  z-index: 10000;
 }
 #discordBtn:hover {
   background: #5b6eae;
@@ -797,8 +807,9 @@ chaosBtn.addEventListener('click', () => {
       }
     });
   </script>
-  <a id="discordBtn" href="https://discord.gg/nutpit" target="_blank" rel="noopener">
-  Discord
-</a>
+  <div id="discordWrapper">
+    <span id="versionNumber">v0.1</span>
+    <a id="discordBtn" href="https://discord.gg/nutpit" target="_blank" rel="noopener">Discord</a>
+  </div>
 </body>
 </html>
