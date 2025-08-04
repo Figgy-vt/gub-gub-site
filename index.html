@@ -66,6 +66,7 @@
   cursor: pointer;
 }
 
+
 #shopPanel {
   position: absolute;
   top: 90px;
@@ -165,6 +166,20 @@
   margin-left: 4px;
   font-size: 12px;
 }
+#upgradePlaceholder {
+  display: flex;
+  align-items: center;
+  font-family: sans-serif;
+  font-weight: bold;
+  pointer-events: none;
+  margin-bottom: 8px;
+}
+#upgradePlaceholder img {
+  height: 20px;
+  width: 20px;
+  margin-right: 8px;
+}
+
 
   </style>
   <script src="https://embed.twitch.tv/embed/v1.js"></script>
@@ -182,6 +197,10 @@
 
   <div id="shopPanel">
     <h4>Shop</h4>
+      <div id="upgradePlaceholder">
+      <img src="gub_wicked.png" alt="Upgrades icon" />
+      Upgrades (coming soon...)
+    </div>
     <div id="shopItemsContainer"></div>
   </div>
 
@@ -546,10 +565,14 @@ let popTimeout;
     const shopItems = [
       { id: 'passiveMaker', name: 'The Gub', cost: 100, rate: 1   },
       { id: 'guberator',     name: 'Guberator', cost: 500, rate: 5   },
-      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 20 }
+      { id: 'gubmill',       name: 'Gubmill',   cost: 2000, rate: 20 },
+      { id: 'gubsolar',    name: 'Solar Gub Panels', cost: 10000, rate: 100 },
+      { id: 'gubfactory',       name: 'Gubactory',    cost: 50000, rate: 500 },
+      { id: 'gubhydro',      name: 'Hydro Gub Plant',   cost: 250000, rate: 2500 },
+      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    cost: 1000000, rate: 10000 }
     ];
     const shopRef = db.ref(`shop/${uid}`);
-    const owned = { passiveMaker:0, guberator:0, gubmill:0 };
+    const owned = { passiveMaker:0, guberator:0, gubmill:0, gubsolar:0, gubfactory:0, gubhydro:0, gubnuclear:0 };
     const passiveTimers = {};
 
     function updatePassiveIncome() {
