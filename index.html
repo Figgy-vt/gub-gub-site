@@ -13,6 +13,9 @@
   <meta property="og:image"       content="https://gub.cam/gub_wicked.png" />
 
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <style>
     body { margin:0; overflow:hidden; background:#111; position:relative; height:100vh; width:100vw; }
     #gub-wrapper { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
@@ -330,6 +333,8 @@
   <canvas id="visualizer"></canvas>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
+const CLIENT_VERSION = '0.1.2';
+document.getElementById('versionNumber').textContent = `v${CLIENT_VERSION}`;
 const isMobile = window.innerWidth < 768;
 const NUM_FLOATERS = isMobile ? 5 : 20;
 const chaosAudio = new Audio('music.mp3');
@@ -441,6 +446,18 @@ firebase.auth().signInAnonymously().then(() => {
   const db  = firebase.database();
   const uid = firebase.auth().currentUser.uid;
 
+  const versionRef = db.ref('config/version');
+  versionRef.on('value', snap => {
+    const serverVersion = snap.val();
+    if (serverVersion !== CLIENT_VERSION) {
+      const warn = document.createElement('div');
+      warn.textContent = 'Site updated - reloading...';
+      warn.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;font-size:24px;padding:20px;z-index:100000;';
+      document.body.appendChild(warn);
+      setTimeout(() => location.reload(true), 2000);
+    }
+  });
+
         // ─── Presence Setup ───────────────────────────────────────────────
   const presenceRef   = db.ref('.info/connected');
   const userOnlineRef = db.ref('presence/' + uid);
@@ -484,7 +501,7 @@ firebase.auth().signInAnonymously().then(() => {
         if (scoreDirty && currentScore !== lastSentScore) {
           scoreDirty = false;
           lastSentScore = currentScore;
-          db.ref(`leaderboard/${uid}`).set({ username, score: currentScore });
+          db.ref(`leaderboard_v2/${uid}`).set({ username, score: currentScore });
         }
       }, 1000);
 
@@ -498,13 +515,13 @@ firebase.auth().signInAnonymously().then(() => {
       }
 
       // Load or initialize user's score, migrating any legacy username entries
-      const userRef = db.ref(`leaderboard/${uid}/score`);
+      const userRef = db.ref(`leaderboard_v2/${uid}/score`);
       userRef.once('value').then(async snap => {
         if (snap.exists()) {
           globalCount = snap.val() || 0;
         } else {
           // Try to migrate from old username-based key
-          const legacyRef = db.ref(`leaderboard/${username}/score`);
+          const legacyRef = db.ref(`leaderboard_v2/${username}/score`);
           const legacySnap = await legacyRef.once('value');
           globalCount = legacySnap.val() || 0;
           if (legacySnap.exists()) {
@@ -513,7 +530,7 @@ firebase.auth().signInAnonymously().then(() => {
         }
         displayedCount = globalCount;
         renderCounter();
-        db.ref(`leaderboard/${uid}`).set({ username, score: globalCount });
+        db.ref(`leaderboard_v2/${uid}`).set({ username, score: globalCount });
         lastSentScore = Math.floor(globalCount);
 
         // Keep local score in sync with external/manual updates
@@ -528,7 +545,7 @@ firebase.auth().signInAnonymously().then(() => {
         });
 
 // Real-time leaderboard updates (top 10 only)
-  db.ref('leaderboard')
+  db.ref('leaderboard_v2')
     .orderByChild('score')
     .limitToLast(10)
     .on('value', snap => {
@@ -862,7 +879,7 @@ adminUpdate.addEventListener('click', () => {
   const target = sanitizeUsername(adminUser.value);
   const score  = parseInt(adminScore.value, 10);
   if (!target || isNaN(score)) return;
-  db.ref('leaderboard').orderByChild('username').equalTo(target).once('value').then(snap => {
+  db.ref('leaderboard_v2').orderByChild('username').equalTo(target).once('value').then(snap => {
     snap.forEach(child => {
       child.ref.update({ score });
     });
@@ -872,7 +889,7 @@ adminUpdate.addEventListener('click', () => {
 adminDelete.addEventListener('click', () => {
   const target = sanitizeUsername(adminUser.value);
   if (!target) return;
-  db.ref('leaderboard').orderByChild('username').equalTo(target).once('value').then(snap => {
+  db.ref('leaderboard_v2').orderByChild('username').equalTo(target).once('value').then(snap => {
     snap.forEach(child => child.ref.remove());
   });
 });
@@ -1150,7 +1167,7 @@ chaosBtn.addEventListener('click', () => {
     });
   </script>
   <div id="discordWrapper">
-    <span id="versionNumber">v0.1.1</span>
+    <span id="versionNumber">v0.1.2</span>
     <a id="discordBtn" href="https://discord.gg/nutpit" target="_blank" rel="noopener">Discord</a>
   </div>
 </body>
