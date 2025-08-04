@@ -112,12 +112,12 @@
     #twitchPlayer  { position:absolute; top:50px; right:10px; width:500px; height:300px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
     #golden-counter { position:absolute; top:10px; right:10px; z-index:10000; color:white; font-family:sans-serif; font-size:20px; font-weight:bold; }
     #leaderboard { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; z-index:10000; }
-    #discordWrapper {
+#discordWrapper {
   position: absolute;
   bottom: 10px;
   right: 10px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 6px;
   z-index: 10000;
 }
@@ -125,6 +125,7 @@
   color: #fff;
   font-family: sans-serif;
   font-size: 12px;
+  line-height: 1;
 }
     #discordBtn {
   background: #7289da;
@@ -136,6 +137,7 @@
   font-size: 14px;
   cursor: pointer;
   text-decoration: none;
+      
 }
 #discordBtn:hover {
   background: #5b6eae;
