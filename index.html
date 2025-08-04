@@ -550,7 +550,22 @@ let popTimeout;
     ];
     const shopRef = db.ref(`shop/${uid}`);
     const owned = { passiveMaker:0, guberator:0, gubmill:0 };
-    let totalRate = 0;
+    const passiveTimers = {};
+
+    function updatePassiveIncome() {
+      Object.values(passiveTimers).forEach(clearInterval);
+      shopItems.forEach(item => {
+        const perMinute = owned[item.id] * item.rate;
+        if (perMinute > 0) {
+          const interval = 60_000 / perMinute;
+          passiveTimers[item.id] = setInterval(() => {
+            globalCount++;
+            renderCounter();
+            db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
+          }, interval);
+        }
+      });
+    }
 
 const shopBtn       = document.getElementById('shopBtn');
 const shopPanel     = document.getElementById('shopPanel');
@@ -575,12 +590,12 @@ shopItems.forEach(item => {
   div.querySelector(`#buy-${item.id}`).addEventListener('click', () => {
     if (globalCount >= item.cost) {
       globalCount -= item.cost;
-      totalRate   += item.rate;
       owned[item.id] += 1;
       document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
       renderCounter();
       db.ref(`shop/${uid}/${item.id}`).set(owned[item.id]);
       db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
+      updatePassiveIncome();
     }
   });
 });
@@ -591,16 +606,9 @@ shopRef.once('value').then(snapshot => {
     owned[item.id] = stored[item.id] || 0;
     document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
   });
-  totalRate = shopItems.reduce((sum, it) => sum + owned[it.id] * it.rate, 0);
+  updatePassiveIncome();
 });
-    // passive income timer
-    setInterval(()=>{
-      if (totalRate > 0) {
-        globalCount += totalRate;
-        renderCounter();
-        db.ref(`leaderboard/${username}`).set({ score: Math.floor(globalCount) });
-      }
-    }, 60_000);
+    // passive income timers are handled per item
     // ──────────────────────────────────────────────────────────────────────
       
     }).catch(err => console.error('Auth Error', err));
