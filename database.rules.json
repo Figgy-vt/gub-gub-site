@@ -6,8 +6,12 @@
     },
     "leaderboard_v2": {
       ".read": true,
+      ".write": false
+    },
+    "leaderboard_v3": {
+      ".read": true,
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('leaderboard_v2').child(auth.uid).child('username').val() === 'figgy')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('leaderboard_v3').child(auth.uid).child('username').val() === 'figgy')",
         "username": {
           ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
         },
