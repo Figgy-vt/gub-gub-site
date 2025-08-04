@@ -46,10 +46,7 @@
     "shop": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid",
-        "$item": {
-          ".validate": "newData.isNumber() && newData.val() >= 0"
-        }
+        ".write": false
       }
     },
     "shop_v2": {
