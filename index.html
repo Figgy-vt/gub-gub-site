@@ -182,8 +182,8 @@
 }
 
     #chat {
-  width: 300px;
-  max-height: 150px;   /* match leaderboard height or adjust */
+  width: 400px;
+  max-height: 200px;   /* expanded for better readability */
   border-radius: 8px;
   background: rgba(0,0,0,0.6);
   color: #fff;
@@ -197,7 +197,7 @@
   flex: 1;
   overflow-y: auto;
   margin-bottom: 8px;
-  font-size: 12px;
+  font-size: 14px;
 }
 #chatForm {
   display: flex;
@@ -205,12 +205,12 @@
 #chatInput {
   flex: 1;
   padding: 4px;
-  font-size: 12px;
+  font-size: 14px;
 }
 #chatForm button {
   padding: 4px 8px;
   margin-left: 4px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .chat-emote {
   height: 1em;
@@ -565,14 +565,16 @@ chatRef
   .on('child_added', snap => {
     const { user, text, ts } = snap.val();
     const msgEl = document.createElement('div');
-    const time  = new Date(ts).toLocaleTimeString();
+    const dateObj = new Date(ts);
+    const date = dateObj.toLocaleDateString();
+    const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     // Append the message immediately to preserve order, then replace
     // any emote codes asynchronously once they are resolved.
-    msgEl.innerHTML = `[${time}] ${user}: ${escapeHTML(text)}`;
+    msgEl.innerHTML = `[${date} ${time}] ${user}: ${escapeHTML(text)}`;
     messagesEl.appendChild(msgEl);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     emoteHTML(text).then(processed => {
-      msgEl.innerHTML = `[${time}] ${user}: ${processed}`;
+      msgEl.innerHTML = `[${date} ${time}] ${user}: ${processed}`;
     }).catch(() => {
       // If emote lookup fails, keep the plain text message.
     });
