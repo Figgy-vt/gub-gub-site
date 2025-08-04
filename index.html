@@ -262,7 +262,7 @@
   float: right;
 }
 
-    #chat {
+#chat {
   width: 400px;
   max-height: 200px;   /* expanded for better readability */
   border-radius: 8px;
@@ -273,6 +273,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 #messages {
   flex: 1;
@@ -296,6 +297,31 @@
 .chat-emote {
   height: 1.5em;
   vertical-align: middle;
+}
+.mention-highlight {
+  background: yellow;
+  color: black;
+  font-weight: bold;
+}
+#mentionSuggestions {
+  position: absolute;
+  bottom: 36px;
+  left: 8px;
+  right: 8px;
+  background: #222;
+  border: 1px solid #555;
+  display: none;
+  max-height: 100px;
+  overflow-y: auto;
+  z-index: 10;
+  font-size: 14px;
+}
+#mentionSuggestions div {
+  padding: 2px 4px;
+  cursor: pointer;
+}
+#mentionSuggestions div:hover {
+  background: #444;
 }
 #upgradePlaceholder {
   display: flex;
@@ -366,6 +392,7 @@
     <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
     <div id="chat">
       <div id="messages"></div>
+      <div id="mentionSuggestions"></div>
       <form id="chatForm">
         <input id="chatInput" type="text" placeholder="Type a message…" autocomplete="off" maxlength="200" />
         <button type="submit">Send</button>
@@ -495,6 +522,7 @@ const firebaseConfig = {
 firebase.auth().signInAnonymously().then(() => {
   const db  = firebase.database();
   const uid = firebase.auth().currentUser.uid;
+  const allUsers = new Set([username]);
 
   const versionRef = db.ref('config/version');
   versionRef.on('value', snap => {
@@ -534,13 +562,22 @@ firebase.auth().signInAnonymously().then(() => {
   }
 
   presenceListRef.on('child_added', snap => {
-    onlineUsers.set(snap.key, sanitizeUsername(snap.val()));
+    const name = sanitizeUsername(snap.val());
+    onlineUsers.set(snap.key, name);
+    allUsers.add(name);
     renderOnlineUsers();
   });
 
   presenceListRef.on('child_removed', snap => {
     onlineUsers.delete(snap.key);
     renderOnlineUsers();
+  });
+  db.ref('leaderboard_v3').once('value').then(snap => {
+    snap.forEach(child => {
+      const data = child.val() || {};
+      const u = sanitizeUsername(data.username || '');
+      if (u) allUsers.add(u);
+    });
   });
   // ─────────────────────────────────────────────────────────────────
 
@@ -604,7 +641,9 @@ firebase.auth().signInAnonymously().then(() => {
       const list = [];
       snap.forEach(child => {
         const data = child.val() || {};
-        list.push({ user: sanitizeUsername(data.username || ''), score: data.score || 0 });
+        const user = sanitizeUsername(data.username || '');
+        list.push({ user, score: data.score || 0 });
+        allUsers.add(user);
       });
       list.sort((a, b) => b.score - a.score);
       const lbEl = document.getElementById('leaderboard');
@@ -628,6 +667,7 @@ const chatRef    = db.ref('chat');
 const messagesEl = document.getElementById('messages');
 const chatForm   = document.getElementById('chatForm');
 const chatInput  = document.getElementById('chatInput');
+const mentionSuggestions = document.getElementById('mentionSuggestions');
 
 // 7TV emotes
 const emoteMap = {};
@@ -677,6 +717,63 @@ async function emoteHTML(text) {
   return tokens.join('');
 }
 
+function updateSuggestions() {
+  const cursor = chatInput.selectionStart;
+  const textBefore = chatInput.value.slice(0, cursor);
+  const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
+  if (match) {
+    const prefix = match[1].toLowerCase();
+    const matches = Array.from(allUsers)
+      .filter(u => u.toLowerCase().startsWith(prefix))
+      .sort();
+    if (matches.length > 0) {
+      mentionSuggestions.innerHTML = matches.slice(0,5).map(m => `<div>${m}</div>`).join('');
+      mentionSuggestions.style.display = 'block';
+    } else {
+      mentionSuggestions.style.display = 'none';
+    }
+  } else {
+    mentionSuggestions.style.display = 'none';
+  }
+}
+
+chatInput.addEventListener('input', updateSuggestions);
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Tab' && mentionSuggestions.style.display === 'block') {
+    e.preventDefault();
+    const first = mentionSuggestions.firstChild;
+    if (first) {
+      const name = first.textContent;
+      const cursor = chatInput.selectionStart;
+      const textBefore = chatInput.value.slice(0, cursor);
+      const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
+      if (match) {
+        const start = cursor - match[1].length;
+        chatInput.value = chatInput.value.slice(0, start) + name + chatInput.value.slice(cursor);
+        chatInput.selectionStart = chatInput.selectionEnd = start + name.length;
+      }
+      mentionSuggestions.style.display = 'none';
+    }
+  }
+});
+
+mentionSuggestions.addEventListener('mousedown', e => {
+  if (e.target && e.target.tagName === 'DIV') {
+    e.preventDefault();
+    const name = e.target.textContent;
+    const cursor = chatInput.selectionStart;
+    const textBefore = chatInput.value.slice(0, cursor);
+    const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
+    if (match) {
+      const start = cursor - match[1].length;
+      chatInput.value = chatInput.value.slice(0, start) + name + chatInput.value.slice(cursor);
+      chatInput.selectionStart = chatInput.selectionEnd = start + name.length;
+    }
+    mentionSuggestions.style.display = 'none';
+    chatInput.focus();
+  }
+});
+
 // 2. Listen for new chat messages (last 50), append them in order
 const CHAT_MESSAGE_LIMIT = 50;
 const MAX_CHAT_LENGTH = 200;
@@ -685,17 +782,23 @@ chatRef
   .limitToLast(CHAT_MESSAGE_LIMIT)
   .on('child_added', snap => {
     const { user, text, ts } = snap.val();
+    const safeUser = sanitizeUsername(user);
+    allUsers.add(safeUser);
     const msgEl = document.createElement('div');
     const dateObj = new Date(ts);
     const date = dateObj.toLocaleDateString();
     const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    // Append the message immediately to preserve order, then replace
-    // any emote codes asynchronously once they are resolved.
-    msgEl.innerHTML = `[${date} ${time}] ${user}: ${escapeHTML(text)}`;
+    function escapeRegex(s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\$&');
+    }
+    const mentionRegex = new RegExp('@' + escapeRegex(username) + '\b', 'gi');
+    const initial = escapeHTML(text).replace(mentionRegex, '<span class="mention-highlight">$&</span>');
+    msgEl.innerHTML = `[${date} ${time}] ${user}: ${initial}`;
     messagesEl.appendChild(msgEl);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     emoteHTML(text).then(processed => {
-      msgEl.innerHTML = `[${date} ${time}] ${user}: ${processed}`;
+      const final = processed.replace(mentionRegex, '<span class="mention-highlight">$&</span>');
+      msgEl.innerHTML = `[${date} ${time}] ${user}: ${final}`;
     }).catch(() => {
       // If emote lookup fails, keep the plain text message.
     });
@@ -712,6 +815,7 @@ chatForm.addEventListener('submit', e => {
     ts: firebase.database.ServerValue.TIMESTAMP
   });
   chatInput.value = '';
+  mentionSuggestions.style.display = 'none';
 });
 
   // Start spawning golden gubs
@@ -918,8 +1022,9 @@ const adminUser     = document.getElementById('adminUsername');
 const adminScore    = document.getElementById('adminScore');
 const adminUpdate   = document.getElementById('adminUpdate');
 const adminDelete   = document.getElementById('adminDelete');
+const ADMINS        = ['figgy', 'harupi'];
 
-if (username.toLowerCase() === 'figgy') {
+if (ADMINS.includes(username.toLowerCase())) {
   adminBtn.style.display = 'block';
 }
 
@@ -1243,18 +1348,6 @@ chaosBtn.addEventListener('click', () => {
     styleEl.textContent = `@keyframes flash{0%{background:#111}25%{background:#ff0}50%{background:#0ff}75%{background:#f0f}100%{background:#111}}@keyframes spinmove{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}`;
     document.head.appendChild(styleEl);
   });
-  </script>
-  <script>
-    // Ensure persisted username remains sanitized
-    window.addEventListener('DOMContentLoaded', () => {
-      const stored = localStorage.getItem('gubUser');
-      if (stored) {
-        const safe = sanitizeUsername(stored);
-        if (safe !== stored) {
-          localStorage.setItem('gubUser', safe);
-        }
-      }
-    });
   </script>
   <div id="feedbackModal">
     <textarea id="feedbackInput" placeholder="Your suggestion (max 200 chars)" maxlength="200"></textarea>
