@@ -196,7 +196,7 @@
   font-size: 12px;
   line-height: 1;
 }
-    #discordBtn {
+#discordBtn {
   background: #7289da;
   color: white;
   border: none;
@@ -206,10 +206,46 @@
   font-size: 14px;
   cursor: pointer;
   text-decoration: none;
-      
+
 }
 #discordBtn:hover {
   background: #5b6eae;
+}
+
+#feedbackBtn {
+  background: #ffa500;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+}
+#feedbackBtn:hover {
+  background: #cc8400;
+}
+
+#feedbackModal {
+  position: fixed;
+  bottom: 60px;
+  right: 10px;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  font-family: sans-serif;
+  display: none;
+  z-index: 10000;
+  width: 260px;
+}
+#feedbackModal textarea {
+  width: 100%;
+  height: 80px;
+}
+#feedbackModal button {
+  margin-top: 6px;
+  float: right;
 }
 
     #chat {
@@ -985,8 +1021,30 @@ shopRef.once('value').then(snapshot => {
 });
     // passive income handled via a single interval
     // ──────────────────────────────────────────────────────────────────────
-      
-    }).catch(err => console.error('Auth Error', err));
+
+  // Feedback submission
+  const feedbackBtn = document.getElementById('feedbackBtn');
+  const feedbackModal = document.getElementById('feedbackModal');
+  const feedbackInput = document.getElementById('feedbackInput');
+  const feedbackSubmit = document.getElementById('feedbackSubmit');
+
+  feedbackBtn.addEventListener('click', () => {
+    feedbackModal.style.display = feedbackModal.style.display === 'block' ? 'none' : 'block';
+  });
+
+  feedbackSubmit.addEventListener('click', () => {
+    const text = feedbackInput.value.trim();
+    if (!text) return;
+    db.ref('feedback').push({
+      user: username,
+      text,
+      ts: Date.now()
+    });
+    feedbackInput.value = '';
+    feedbackModal.style.display = 'none';
+  });
+
+}).catch(err => console.error('Auth Error', err));
 
     // --- Game Logic & Controls (unchanged) ---
     const highImages = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg','floater9.jpg','floater10.jpg','floater11.jpg','floater12.jpg','floater13.jpg','floater14.jpg','floater15.jpg','floater16.jpg','floater17.png','floater18.jpg'];
@@ -1168,8 +1226,13 @@ chaosBtn.addEventListener('click', () => {
       }
     });
   </script>
+  <div id="feedbackModal">
+    <textarea id="feedbackInput" placeholder="Your suggestion"></textarea>
+    <button id="feedbackSubmit">Send</button>
+  </div>
   <div id="discordWrapper">
     <span id="versionNumber">v0.1.3</span>
+    <button id="feedbackBtn">Feedback</button>
     <a id="discordBtn" href="https://discord.gg/nutpit" target="_blank" rel="noopener">Discord</a>
   </div>
 </body>

@@ -58,6 +58,27 @@
         }
       }
     },
+    "feedback": {
+      ".read": true,
+      "$id": {
+        ".write": "auth != null && newData.hasChildren(['user','text','ts'])",
+        "user": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "ts": {
+          ".validate": "newData.isNumber()"
+        },
+        "votes": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.val() == 1 || newData.val() == -1 || newData.val() == null"
+          }
+        }
+      }
+    },
     "config": {
       ".read": true,
       ".write": false
