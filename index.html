@@ -623,7 +623,7 @@ function scheduleNextGolden(initial = false) {
       const goldenCounterEl = document.getElementById('golden-counter');
 
       function renderCounter() {
-        goldenCounterEl.textContent = 'Gubs: ' + Math.floor(displayedCount);
+        goldenCounterEl.textContent = 'Gubs: ' + abbreviateNumber(Math.floor(displayedCount));
       }
 
       function gainGubs(amount) {
