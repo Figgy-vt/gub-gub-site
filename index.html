@@ -667,17 +667,20 @@ let popTimeout;
     ];
     const shopRef = db.ref(`shop/${uid}`);
     const owned = { passiveMaker:0, guberator:0, gubmill:0, gubsolar:0, gubfactory:0, gubhydro:0, gubnuclear:0 };
-    let passiveInterval = null;
+
+    // Continuous passive income ticker so purchasing items doesn't pause income
+    const PASSIVE_TICK_MS = 100; // update counter 10x per second for responsiveness
+    let passiveRatePerSec = 0;
+
+    setInterval(() => {
+      if (passiveRatePerSec > 0) {
+        gainGubs(passiveRatePerSec * (PASSIVE_TICK_MS / 1000));
+      }
+    }, PASSIVE_TICK_MS);
 
     function updatePassiveIncome() {
-      if (passiveInterval) clearInterval(passiveInterval);
       const perMinuteTotal = shopItems.reduce((sum, item) => sum + owned[item.id] * item.rate, 0);
-      if (perMinuteTotal > 0) {
-        const increment = perMinuteTotal / 60;
-        passiveInterval = setInterval(() => {
-          gainGubs(increment);
-        }, 1000);
-      }
+      passiveRatePerSec = perMinuteTotal / 60;
     }
 
 const shopBtn       = document.getElementById('shopBtn');
