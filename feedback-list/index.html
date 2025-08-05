@@ -41,7 +41,7 @@
       const db = firebase.database();
       const uid = firebase.auth().currentUser.uid;
       function sanitizeUsername(name) {
-        return (name || '').replace(/[^A-Za-z0-9_]/g, '').slice(0,20);
+        return (name || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0,20);
       }
         const username = sanitizeUsername(localStorage.getItem('gubUser')) || 'Anon';
         const listEl = document.getElementById('list');

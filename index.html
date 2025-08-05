@@ -497,7 +497,7 @@ specialStyle.textContent = `
 document.head.appendChild(specialStyle);
     // Sanitize usernames (letters, numbers, underscore; max 20 chars)
     function sanitizeUsername(name) {
-      return (name || '').replace(/[^A-Za-z0-9_]/g, '').slice(0, 20);
+      return (name || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20);
     }
 
     // 1. Prompt & sanitize username
