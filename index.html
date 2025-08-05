@@ -1022,11 +1022,16 @@ const adminUser     = document.getElementById('adminUsername');
 const adminScore    = document.getElementById('adminScore');
 const adminUpdate   = document.getElementById('adminUpdate');
 const adminDelete   = document.getElementById('adminDelete');
-const ADMINS        = ['figgy', 'harupi'];
 
-if (ADMINS.includes(username.toLowerCase())) {
-  adminBtn.style.display = 'block';
-}
+const ADMIN_UIDS = ['sGd1ZHR1nvMKKCw9A1O5bwtbFD23', 'YHtvs4JyAtS3SUtNAUJuPMm3ac22'];
+db.ref('admins/' + uid).once('value').then(snap => {
+  if (!snap.exists() && ADMIN_UIDS.includes(uid)) {
+    db.ref('admins/' + uid).set(true);
+    adminBtn.style.display = 'block';
+  } else if (snap.val()) {
+    adminBtn.style.display = 'block';
+  }
+});
 
 adminBtn.addEventListener('click', () => {
   adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
