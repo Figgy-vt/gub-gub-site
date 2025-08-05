@@ -301,7 +301,7 @@
   vertical-align: middle;
 }
 .mention-highlight {
-  background: #fff;
+  background: #ff0;
   color: #000;
   font-weight: bold;
   padding: 0 2px;
@@ -792,10 +792,7 @@ chatRef
     const dateObj = new Date(ts);
     const date = dateObj.toLocaleDateString();
     const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    function escapeRegex(s) {
-      return s.replace(/[.*+?^${}()|[\]\\]/g, '\$&');
-    }
-    const mentionRegex = new RegExp('@' + escapeRegex(username) + '\b', 'gi');
+    const mentionRegex = new RegExp(`@${username}\\b`, 'gi');
     const initial = escapeHTML(text).replace(mentionRegex, '<span class="mention-highlight">$&</span>');
     msgEl.innerHTML = `[${date} ${time}] ${user}: ${initial}`;
     messagesEl.appendChild(msgEl);
