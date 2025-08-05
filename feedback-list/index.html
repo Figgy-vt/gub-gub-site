@@ -43,13 +43,22 @@
       function sanitizeUsername(name) {
         return (name || '').replace(/[^A-Za-z0-9_]/g, '').slice(0,20);
       }
-      const username = sanitizeUsername(localStorage.getItem('gubUser')) || 'Anon';
-      const isAdmin = ['figgy', 'harupi'].includes(username.toLowerCase());
-      const listEl = document.getElementById('list');
-      const feedbackRef = db.ref('feedback');
+        const username = sanitizeUsername(localStorage.getItem('gubUser')) || 'Anon';
+        const listEl = document.getElementById('list');
+        const feedbackRef = db.ref('feedback');
+        let isAdmin = false;
 
-      feedbackRef.on('child_added', snap => render(snap.key, snap.val()));
-      feedbackRef.on('child_changed', snap => render(snap.key, snap.val()));
+        const ADMIN_UIDS = ['sGd1ZHR1nvMKKCw9A1O5bwtbFD23', 'YHtvs4JyAtS3SUtNAUJuPMm3ac22'];
+        db.ref('admins/' + uid).once('value').then(snap => {
+          if (!snap.exists() && ADMIN_UIDS.includes(uid)) {
+            db.ref('admins/' + uid).set(true);
+            isAdmin = true;
+          } else {
+            isAdmin = !!snap.val();
+          }
+          feedbackRef.on('child_added', snap => render(snap.key, snap.val()));
+          feedbackRef.on('child_changed', snap => render(snap.key, snap.val()));
+        });
 
       function render(id, data) {
         let div = document.getElementById('fb-' + id);
