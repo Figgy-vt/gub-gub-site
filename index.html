@@ -987,7 +987,7 @@ let popTimeout;
       { id: 'gubai',        name: 'GUB AI', caption: '(be careful of gubnet...)', baseCost: 25000000, rate: 15000000 },
       { id: 'gubclone',     name: 'Gub Cloning Facility',    baseCost: 125000000,  rate: 75000000 },
       { id: 'gubspace',     name: 'Gub Space Program',       baseCost: 625000000,  rate: 375000000 },
-      { id: 'intergalatic', name: 'Intergalatic Gub',        baseCost: 3125000000, rate: 1875000000 }
+      { id: 'intergalactic', name: 'Intergalactic Gub',        baseCost: 3125000000, rate: 1875000000 }
     ];
     const shopRef = db.ref(`shop_v2/${uid}`);
     const owned = {
@@ -1002,7 +1002,7 @@ let popTimeout;
       gubai:0,
       gubclone:0,
       gubspace:0,
-      intergalatic:0
+      intergalactic:0
     };
 
     // Continuous passive income ticker so purchasing items doesn't pause income
