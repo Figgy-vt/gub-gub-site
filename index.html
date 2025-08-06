@@ -414,7 +414,7 @@
   <canvas id="visualizer"></canvas>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
-const CLIENT_VERSION = '0.1.3';
+const CLIENT_VERSION = '0.1.4';
 document.getElementById('versionNumber').textContent = `v${CLIENT_VERSION}`;
 const isMobile = window.innerWidth < 768;
 const NUM_FLOATERS = isMobile ? 5 : 20;
@@ -534,10 +534,10 @@ firebase.auth().signInAnonymously().then(() => {
     // Only force a reload when the server has a version and it differs from the client
     if (serverVersion && serverVersion !== CLIENT_VERSION) {
       const warn = document.createElement('div');
-      warn.textContent = 'Site updated - reloading...';
+      warn.textContent = 'Client outdated – refreshing in 5s...';
       warn.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;font-size:24px;padding:20px;z-index:100000;';
       document.body.appendChild(warn);
-      setTimeout(() => location.reload(), 2000);
+      setTimeout(() => location.reload(), 5000);
 
     }
   });
