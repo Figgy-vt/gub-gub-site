@@ -842,7 +842,7 @@ chatForm.addEventListener('submit', e => {
   scheduleNextGolden();
 
       function getGoldenGubReward() {
-        return Math.max(15, Math.floor(globalCount * 0.04));
+        return Math.max(10, Math.floor(globalCount * 0.03));
       }
 
       // Spawn golden gub and handle clicks
@@ -866,7 +866,7 @@ chatForm.addEventListener('submit', e => {
           el.style.pointerEvents = 'none';
           el.style.opacity = 0;
           setTimeout(() => { el.remove(); scheduleNextGolden(); }, 3000);
-        }, 30000);
+        }, 60000);
         el.addEventListener('click', (e) => {
           clearTimeout(timeout);
           const reward = getGoldenGubReward();
@@ -951,7 +951,7 @@ function spawnSpecialGub() {
     container.style.pointerEvents = 'none';
     container.style.opacity = 0;
     setTimeout(() => { container.remove(); scheduleNextGolden(); }, 3000);
-  }, 30000);
+  }, 60000);
 
   // 5. click handler triggers feral mode
   container.addEventListener('click', (e) => {
@@ -974,8 +974,8 @@ function spawnSpecialGub() {
 
       // ─── UPDATED SCHEDULER ──────────────────
 function scheduleNextGolden() {
-  const min = 120000; // 2 minutes
-  const max = 600000; // 10 minutes
+  const min = 300000; // 5 minutes
+  const max = 1500000; // 25 minutes
   setTimeout(() => {
     if (Math.random() < 0.05) spawnSpecialGub();
     else                      spawnGolden();
