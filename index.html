@@ -197,10 +197,6 @@
       text-align: right;
       line-height: 1.2;
     }
-    #gubRate {
-      font-size: 14px;
-      font-weight: normal;
-    }
     #leaderboard { background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; }
 #discordWrapper {
   position: absolute;
@@ -411,8 +407,7 @@
 />
   </div>
   <div id="golden-counter">
-    <div id="gubTotal">Gubs: 0</div>
-    <div id="gubRate">Gub/s: 0</div>
+    <div id="gubTotal">Gubs: 0 (0gub/s)</div>
   </div>
   <div id="bottom-ui">
     <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
@@ -988,12 +983,11 @@ function scheduleNextGolden() {
 }
       // Elements for displaying totals and rate
       const gubTotalEl = document.getElementById('gubTotal');
-      const gubRateEl  = document.getElementById('gubRate');
       let passiveRatePerSec = 0;
 
       function renderCounter() {
-        gubTotalEl.textContent = 'Gubs: ' + abbreviateNumber(Math.floor(displayedCount));
-        gubRateEl.textContent  = 'Gub/s: ' + abbreviateNumber(passiveRatePerSec * gubRateMultiplier);
+        const rate = abbreviateNumber(passiveRatePerSec * gubRateMultiplier);
+        gubTotalEl.textContent = 'Gubs: ' + abbreviateNumber(Math.floor(displayedCount)) + ' (' + rate + 'gub/s)';
       }
 
       function gainGubs(amount) {
