@@ -826,7 +826,7 @@ chatForm.addEventListener('submit', e => {
 });
 
   // Start spawning golden gubs
-  scheduleNextGolden(true);
+  scheduleNextGolden();
 
       function getGoldenGubReward() {
         return Math.max(15, Math.floor(globalCount * 0.04));
@@ -946,10 +946,11 @@ function spawnSpecialGub() {
     const plusOne = document.createElement('div');
     plusOne.textContent = 'FERAL GUB MODE!';
     plusOne.className = 'plus-one';
+    plusOne.style.animationDuration = '2s';
     plusOne.style.left = `${e.clientX}px`;
     plusOne.style.top = `${e.clientY}px`;
     document.body.appendChild(plusOne);
-    setTimeout(() => plusOne.remove(), 1000);
+    setTimeout(() => plusOne.remove(), 2000);
 
     container.remove();
     scheduleNextGolden();
@@ -957,9 +958,9 @@ function spawnSpecialGub() {
 }
 
       // ─── UPDATED SCHEDULER ──────────────────
-function scheduleNextGolden(initial = false) {
-  const min = initial ? 3000 : 5000;
-  const max = initial ? 10000 : 15000;
+function scheduleNextGolden() {
+  const min = 120000; // 2 minutes
+  const max = 600000; // 10 minutes
   setTimeout(() => {
     if (Math.random() < 0.05) spawnSpecialGub();
     else                      spawnGolden();
@@ -1019,18 +1020,18 @@ let popTimeout;
  // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
     const COST_MULTIPLIER = 1.15; // smoother exponential cost scaling factor
     const shopItems = [
-      { id: 'passiveMaker', name: 'The Gub', baseCost: 100, rate: 60 },
-      { id: 'guberator',     name: 'Guberator', baseCost: 500, rate: 300 },
-      { id: 'gubmill',       name: 'Gubmill',   baseCost: 2000, rate: 1200 },
-      { id: 'gubsolar',    name: 'Solar Gub Panels', baseCost: 10000, rate: 6000 },
-      { id: 'gubfactory',       name: 'Gubactory',    baseCost: 50000, rate: 30000 },
-      { id: 'gubhydro',      name: 'Hydro Gub Plant',   baseCost: 250000, rate: 150000 },
-      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    baseCost: 1000000, rate: 600000 },
-      { id: 'gubquantum',    name: 'Quantum Gub Computer', baseCost: 5000000, rate: 3000000 },
-      { id: 'gubai',        name: 'GUB AI', caption: '(be careful of gubnet...)', baseCost: 25000000, rate: 15000000 },
-      { id: 'gubclone',     name: 'Gub Cloning Facility',    baseCost: 125000000,  rate: 75000000 },
-      { id: 'gubspace',     name: 'Gub Space Program',       baseCost: 625000000,  rate: 375000000 },
-      { id: 'intergalactic', name: 'Intergalactic Gub',        baseCost: 3125000000, rate: 1875000000 }
+      { id: 'passiveMaker', name: 'The Gub', baseCost: 100, rate: 1 },
+      { id: 'guberator',     name: 'Guberator', baseCost: 500, rate: 5 },
+      { id: 'gubmill',       name: 'Gubmill',   baseCost: 2000, rate: 20 },
+      { id: 'gubsolar',    name: 'Solar Gub Panels', baseCost: 10000, rate: 100 },
+      { id: 'gubfactory',       name: 'Gubactory',    baseCost: 50000, rate: 500 },
+      { id: 'gubhydro',      name: 'Hydro Gub Plant',   baseCost: 250000, rate: 2500 },
+      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    baseCost: 1000000, rate: 10000 },
+      { id: 'gubquantum',    name: 'Quantum Gub Computer', baseCost: 5000000, rate: 50000 },
+      { id: 'gubai',        name: 'GUB AI', caption: '(be careful of gubnet...)', baseCost: 25000000, rate: 250000 },
+      { id: 'gubclone',     name: 'Gub Cloning Facility',    baseCost: 125000000,  rate: 1250000 },
+      { id: 'gubspace',     name: 'Gub Space Program',       baseCost: 625000000,  rate: 6250000 },
+      { id: 'intergalactic', name: 'Intergalactic Gub',        baseCost: 3125000000, rate: 31250000 }
     ];
     const shopRef = db.ref(`shop_v2/${uid}`);
     const owned = {
@@ -1059,8 +1060,8 @@ let popTimeout;
     }, PASSIVE_TICK_MS);
 
     function updatePassiveIncome() {
-      const perMinuteTotal = shopItems.reduce((sum, item) => sum + owned[item.id] * item.rate, 0);
-      passiveRatePerSec = perMinuteTotal / 60;
+      const perSecondTotal = shopItems.reduce((sum, item) => sum + owned[item.id] * item.rate, 0);
+      passiveRatePerSec = perSecondTotal;
     }
 
 const shopBtn       = document.getElementById('shopBtn');
@@ -1115,7 +1116,7 @@ shopItems.forEach(item => {
   div.innerHTML = `
     <strong>${item.name}</strong>${item.caption ? ` <span style="color:red;font-size:0.8em;">${item.caption}</span>` : ''}<br>
     Cost: <span id="cost-${item.id}"></span> Gubs<br>
-    Rate: ${abbreviateNumber(item.rate)} Gubs/min<br>
+    Rate: ${abbreviateNumber(item.rate)} Gub/s<br>
     Owned: <span id="owned-${item.id}">0</span><br>
     <button id="buy-${item.id}">Buy</button>
     <button id="buy-${item.id}-x10">x10</button>
