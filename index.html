@@ -185,7 +185,22 @@
   font-size: 14px;
 }
     #twitchPlayer  { position:absolute; top:50px; right:10px; width:500px; height:300px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
-    #golden-counter { position:absolute; top:10px; right:10px; z-index:10000; color:white; font-family:sans-serif; font-size:20px; font-weight:bold; }
+    #golden-counter {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10000;
+      color: white;
+      font-family: sans-serif;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: right;
+      line-height: 1.2;
+    }
+    #gubRate {
+      font-size: 14px;
+      font-weight: normal;
+    }
     #leaderboard { background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; }
 #discordWrapper {
   position: absolute;
@@ -395,7 +410,10 @@
   style="width:100%; margin-top:4px;"
 />
   </div>
-  <div id="golden-counter">Gubs: 0</div>
+  <div id="golden-counter">
+    <div id="gubTotal">Gubs: 0</div>
+    <div id="gubRate">Gub/s: 0</div>
+  </div>
   <div id="bottom-ui">
     <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
     <div id="chat">
@@ -418,7 +436,7 @@
   <canvas id="visualizer"></canvas>
   <script>
 window.addEventListener('DOMContentLoaded', () => {
-const CLIENT_VERSION = '0.1.5';
+const CLIENT_VERSION = '0.1.6';
 document.getElementById('versionNumber').textContent = `v${CLIENT_VERSION}`;
 const isMobile = window.innerWidth < 768;
 const NUM_FLOATERS = isMobile ? 5 : 20;
@@ -877,11 +895,13 @@ chatForm.addEventListener('submit', e => {
 function activateFeralGubMode() {
   const duration = 30000 + Math.random() * 90000;
   gubRateMultiplier = 10;
+  renderCounter();
   mainGub.classList.add('feral-glow');
   clearTimeout(feralTimeout);
   feralTimeout = setTimeout(() => {
     gubRateMultiplier = 1;
     mainGub.classList.remove('feral-glow');
+    renderCounter();
   }, duration);
 }
 
@@ -966,11 +986,14 @@ function scheduleNextGolden() {
     else                      spawnGolden();
   }, min + Math.random() * (max - min));
 }
-      // Expose goldenCounterEl for spawn
-      const goldenCounterEl = document.getElementById('golden-counter');
+      // Elements for displaying totals and rate
+      const gubTotalEl = document.getElementById('gubTotal');
+      const gubRateEl  = document.getElementById('gubRate');
+      let passiveRatePerSec = 0;
 
       function renderCounter() {
-        goldenCounterEl.textContent = 'Gubs: ' + abbreviateNumber(Math.floor(displayedCount));
+        gubTotalEl.textContent = 'Gubs: ' + abbreviateNumber(Math.floor(displayedCount));
+        gubRateEl.textContent  = 'Gub/s: ' + abbreviateNumber(passiveRatePerSec * gubRateMultiplier);
       }
 
       function gainGubs(amount) {
@@ -1051,7 +1074,6 @@ let popTimeout;
 
     // Continuous passive income ticker so purchasing items doesn't pause income
     const PASSIVE_TICK_MS = 100; // update counter 10x per second for responsiveness
-    let passiveRatePerSec = 0;
 
     setInterval(() => {
       if (passiveRatePerSec > 0) {
@@ -1062,6 +1084,7 @@ let popTimeout;
     function updatePassiveIncome() {
       const perSecondTotal = shopItems.reduce((sum, item) => sum + owned[item.id] * item.rate, 0);
       passiveRatePerSec = perSecondTotal;
+      renderCounter();
     }
 
 const shopBtn       = document.getElementById('shopBtn');
@@ -1413,7 +1436,7 @@ chaosBtn.addEventListener('click', () => {
     <button id="feedbackSubmit">Send</button>
   </div>
   <div id="discordWrapper">
-    <span id="versionNumber">v0.1.5</span>
+    <span id="versionNumber">v0.1.6</span>
     <button id="feedbackBtn">Feedback</button>
     <a id="discordBtn" href="https://discord.gg/nutpit" target="_blank" rel="noopener">Discord</a>
   </div>
