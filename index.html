@@ -984,7 +984,10 @@ let popTimeout;
       { id: 'gubhydro',      name: 'Hydro Gub Plant',   baseCost: 250000, rate: 150000 },
       { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    baseCost: 1000000, rate: 600000 },
       { id: 'gubquantum',    name: 'Quantum Gub Computer', baseCost: 5000000, rate: 3000000 },
-      { id: 'gubai',        name: 'GUB AI', caption: '(be careful of gubnet...)', baseCost: 25000000, rate: 15000000 }
+      { id: 'gubai',        name: 'GUB AI', caption: '(be careful of gubnet...)', baseCost: 25000000, rate: 15000000 },
+      { id: 'gubclone',     name: 'Gub Cloning Facility',    baseCost: 125000000,  rate: 75000000 },
+      { id: 'gubspace',     name: 'Gub Space Program',       baseCost: 625000000,  rate: 375000000 },
+      { id: 'intergalatic', name: 'Intergalatic Gub',        baseCost: 3125000000, rate: 1875000000 }
     ];
     const shopRef = db.ref(`shop_v2/${uid}`);
     const owned = {
@@ -996,7 +999,10 @@ let popTimeout;
       gubhydro:0,
       gubnuclear:0,
       gubquantum:0,
-      gubai:0
+      gubai:0,
+      gubclone:0,
+      gubspace:0,
+      intergalatic:0
     };
 
     // Continuous passive income ticker so purchasing items doesn't pause income
