@@ -280,7 +280,7 @@
 }
 
 #chat {
-  width: 400px;
+  width: 420px;
   max-height: 200px;   /* expanded for better readability */
   border-radius: 8px;
   background: rgba(0,0,0,0.6);
@@ -297,6 +297,9 @@
   overflow-y: auto;
   margin-bottom: 8px;
   font-size: 14px;
+  padding-right: 12px;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
 }
 #chatForm {
   display: flex;
@@ -819,6 +822,16 @@ chatRef
     emoteHTML(text).then(processed => {
       const final = processed.replace(mentionRegex, '<span class="mention-highlight">$&</span>');
       msgEl.innerHTML = `[${date} ${time}] ${user}: ${final}`;
+      msgEl.querySelectorAll('img').forEach(img => {
+        if (img.complete) {
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        } else {
+          img.addEventListener('load', () => {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          });
+        }
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }).catch(() => {
       // If emote lookup fails, keep the plain text message.
     });
