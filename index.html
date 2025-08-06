@@ -76,6 +76,10 @@
 #main-gub {
   cursor: pointer; /* show it’s clickable */
 }
+
+.feral-glow {
+  filter: drop-shadow(0 0 10px gold) drop-shadow(0 0 20px gold);
+}
     @media (max-width: 768px) {
   #discordWrapper {
     bottom: 170px !important;   /* move it up above the chat */
@@ -413,8 +417,8 @@
   <div id="clickMe">click me</div>
   <canvas id="visualizer"></canvas>
   <script>
-  window.addEventListener('DOMContentLoaded', () => {
-const CLIENT_VERSION = '0.1.4';
+window.addEventListener('DOMContentLoaded', () => {
+const CLIENT_VERSION = '0.1.5';
 document.getElementById('versionNumber').textContent = `v${CLIENT_VERSION}`;
 const isMobile = window.innerWidth < 768;
 const NUM_FLOATERS = isMobile ? 5 : 20;
@@ -586,6 +590,8 @@ firebase.auth().signInAnonymously().then(() => {
   // ─────────────────────────────────────────────────────────────────
 
       let sessionCount = 0, globalCount = 0, displayedCount = 0;
+      let gubRateMultiplier = 1;
+      let feralTimeout;
       let scoreDirty = false;
       let lastSentScore = 0;
       function queueScoreUpdate(){ scoreDirty = true; }
@@ -821,6 +827,11 @@ chatForm.addEventListener('submit', e => {
 
   // Start spawning golden gubs
   scheduleNextGolden(true);
+
+      function getGoldenGubReward() {
+        return Math.max(15, Math.floor(globalCount * 0.04));
+      }
+
       // Spawn golden gub and handle clicks
       function spawnGolden() {
         const el = document.createElement('img');
@@ -834,13 +845,24 @@ chatForm.addEventListener('submit', e => {
         el.style.filter = 'sepia(1) hue-rotate(20deg) saturate(5) brightness(1.2)';
         el.style.border = '2px solid white';
         el.style.pointerEvents = 'auto';
+        el.style.opacity = 0;
+        el.style.transition = 'opacity 3s';
         document.body.appendChild(el);
+        requestAnimationFrame(() => { el.style.opacity = 1; });
+        const timeout = setTimeout(() => {
+          el.style.pointerEvents = 'none';
+          el.style.opacity = 0;
+          setTimeout(() => { el.remove(); scheduleNextGolden(); }, 3000);
+        }, 30000);
         el.addEventListener('click', (e) => {
-          sessionCount +=15;
-          gainGubs(15);
+          clearTimeout(timeout);
+          const reward = getGoldenGubReward();
+          const actualReward = reward * gubRateMultiplier;
+          sessionCount += actualReward;
+          gainGubs(reward);
 
           const plusOne = document.createElement('div');
-          plusOne.textContent = '+15';
+          plusOne.textContent = '+' + abbreviateNumber(actualReward);
           plusOne.className = 'plus-one';
           plusOne.style.left = `${e.clientX}px`;
           plusOne.style.top = `${e.clientY}px`;
@@ -852,6 +874,17 @@ chatForm.addEventListener('submit', e => {
         });
       }
       // ─── SPECIAL GUB SPAWNER ───────────────────────────────────────────────
+function activateFeralGubMode() {
+  const duration = 30000 + Math.random() * 90000;
+  gubRateMultiplier = 10;
+  mainGub.classList.add('feral-glow');
+  clearTimeout(feralTimeout);
+  feralTimeout = setTimeout(() => {
+    gubRateMultiplier = 1;
+    mainGub.classList.remove('feral-glow');
+  }, duration);
+}
+
 function spawnSpecialGub() {
   // 1. pick the exact same random image
   const imgSrc = images[Math.floor(Math.random() * images.length)];
@@ -895,15 +928,23 @@ function spawnSpecialGub() {
   });
   container.appendChild(label);
 
+  container.style.opacity = 0;
+  container.style.transition = 'opacity 3s';
   document.body.appendChild(container);
+  requestAnimationFrame(() => { container.style.opacity = 1; });
+  const timeout = setTimeout(() => {
+    container.style.pointerEvents = 'none';
+    container.style.opacity = 0;
+    setTimeout(() => { container.remove(); scheduleNextGolden(); }, 3000);
+  }, 30000);
 
-  // 5. click handler awards +50
+  // 5. click handler triggers feral mode
   container.addEventListener('click', (e) => {
-    sessionCount += 50;
-    gainGubs(50);
+    clearTimeout(timeout);
+    activateFeralGubMode();
 
     const plusOne = document.createElement('div');
-    plusOne.textContent = '+50';
+    plusOne.textContent = 'FERAL GUB MODE!';
     plusOne.className = 'plus-one';
     plusOne.style.left = `${e.clientX}px`;
     plusOne.style.top = `${e.clientY}px`;
@@ -920,8 +961,8 @@ function scheduleNextGolden(initial = false) {
   const min = initial ? 3000 : 5000;
   const max = initial ? 10000 : 15000;
   setTimeout(() => {
-    if (Math.random() < 0.2) spawnSpecialGub();
-    else                 spawnGolden();
+    if (Math.random() < 0.05) spawnSpecialGub();
+    else                      spawnGolden();
   }, min + Math.random() * (max - min));
 }
       // Expose goldenCounterEl for spawn
@@ -932,6 +973,7 @@ function scheduleNextGolden(initial = false) {
       }
 
       function gainGubs(amount) {
+        amount *= gubRateMultiplier;
         globalCount += amount;
         displayedCount += amount;
         renderCounter();
@@ -955,11 +997,12 @@ let popTimeout;
       mainGub.addEventListener('click', (e) => {
         clickMe.style.display = 'none';
         sessionStorage.setItem('gubClicked', 'true');
-        sessionCount++;
+        const clickGain = gubRateMultiplier;
+        sessionCount += clickGain;
         gainGubs(1);
 
         const plusOne = document.createElement('div');
-        plusOne.textContent = '+1';
+        plusOne.textContent = '+' + abbreviateNumber(clickGain);
         plusOne.className = 'plus-one';
         plusOne.style.left = `${e.clientX}px`;
         plusOne.style.top = `${e.clientY}px`;
@@ -1369,7 +1412,7 @@ chaosBtn.addEventListener('click', () => {
     <button id="feedbackSubmit">Send</button>
   </div>
   <div id="discordWrapper">
-    <span id="versionNumber">v0.1.4</span>
+    <span id="versionNumber">v0.1.5</span>
     <button id="feedbackBtn">Feedback</button>
     <a id="discordBtn" href="https://discord.gg/nutpit" target="_blank" rel="noopener">Discord</a>
   </div>
