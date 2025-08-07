@@ -484,6 +484,9 @@ chaosAudio.volume = isNaN(stored) ? 0.5 : stored;
     window.addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume();
       }, { once: true });
+    window.addEventListener('keydown', () => {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      }, { once: true });
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray    = new Uint8Array(bufferLength);
