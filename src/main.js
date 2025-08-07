@@ -833,7 +833,16 @@ window.addEventListener("DOMContentLoaded", () => {
   ];
   let speedMultiplier = 2,
     numFloaters = NUM_FLOATERS;
+  let movementPaused = false;
   const floaters = [];
+
+  speedMultiplier = parseInt(localStorage.getItem("gubSpeed")) || 2;
+  numFloaters = parseInt(localStorage.getItem("gubImages")) || NUM_FLOATERS;
+  movementPaused = localStorage.getItem("gubPaused") === "true";
+  let storedSpeed = speedMultiplier;
+  if (movementPaused) {
+    speedMultiplier = 0;
+  }
   function createEntity(isText = false) {
     const elem = document.createElement("div");
     const size = 80 + Math.random() * 320;
@@ -879,7 +888,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
     requestAnimationFrame(animate);
   }
-  for (let i = 0; i < NUM_FLOATERS; i++) {
+  for (let i = 0; i < numFloaters; i++) {
     createEntity(false);
     createEntity(true);
   }
@@ -895,9 +904,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const imgVal = document.getElementById("imgVal");
   const moveToggle = document.getElementById("moveToggle");
   const qualityBtn = document.getElementById("qualityBtn");
-
-  let movementPaused = false;
-  let storedSpeed = speedMultiplier;
   qualityBtn.textContent = useHighQuality
     ? "High Quality: On"
     : "High Quality: Off";
@@ -927,8 +933,10 @@ window.addEventListener("DOMContentLoaded", () => {
   function adjustSpeed(d) {
     if (movementPaused) {
       storedSpeed = Math.max(1, storedSpeed + d);
+      localStorage.setItem("gubSpeed", storedSpeed);
     } else {
       speedMultiplier = Math.max(1, speedMultiplier + d);
+      localStorage.setItem("gubSpeed", speedMultiplier);
     }
     updateLabels();
   }
@@ -946,6 +954,7 @@ window.addEventListener("DOMContentLoaded", () => {
           removeEntity();
         }
       numFloaters = newVal;
+      localStorage.setItem("gubImages", numFloaters);
       updateLabels();
     }
   }
@@ -963,8 +972,14 @@ window.addEventListener("DOMContentLoaded", () => {
       moveToggle.textContent = "Pause Movement";
     }
     movementPaused = !movementPaused;
+    localStorage.setItem("gubPaused", movementPaused);
+    localStorage.setItem("gubSpeed", storedSpeed);
     updateLabels();
   };
+
+  if (movementPaused) {
+    moveToggle.textContent = "Resume Movement";
+  }
   updateLabels();
 
   // Twitch & Chaos Mode
