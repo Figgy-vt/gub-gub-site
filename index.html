@@ -824,6 +824,7 @@ mentionSuggestions.addEventListener('mousedown', e => {
 // 2. Listen for new chat messages (last 50), append them in order
 const CHAT_MESSAGE_LIMIT = 50;
 const MAX_CHAT_LENGTH = 200;
+let initialChatLoaded = false;
 chatRef
   .orderByChild('ts')
   .limitToLast(CHAT_MESSAGE_LIMIT)
@@ -842,7 +843,7 @@ chatRef
     msgEl.innerHTML = `[${date} ${time}] ${user}: ${initial}`;
     messagesEl.appendChild(msgEl);
     messagesEl.scrollTop = messagesEl.scrollHeight;
-    if (isMention && safeUser !== username) {
+    if (initialChatLoaded && isMention && safeUser !== username) {
       playMentionSound();
     }
     emoteHTML(text).then(processed => {
@@ -863,6 +864,10 @@ chatRef
       // If emote lookup fails, keep the plain text message.
     });
   });
+
+chatRef.once('value').then(() => {
+  initialChatLoaded = true;
+});
 
 // 3. Hook up the form so sending pushes a new message
 chatForm.addEventListener('submit', e => {
