@@ -1,539 +1,697 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>The Gub</title>
-  <meta name="description" content="Click da Gub" />
-  <meta property="og:type"        content="website" />
-  <meta property="og:url"         content="https://gub.cam/" />
-  <meta property="og:title"       content="The Gub" />
-  <meta property="og:description" content="click and pet the gub" />
-  <meta property="og:image"       content="https://gub.cam/gub_wicked.png" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>The Gub</title>
+    <meta name="description" content="Click da Gub" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gub.cam/" />
+    <meta property="og:title" content="The Gub" />
+    <meta property="og:description" content="click and pet the gub" />
+    <meta property="og:image" content="https://gub.cam/gub_wicked.png" />
 
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <style>
-    body { margin:0; overflow:hidden; background:#111; position:relative; height:100vh; width:100vw; }
-    #gub-wrapper { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
-    #main-gub { max-height:90vh; max-width:90vw; display:block; transform-origin:center; }
-    #clickMe {
-      position:absolute;
-      top:200px;
-      left:50%;
-      transform:translateX(-50%);
-      color:#fff;
-      font-family:sans-serif;
-      font-weight:bold;
-      font-size:3rem;
-      pointer-events:none;
-      display:none;
-      white-space:nowrap;
-      z-index:10001;
-    }
-
-    
-    #btnRow { position:absolute; top:10px; left:10px; display:flex; gap:5px; z-index:9999; }
-    #btnRow button { background:#fff; color:#000; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-family:sans-serif; padding:8px 16px; font-size:14px; }
-
-    
-    #perfMenu { position:absolute; top:50px; left:10px; z-index:9998; background:#222; color:#fff; border:1px solid #555; border-radius:6px; padding:8px; display:none; font-family:sans-serif; font-size:14px; }
-    #perfMenu button { margin:2px 4px; padding:4px 8px; border:none; border-radius:4px; background:#444; color:#fff; cursor:pointer; }
-
-    .rainbow-text { font-size:2rem; font-weight:bold; font-family:sans-serif; animation:rainbow 5s linear infinite; white-space:nowrap; position:absolute; pointer-events:none; z-index:2; }
-    .floater      { position:absolute; pointer-events:none; z-index:2; }
-    .floater img  { width:100%; height:100%; object-fit:contain; }
-
-    @keyframes rainbow {0%{color:red;}20%{color:orange;}40%{color:yellow;}60%{color:green;}80%{color:blue;}100%{color:violet;}}
-  @keyframes pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-.pop-effect {
-  animation: pop 0.15s ease-out both;
-}
-
-.plus-one {
-  position: absolute;
-  color: #fff;
-  font-family: sans-serif;
-  font-weight: bold;
-  font-size: 2.5rem;
-  pointer-events: none;
-  z-index: 10002;
-  transform: translate(-50%, -50%);
-  animation: fadeUp 1s ease-out forwards;
-}
-@keyframes fadeUp {
-  from { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
-  to   { opacity: 0; transform: translate(-50%, -50%) translateY(-20px); }
-}
-
-#main-gub {
-  cursor: pointer; /* show it’s clickable */
-}
-
-.feral-glow {
-  filter: drop-shadow(0 0 10px gold) drop-shadow(0 0 20px gold);
-}
-    @media (max-width: 768px) {
-  #discordWrapper {
-    bottom: 170px !important;   /* move it up above the chat */
-    right: 10px !important;     /* keep it flush to the right edge */
-  }
-  #golden-counter {
-    top: 60px !important; /* push it down under the btnRow (which sits at 10px + ~40px height) */
-  }
-}
- 
-#topRight {
-  position: absolute;
-  top: 40px;
-  right: 10px;
-  display: flex;
-  gap: 10px;
-  z-index: 10001;
-}
-#topRight button {
-  background: #fff;
-  color: #000;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 20px;
-  font-weight: bold;
-  font-family: sans-serif;
-  font-size: 16px;
-  cursor: pointer;
-}
-#adminBtn { display: none; }
-
-
-#shopPanel {
-  position: absolute;
-  top: 90px;
-  right: 10px;
-  display: none;
-  background: #222;
-  color: #fff;
-  padding: 8px;
-  border-radius: 6px;
-  z-index: 10001;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-}
-  #shopPanel h4 {
-  font-size: 2rem;    /* makes it roughly 32px tall */
-  font-weight: bold;  /* extra emphasis */
-  margin-top: 0;
-  margin-bottom: 0.5em;
-}
-
-#adminPanel {
-  position: absolute;
-  top: 90px;
-  right: 10px;
-  display: none;
-  background: #222;
-  color: #fff;
-  padding: 8px;
-  border-radius: 6px;
-  z-index: 10001;
-}
-#adminPanel h4 {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-top: 0;
-  margin-bottom: 0.5em;
-}
-#adminPanel input {
-  width: 150px;
-  margin-bottom: 4px;
-}
-
-
-    #visualizer {
-  position: fixed;
-  bottom: 0;
-  left: calc(50% + 280px);
-  transform: translateX(-50%);
-  width: 80vw;
-  height: 100px;
-  z-index: 5000;
-  pointer-events: none;
-}
-    
-#bottom-ui {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  z-index: 10000;
-  pointer-events: none;
-}
-
-#bottom-ui > * {
-  pointer-events: auto;
-}
-
-#online-users {
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-family: sans-serif;
-  font-size: 14px;
-}
-    #twitchPlayer  { position:absolute; top:50px; right:10px; width:500px; height:300px; z-index:9000; display:none; box-shadow:0 0 8px #000; border-radius:8px; overflow:hidden; }
-    #golden-counter {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 10000;
-      color: white;
-      font-family: sans-serif;
-      font-size: 20px;
-      font-weight: bold;
-      text-align: right;
-      line-height: 1.2;
-    }
-    #leaderboard { background:rgba(0,0,0,0.6); color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; }
-#discordWrapper {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  z-index: 10000;
-}
-    #versionNumber {
-  color: #fff;
-  font-family: sans-serif;
-  font-size: 12px;
-  line-height: 1;
-}
-#discordBtn {
-  background: #7289da;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-family: sans-serif;
-  font-size: 14px;
-  cursor: pointer;
-  text-decoration: none;
-
-}
-#discordBtn:hover {
-  background: #5b6eae;
-}
-
-#feedbackBtn {
-  background: #ffa500;
-  color: #000;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-family: sans-serif;
-  font-size: 14px;
-  cursor: pointer;
-}
-#feedbackBtn:hover {
-  background: #cc8400;
-}
-
-#feedbackModal {
-  position: fixed;
-  bottom: 60px;
-  right: 10px;
-  background: rgba(0,0,0,0.85);
-  color: #fff;
-  padding: 10px;
-  border-radius: 6px;
-  font-family: sans-serif;
-  display: none;
-  z-index: 10000;
-  width: 260px;
-}
-#feedbackModal textarea {
-  width: 100%;
-  height: 80px;
-}
-#feedbackCounter {
-  font-size: 12px;
-  text-align: right;
-}
-#feedbackAnonLabel {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
-}
-#feedbackModal button {
-  margin-top: 6px;
-}
-#feedbackSee {
-  float: left;
-}
-#feedbackSubmit {
-  float: right;
-}
-
-#chat {
-  width: 420px;
-  height: 200px;         /* initial size, can be resized by user */
-  overflow: auto;
-  border-radius: 8px;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  font-family: sans-serif;
-  padding: 8px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-#chatResizeHandle {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 12px;
-  height: 12px;
-  cursor: nwse-resize;
-  background: rgba(255,255,255,0.6);
-  border-bottom-left-radius: 4px;
-}
-#messages {
-  flex: 1;
-  overflow-y: auto;
-  margin-bottom: 8px;
-  font-size: 14px;
-  padding-right: 12px;
-  box-sizing: border-box;
-  scrollbar-gutter: stable;
-}
-#messages div {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-#chatForm {
-  display: flex;
-}
-#chatInput {
-  flex: 1;
-  padding: 4px;
-  font-size: 14px;
-}
-#chatForm button {
-  padding: 4px 8px;
-  margin-left: 4px;
-  font-size: 14px;
-}
-.chat-emote {
-  height: 1.5em;
-  vertical-align: middle;
-}
-.mention-highlight {
-  background: #ff0;
-  color: #000;
-  font-weight: bold;
-  padding: 0 2px;
-  border-radius: 2px;
-}
-#mentionSuggestions {
-  position: absolute;
-  bottom: 36px;
-  left: 8px;
-  right: 8px;
-  background: #222;
-  border: 1px solid #555;
-  display: none;
-  max-height: 100px;
-  overflow-y: auto;
-  z-index: 10;
-  font-size: 14px;
-}
-#mentionSuggestions div {
-  padding: 2px 4px;
-  cursor: pointer;
-}
-#mentionSuggestions div:hover {
-  background: #444;
-}
-#upgradePlaceholder {
-  display: flex;
-  align-items: center;
-  font-family: sans-serif;
-  font-weight: bold;
-  pointer-events: none;
-  margin-bottom: 8px;
-}
-#upgradePlaceholder img {
-  height: 20px;
-  width: 20px;
-  margin-right: 8px;
-}
-
-
-  </style>
-  <script src="https://embed.twitch.tv/embed/v1.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-</head>
-<body>
-  <div id="btnRow">
-    <button id="lowPerfBtn">Settings Menu</button>
-    <button id="chaosBtn">Chaos Mode <span style="font-size:10px;">(epilepsy warning)</span></button>
-    <button id="twitchBtn">Show Stream</button>
-  </div>
-<div id="topRight">
-  <button id="adminBtn">Admin</button>
-  <button id="shopBtn">Shop</button>
-</div>
-
-  <div id="shopPanel">
-    <h4>Shop</h4>
-      <div id="upgradePlaceholder">
-      <img src="gub_wicked.png" alt="Upgrades icon" />
-      Upgrades (coming soon...)
-    </div>
-    <div id="shopItemsContainer"></div>
-  </div>
-
-  <div id="adminPanel">
-    <h4>Admin</h4>
-    <input id="adminUsername" type="text" placeholder="Username" />
-    <input id="adminScore" type="number" placeholder="New Score" />
-    <button id="adminUpdate">Update</button>
-    <button id="adminDelete">Delete</button>
-  </div>
-
-  <div id="perfMenu">
-    <div>Speed: <button id="spdDec">-</button><span id="spdVal">2</span><button id="spdInc">+</button></div>
-    <div>Images: <button id="imgDec">-</button><span id="imgVal">20</span><button id="imgInc">+</button></div>
-    <div><button id="moveToggle">Pause Movement</button></div>
-    <div><button id="qualityBtn">High Quality: Off</button></div>
-    <label for="volumeSlider" style="margin-top:8px; display:block; color:#fff; font-weight:bold;">
-  Chaos Volume
-</label>
-<input
-  id="volumeSlider"
-  type="range"
-  min="0" max="1" step="0.01"
-  style="width:100%; margin-top:4px;"
-/>
-  </div>
-  <div id="golden-counter">
-    <div id="gubTotal">Gubs: 0 (0 gub/s)</div>
-  </div>
-  <div id="bottom-ui">
-    <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
-    <div id="chat">
-      <div id="chatResizeHandle"></div>
-      <div id="messages"></div>
-      <div id="mentionSuggestions"></div>
-      <form id="chatForm">
-        <input id="chatInput" type="text" placeholder="Type a message…" autocomplete="off" maxlength="200" />
-        <button type="submit">Send</button>
-      </form>
-    </div>
-    <div id="online-users">
-      Online: …
-    </div>
-  </div>
-  <div id="twitchPlayer"></div>
-   <div id="gub-wrapper">
-    <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
-  </div>
-  <div id="clickMe">click me</div>
-  <canvas id="visualizer"></canvas>
-  <script>
-window.addEventListener('DOMContentLoaded', () => {
-const CLIENT_VERSION = '0.1.6';
-document.getElementById('versionNumber').textContent = `v${CLIENT_VERSION}`;
-const isMobile = window.innerWidth < 768;
-const NUM_FLOATERS = isMobile ? 5 : 20;
-const chaosAudio = new Audio('music.mp3');
-chaosAudio.loop = true;
-// restore saved volume or default to 0.5
-const stored = parseFloat(localStorage.getItem('gubVolume'));
-chaosAudio.volume = isNaN(stored) ? 0.5 : stored;
-
-      const volumeSlider = document.getElementById('volumeSlider');        // 1a: grab the slider element
-    volumeSlider.value = chaosAudio.volume;                             // 1b: initialize its position
-    volumeSlider.addEventListener('input', () => {                     // 1c: listen for changes
-      chaosAudio.volume = volumeSlider.value;
-      localStorage.setItem('gubVolume', volumeSlider.value);
-    });
-
-    let flashing = false;
-    let musicPlaying = false;
-    
-        // ─── VISUALIZER SETUP ────────────────────────────────────────────────
-    const canvas   = document.getElementById('visualizer');
-    const ctx      = canvas.getContext('2d');
-    function resize(){ canvas.width = window.innerWidth; canvas.height = 100; }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // Hook the visualizer up to our chaosAudio element
-    const audioCtx   = new (window.AudioContext||window.webkitAudioContext)();
-    const analyser   = audioCtx.createAnalyser();
-    const sourceNode = audioCtx.createMediaElementSource(chaosAudio);
-    sourceNode.connect(analyser);
-    analyser.connect(audioCtx.destination);
-    analyser.fftSize = 256;
-
-    window.addEventListener('touchstart', () => {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      }, { once: true });
-    window.addEventListener('click', () => {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      }, { once: true });
-    window.addEventListener('keydown', () => {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      }, { once: true });
-
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray    = new Uint8Array(bufferLength);
-
-    function drawVis(){
-      requestAnimationFrame(drawVis);
-      analyser.getByteFrequencyData(dataArray);
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      const barWidth = canvas.width / bufferLength;
-      for(let i=0; i<bufferLength; i++){
-        const h = dataArray[i];
-        ctx.fillStyle = `hsl(${i*3},100%,50%)`;
-        ctx.fillRect(i*barWidth, canvas.height-h, barWidth-1, h);
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #111;
+        position: relative;
+        height: 100vh;
+        width: 100vw;
       }
-    }
-    drawVis();
-    // ─────────────────────────────────────────────────────────────────────
+      #gub-wrapper {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #main-gub {
+        max-height: 90vh;
+        max-width: 90vw;
+        display: block;
+        transform-origin: center;
+      }
+      #clickMe {
+        position: absolute;
+        top: 200px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #fff;
+        font-family: sans-serif;
+        font-weight: bold;
+        font-size: 3rem;
+        pointer-events: none;
+        display: none;
+        white-space: nowrap;
+        z-index: 10001;
+      }
 
-    function playMentionSound() {
-      const osc  = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = 880;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.2);
-    }
+      #btnRow {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        gap: 5px;
+        z-index: 9999;
+      }
+      #btnRow button {
+        background: #fff;
+        color: #000;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-family: sans-serif;
+        padding: 8px 16px;
+        font-size: 14px;
+      }
 
-// ─── SPECIAL GUB STYLE ───────────────────────────────────────────────────
-const specialStyle = document.createElement('style');
-specialStyle.textContent = `
+      #perfMenu {
+        position: absolute;
+        top: 50px;
+        left: 10px;
+        z-index: 9998;
+        background: #222;
+        color: #fff;
+        border: 1px solid #555;
+        border-radius: 6px;
+        padding: 8px;
+        display: none;
+        font-family: sans-serif;
+        font-size: 14px;
+      }
+      #perfMenu button {
+        margin: 2px 4px;
+        padding: 4px 8px;
+        border: none;
+        border-radius: 4px;
+        background: #444;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      .rainbow-text {
+        font-size: 2rem;
+        font-weight: bold;
+        font-family: sans-serif;
+        animation: rainbow 5s linear infinite;
+        white-space: nowrap;
+        position: absolute;
+        pointer-events: none;
+        z-index: 2;
+      }
+      .floater {
+        position: absolute;
+        pointer-events: none;
+        z-index: 2;
+      }
+      .floater img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      @keyframes rainbow {
+        0% {
+          color: red;
+        }
+        20% {
+          color: orange;
+        }
+        40% {
+          color: yellow;
+        }
+        60% {
+          color: green;
+        }
+        80% {
+          color: blue;
+        }
+        100% {
+          color: violet;
+        }
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .pop-effect {
+        animation: pop 0.15s ease-out both;
+      }
+
+      .plus-one {
+        position: absolute;
+        color: #fff;
+        font-family: sans-serif;
+        font-weight: bold;
+        font-size: 2.5rem;
+        pointer-events: none;
+        z-index: 10002;
+        transform: translate(-50%, -50%);
+        animation: fadeUp 1s ease-out forwards;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 1;
+          transform: translate(-50%, -50%) translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translate(-50%, -50%) translateY(-20px);
+        }
+      }
+
+      #main-gub {
+        cursor: pointer; /* show it’s clickable */
+      }
+
+      .feral-glow {
+        filter: drop-shadow(0 0 10px gold) drop-shadow(0 0 20px gold);
+      }
+      @media (max-width: 768px) {
+        #discordWrapper {
+          bottom: 170px !important; /* move it up above the chat */
+          right: 10px !important; /* keep it flush to the right edge */
+        }
+        #golden-counter {
+          top: 60px !important; /* push it down under the btnRow (which sits at 10px + ~40px height) */
+        }
+      }
+
+      #topRight {
+        position: absolute;
+        top: 40px;
+        right: 10px;
+        display: flex;
+        gap: 10px;
+        z-index: 10001;
+      }
+      #topRight button {
+        background: #fff;
+        color: #000;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-weight: bold;
+        font-family: sans-serif;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      #adminBtn {
+        display: none;
+      }
+
+      #shopPanel {
+        position: absolute;
+        top: 90px;
+        right: 10px;
+        display: none;
+        background: #222;
+        color: #fff;
+        padding: 8px;
+        border-radius: 6px;
+        z-index: 10001;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+      }
+      #shopPanel h4 {
+        font-size: 2rem; /* makes it roughly 32px tall */
+        font-weight: bold; /* extra emphasis */
+        margin-top: 0;
+        margin-bottom: 0.5em;
+      }
+
+      #adminPanel {
+        position: absolute;
+        top: 90px;
+        right: 10px;
+        display: none;
+        background: #222;
+        color: #fff;
+        padding: 8px;
+        border-radius: 6px;
+        z-index: 10001;
+      }
+      #adminPanel h4 {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-top: 0;
+        margin-bottom: 0.5em;
+      }
+      #adminPanel input {
+        width: 150px;
+        margin-bottom: 4px;
+      }
+
+      #visualizer {
+        position: fixed;
+        bottom: 0;
+        left: calc(50% + 280px);
+        transform: translateX(-50%);
+        width: 80vw;
+        height: 100px;
+        z-index: 5000;
+        pointer-events: none;
+      }
+
+      #bottom-ui {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        z-index: 10000;
+        pointer-events: none;
+      }
+
+      #bottom-ui > * {
+        pointer-events: auto;
+      }
+
+      #online-users {
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-family: sans-serif;
+        font-size: 14px;
+      }
+      #twitchPlayer {
+        position: absolute;
+        top: 50px;
+        right: 10px;
+        width: 500px;
+        height: 300px;
+        z-index: 9000;
+        display: none;
+        box-shadow: 0 0 8px #000;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      #golden-counter {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10000;
+        color: white;
+        font-family: sans-serif;
+        font-size: 20px;
+        font-weight: bold;
+        text-align: right;
+        line-height: 1.2;
+      }
+      #leaderboard {
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        padding: 10px;
+        border-radius: 6px;
+        font-family: sans-serif;
+      }
+      #discordWrapper {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        z-index: 10000;
+      }
+      #versionNumber {
+        color: #fff;
+        font-family: sans-serif;
+        font-size: 12px;
+        line-height: 1;
+      }
+      #discordBtn {
+        background: #7289da;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-family: sans-serif;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      #discordBtn:hover {
+        background: #5b6eae;
+      }
+
+      #feedbackBtn {
+        background: #ffa500;
+        color: #000;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-family: sans-serif;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      #feedbackBtn:hover {
+        background: #cc8400;
+      }
+
+      #feedbackModal {
+        position: fixed;
+        bottom: 60px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        padding: 10px;
+        border-radius: 6px;
+        font-family: sans-serif;
+        display: none;
+        z-index: 10000;
+        width: 260px;
+      }
+      #feedbackModal textarea {
+        width: 100%;
+        height: 80px;
+      }
+      #feedbackCounter {
+        font-size: 12px;
+        text-align: right;
+      }
+      #feedbackAnonLabel {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+      }
+      #feedbackModal button {
+        margin-top: 6px;
+      }
+      #feedbackSee {
+        float: left;
+      }
+      #feedbackSubmit {
+        float: right;
+      }
+
+      #chat {
+        width: 420px;
+        height: 200px; /* initial size, can be resized by user */
+        overflow: auto;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        font-family: sans-serif;
+        padding: 8px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      #chatResizeHandle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 12px;
+        height: 12px;
+        cursor: nwse-resize;
+        background: rgba(255, 255, 255, 0.6);
+        border-bottom-left-radius: 4px;
+      }
+      #messages {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 8px;
+        font-size: 14px;
+        padding-right: 12px;
+        box-sizing: border-box;
+        scrollbar-gutter: stable;
+      }
+      #messages div {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      #chatForm {
+        display: flex;
+      }
+      #chatInput {
+        flex: 1;
+        padding: 4px;
+        font-size: 14px;
+      }
+      #chatForm button {
+        padding: 4px 8px;
+        margin-left: 4px;
+        font-size: 14px;
+      }
+      .chat-emote {
+        height: 1.5em;
+        vertical-align: middle;
+      }
+      .mention-highlight {
+        background: #ff0;
+        color: #000;
+        font-weight: bold;
+        padding: 0 2px;
+        border-radius: 2px;
+      }
+      #mentionSuggestions {
+        position: absolute;
+        bottom: 36px;
+        left: 8px;
+        right: 8px;
+        background: #222;
+        border: 1px solid #555;
+        display: none;
+        max-height: 100px;
+        overflow-y: auto;
+        z-index: 10;
+        font-size: 14px;
+      }
+      #mentionSuggestions div {
+        padding: 2px 4px;
+        cursor: pointer;
+      }
+      #mentionSuggestions div:hover {
+        background: #444;
+      }
+      #upgradePlaceholder {
+        display: flex;
+        align-items: center;
+        font-family: sans-serif;
+        font-weight: bold;
+        pointer-events: none;
+        margin-bottom: 8px;
+      }
+      #upgradePlaceholder img {
+        height: 20px;
+        width: 20px;
+        margin-right: 8px;
+      }
+    </style>
+    <script src="https://embed.twitch.tv/embed/v1.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  </head>
+  <body>
+    <div id="btnRow">
+      <button id="lowPerfBtn">Settings Menu</button>
+      <button id="chaosBtn">
+        Chaos Mode <span style="font-size: 10px">(epilepsy warning)</span>
+      </button>
+      <button id="twitchBtn">Show Stream</button>
+    </div>
+    <div id="topRight">
+      <button id="adminBtn">Admin</button>
+      <button id="shopBtn">Shop</button>
+    </div>
+
+    <div id="shopPanel">
+      <h4>Shop</h4>
+      <div id="upgradePlaceholder">
+        <img src="gub_wicked.png" alt="Upgrades icon" />
+        Upgrades (coming soon...)
+      </div>
+      <div id="shopItemsContainer"></div>
+    </div>
+
+    <div id="adminPanel">
+      <h4>Admin</h4>
+      <input id="adminUsername" type="text" placeholder="Username" />
+      <input id="adminScore" type="number" placeholder="New Score" />
+      <button id="adminUpdate">Update</button>
+      <button id="adminDelete">Delete</button>
+    </div>
+
+    <div id="perfMenu">
+      <div>
+        Speed: <button id="spdDec">-</button><span id="spdVal">2</span
+        ><button id="spdInc">+</button>
+      </div>
+      <div>
+        Images: <button id="imgDec">-</button><span id="imgVal">20</span
+        ><button id="imgInc">+</button>
+      </div>
+      <div><button id="moveToggle">Pause Movement</button></div>
+      <div><button id="qualityBtn">High Quality: Off</button></div>
+      <label
+        for="volumeSlider"
+        style="margin-top: 8px; display: block; color: #fff; font-weight: bold"
+      >
+        Chaos Volume
+      </label>
+      <input
+        id="volumeSlider"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        style="width: 100%; margin-top: 4px"
+      />
+    </div>
+    <div id="golden-counter">
+      <div id="gubTotal">Gubs: 0 (0 gub/s)</div>
+    </div>
+    <div id="bottom-ui">
+      <div id="leaderboard"><strong>Leaderboard</strong><br />Loading…</div>
+      <div id="chat">
+        <div id="chatResizeHandle"></div>
+        <div id="messages"></div>
+        <div id="mentionSuggestions"></div>
+        <form id="chatForm">
+          <input
+            id="chatInput"
+            type="text"
+            placeholder="Type a message…"
+            autocomplete="off"
+            maxlength="200"
+          />
+          <button type="submit">Send</button>
+        </form>
+      </div>
+      <div id="online-users">Online: …</div>
+    </div>
+    <div id="twitchPlayer"></div>
+    <div id="gub-wrapper">
+      <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
+    </div>
+    <div id="clickMe">click me</div>
+    <canvas id="visualizer"></canvas>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const CLIENT_VERSION = "0.1.6";
+        document.getElementById("versionNumber").textContent =
+          `v${CLIENT_VERSION}`;
+        const isMobile = window.innerWidth < 768;
+        const NUM_FLOATERS = isMobile ? 5 : 20;
+        const chaosAudio = new Audio("music.mp3");
+        chaosAudio.loop = true;
+        // restore saved volume or default to 0.5
+        const stored = parseFloat(localStorage.getItem("gubVolume"));
+        chaosAudio.volume = isNaN(stored) ? 0.5 : stored;
+
+        const volumeSlider = document.getElementById("volumeSlider"); // 1a: grab the slider element
+        volumeSlider.value = chaosAudio.volume; // 1b: initialize its position
+        volumeSlider.addEventListener("input", () => {
+          // 1c: listen for changes
+          chaosAudio.volume = volumeSlider.value;
+          localStorage.setItem("gubVolume", volumeSlider.value);
+        });
+
+        let flashing = false;
+        let musicPlaying = false;
+
+        // ─── VISUALIZER SETUP ────────────────────────────────────────────────
+        const canvas = document.getElementById("visualizer");
+        const ctx = canvas.getContext("2d");
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = 100;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        // Hook the visualizer up to our chaosAudio element
+        const audioCtx = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        const sourceNode = audioCtx.createMediaElementSource(chaosAudio);
+        sourceNode.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        analyser.fftSize = 256;
+
+        window.addEventListener(
+          "touchstart",
+          () => {
+            if (audioCtx.state === "suspended") audioCtx.resume();
+          },
+          { once: true },
+        );
+        window.addEventListener(
+          "click",
+          () => {
+            if (audioCtx.state === "suspended") audioCtx.resume();
+          },
+          { once: true },
+        );
+        window.addEventListener(
+          "keydown",
+          () => {
+            if (audioCtx.state === "suspended") audioCtx.resume();
+          },
+          { once: true },
+        );
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        function drawVis() {
+          requestAnimationFrame(drawVis);
+          analyser.getByteFrequencyData(dataArray);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const barWidth = canvas.width / bufferLength;
+          for (let i = 0; i < bufferLength; i++) {
+            const h = dataArray[i];
+            ctx.fillStyle = `hsl(${i * 3},100%,50%)`;
+            ctx.fillRect(i * barWidth, canvas.height - h, barWidth - 1, h);
+          }
+        }
+        drawVis();
+        // ─────────────────────────────────────────────────────────────────────
+
+        function playMentionSound() {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 880;
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.2,
+          );
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        // ─── SPECIAL GUB STYLE ───────────────────────────────────────────────────
+        const specialStyle = document.createElement("style");
+        specialStyle.textContent = `
   .special-gub {
     position: absolute;
     filter: hue-rotate(30deg) saturate(3) brightness(1.3);
@@ -551,696 +709,869 @@ specialStyle.textContent = `
     outline: none;        /* ← ensure no outline even when focused */
   }
 `;
-document.head.appendChild(specialStyle);
-    // Sanitize usernames (letters, numbers, underscore; max 20 chars)
-    function sanitizeUsername(name) {
-      return (name || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20);
-    }
-
-    // 1. Prompt & sanitize username
-    let username = sanitizeUsername(localStorage.getItem('gubUser'));
-    if (!username || username.length < 3) {
-      do {
-        username = sanitizeUsername(prompt('Enter a username for the leaderboard:'));
-      } while (!username || username.length < 3);
-      localStorage.setItem('gubUser', username);
-    }
-
-    // 2. Initialize Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM",
-  authDomain: "gub-leaderboard.firebaseapp.com",
-  databaseURL: "https://gub-leaderboard-default-rtdb.firebaseio.com",
-  projectId: "gub-leaderboard",
-  storageBucket: "gub-leaderboard.firebasestorage.app",
-  messagingSenderId: "851465760203",
-  appId: "1:851465760203:web:1fc30c730a93c0fab25a4e",
-  measurementId: "G-95SE4H7EEW"
-};
-    firebase.initializeApp(firebaseConfig);
-
-    // 3. Authenticate then setup leaderboard
-firebase.auth().signInAnonymously().then(() => {
-  const db  = firebase.database();
-  const uid = firebase.auth().currentUser.uid;
-  const allUsers = new Set([username]);
-
-  const versionRef = db.ref('config/version');
-  versionRef.on('value', snap => {
-    const serverVersion = snap.val();
-    // Only force a reload when the server has a version and it differs from the client
-    if (serverVersion && serverVersion !== CLIENT_VERSION) {
-      const warn = document.createElement('div');
-      warn.textContent = 'Client outdated – refreshing in 5s...';
-      warn.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;font-size:24px;padding:20px;z-index:100000;';
-      document.body.appendChild(warn);
-      setTimeout(() => location.reload(), 5000);
-
-    }
-  });
-
-        // ─── Presence Setup ───────────────────────────────────────────────
-  const presenceRef   = db.ref('.info/connected');
-  const userOnlineRef = db.ref('presence/' + uid);
-
-  presenceRef.on('value', snap => {
-    if (snap.val() === true) {
-      userOnlineRef.set(username);
-      userOnlineRef.onDisconnect().remove();
-    }
-  });
-
-  const presenceListRef = db.ref('presence');
-  const onlineUsersEl   = document.getElementById('online-users');
-  const onlineUsers     = new Map();
-  const MAX_DISPLAY     = 20;
-
-  function renderOnlineUsers() {
-    const arr  = Array.from(onlineUsers.values());
-    const list = arr.slice(0, MAX_DISPLAY).join(', ');
-    const more = arr.length > MAX_DISPLAY ? ` (+${arr.length - MAX_DISPLAY} more)` : '';
-    onlineUsersEl.textContent = `Online (${arr.length}): ${list}${more}`;
-  }
-
-  presenceListRef.on('child_added', snap => {
-    const name = sanitizeUsername(snap.val());
-    onlineUsers.set(snap.key, name);
-    allUsers.add(name);
-    renderOnlineUsers();
-  });
-
-  presenceListRef.on('child_removed', snap => {
-    onlineUsers.delete(snap.key);
-    renderOnlineUsers();
-  });
-  db.ref('leaderboard_v3').once('value').then(snap => {
-    snap.forEach(child => {
-      const data = child.val() || {};
-      const u = sanitizeUsername(data.username || '');
-      if (u) allUsers.add(u);
-    });
-  });
-  // ─────────────────────────────────────────────────────────────────
-
-      let sessionCount = 0, globalCount = 0, displayedCount = 0;
-      let gubRateMultiplier = 1;
-      let feralTimeout;
-      let scoreDirty = false;
-      let lastSentScore = 0;
-      function queueScoreUpdate(){ scoreDirty = true; }
-      setInterval(() => {
-        const currentScore = Math.floor(globalCount);
-        if (scoreDirty && currentScore !== lastSentScore) {
-          scoreDirty = false;
-          lastSentScore = currentScore;
-          db.ref(`leaderboard_v3/${uid}`).set({ username, score: currentScore });
+        document.head.appendChild(specialStyle);
+        // Sanitize usernames (letters, numbers, underscore; max 20 chars)
+        function sanitizeUsername(name) {
+          return (name || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, "")
+            .slice(0, 20);
         }
-      }, 1000);
 
-      function abbreviateNumber(num){
-        if (num < 1000) return Math.floor(num).toString();
-        const units = ['', 'k', 'm', 'b', 't', 'quad', 'quin', 'sext', 'sept', 'octi', 'noni', 'deci'];
-        let idx = Math.floor(Math.log10(num) / 3);
-        if (idx >= units.length) idx = units.length - 1;
-        const scaled = num / Math.pow(1000, idx);
-        return scaled.toFixed(2) + units[idx];
-      }
-
-      // Load or initialize user's score, migrating any legacy username entries
-      const userRef = db.ref(`leaderboard_v3/${uid}/score`);
-      userRef.once('value').then(async snap => {
-        if (snap.exists()) {
-          globalCount = snap.val() || 0;
-        } else {
-          // Try to migrate from old username-based key
-          const legacyRef = db.ref(`leaderboard_v3/${username}/score`);
-          const legacySnap = await legacyRef.once('value');
-          globalCount = legacySnap.val() || 0;
-          if (legacySnap.exists()) {
-            await legacyRef.parent.remove();
-          }
+        // 1. Prompt & sanitize username
+        let username = sanitizeUsername(localStorage.getItem("gubUser"));
+        if (!username || username.length < 3) {
+          do {
+            username = sanitizeUsername(
+              prompt("Enter a username for the leaderboard:"),
+            );
+          } while (!username || username.length < 3);
+          localStorage.setItem("gubUser", username);
         }
-        displayedCount = globalCount;
-        renderCounter();
-        db.ref(`leaderboard_v3/${uid}`).set({ username, score: globalCount });
-        lastSentScore = Math.floor(globalCount);
 
-        // Keep local score in sync with external/manual updates
-        userRef.on('value', s => {
-          const v = s.val();
-          if (typeof v === 'number') {
-            globalCount = displayedCount = v;
-            lastSentScore = Math.floor(v);
-            scoreDirty = false;
-            renderCounter();
-          }
-        });
+        // 2. Initialize Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM",
+          authDomain: "gub-leaderboard.firebaseapp.com",
+          databaseURL: "https://gub-leaderboard-default-rtdb.firebaseio.com",
+          projectId: "gub-leaderboard",
+          storageBucket: "gub-leaderboard.firebasestorage.app",
+          messagingSenderId: "851465760203",
+          appId: "1:851465760203:web:1fc30c730a93c0fab25a4e",
+          measurementId: "G-95SE4H7EEW",
+        };
+        firebase.initializeApp(firebaseConfig);
 
-// Real-time leaderboard updates (top 10 only)
-  db.ref('leaderboard_v3')
-    .orderByChild('score')
-    .limitToLast(10)
-    .on('value', snap => {
-      const list = [];
-      snap.forEach(child => {
-        const data = child.val() || {};
-        const user = sanitizeUsername(data.username || '');
-        list.push({ user, score: data.score || 0 });
-        allUsers.add(user);
-      });
-      list.sort((a, b) => b.score - a.score);
-      const lbEl = document.getElementById('leaderboard');
-      lbEl.innerHTML = '';
-      const title = document.createElement('strong');
-      title.textContent = 'Leaderboard (Top 10)';
-      lbEl.appendChild(title);
-      lbEl.appendChild(document.createElement('br'));
-      list.forEach((e, i) => {
-        const line = document.createElement('div');
-        line.textContent = `${i+1}. ${e.user}: ${abbreviateNumber(e.score)}`;
-        lbEl.appendChild(line);
-      });
-    });
+        // 3. Authenticate then setup leaderboard
+        firebase
+          .auth()
+          .signInAnonymously()
+          .then(() => {
+            const db = firebase.database();
+            const uid = firebase.auth().currentUser.uid;
+            const allUsers = new Set([username]);
 
-      });
+            const versionRef = db.ref("config/version");
+            versionRef.on("value", (snap) => {
+              const serverVersion = snap.val();
+              // Only force a reload when the server has a version and it differs from the client
+              if (serverVersion && serverVersion !== CLIENT_VERSION) {
+                const warn = document.createElement("div");
+                warn.textContent = "Client outdated – refreshing in 5s...";
+                warn.style.cssText =
+                  "position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;font-size:24px;padding:20px;z-index:100000;";
+                document.body.appendChild(warn);
+                setTimeout(() => location.reload(), 5000);
+              }
+            });
 
-      // ——— Chat setup ———
-// 1. References to your Firebase “chat” node and DOM elements
-const chatRef    = db.ref('chat');
-const messagesEl = document.getElementById('messages');
-const chatForm   = document.getElementById('chatForm');
-const chatInput  = document.getElementById('chatInput');
-const mentionSuggestions = document.getElementById('mentionSuggestions');
-const chatBox    = document.getElementById('chat');
-const resizeHandle = document.getElementById('chatResizeHandle');
+            // ─── Presence Setup ───────────────────────────────────────────────
+            const presenceRef = db.ref(".info/connected");
+            const userOnlineRef = db.ref("presence/" + uid);
 
-// Restore saved chat box size from localStorage
-const savedChatWidth  = localStorage.getItem('chatWidth');
-const savedChatHeight = localStorage.getItem('chatHeight');
-if (savedChatWidth)  chatBox.style.width  = savedChatWidth + 'px';
-if (savedChatHeight) chatBox.style.height = savedChatHeight + 'px';
+            presenceRef.on("value", (snap) => {
+              if (snap.val() === true) {
+                userOnlineRef.set(username);
+                userOnlineRef.onDisconnect().remove();
+              }
+            });
 
-// Save chat size whenever resizing stops
-const saveChatSize = () => {
-  localStorage.setItem('chatWidth', chatBox.offsetWidth);
-  localStorage.setItem('chatHeight', chatBox.offsetHeight);
-};
+            const presenceListRef = db.ref("presence");
+            const onlineUsersEl = document.getElementById("online-users");
+            const onlineUsers = new Map();
+            const MAX_DISPLAY = 20;
 
-let startX, startY, startWidth, startHeight;
+            function renderOnlineUsers() {
+              const arr = Array.from(onlineUsers.values());
+              const list = arr.slice(0, MAX_DISPLAY).join(", ");
+              const more =
+                arr.length > MAX_DISPLAY
+                  ? ` (+${arr.length - MAX_DISPLAY} more)`
+                  : "";
+              onlineUsersEl.textContent = `Online (${arr.length}): ${list}${more}`;
+            }
 
-function initResize(e) {
-  e.preventDefault();
-  const touch = e.touches ? e.touches[0] : e;
-  startX = touch.clientX;
-  startY = touch.clientY;
-  startWidth = chatBox.offsetWidth;
-  startHeight = chatBox.offsetHeight;
-  document.documentElement.addEventListener('mousemove', doResize);
-  document.documentElement.addEventListener('touchmove', doResize);
-  document.documentElement.addEventListener('mouseup', stopResize);
-  document.documentElement.addEventListener('touchend', stopResize);
-}
+            presenceListRef.on("child_added", (snap) => {
+              const name = sanitizeUsername(snap.val());
+              onlineUsers.set(snap.key, name);
+              allUsers.add(name);
+              renderOnlineUsers();
+            });
 
-function doResize(e) {
-  const touch = e.touches ? e.touches[0] : e;
-  const newWidth = Math.max(200, startWidth + (touch.clientX - startX));
-  const newHeight = Math.max(100, startHeight - (touch.clientY - startY));
-  chatBox.style.width = newWidth + 'px';
-  chatBox.style.height = newHeight + 'px';
-}
+            presenceListRef.on("child_removed", (snap) => {
+              onlineUsers.delete(snap.key);
+              renderOnlineUsers();
+            });
+            db.ref("leaderboard_v3")
+              .once("value")
+              .then((snap) => {
+                snap.forEach((child) => {
+                  const data = child.val() || {};
+                  const u = sanitizeUsername(data.username || "");
+                  if (u) allUsers.add(u);
+                });
+              });
+            // ─────────────────────────────────────────────────────────────────
 
-function stopResize() {
-  document.documentElement.removeEventListener('mousemove', doResize);
-  document.documentElement.removeEventListener('touchmove', doResize);
-  document.documentElement.removeEventListener('mouseup', stopResize);
-  document.documentElement.removeEventListener('touchend', stopResize);
-  saveChatSize();
-}
+            let sessionCount = 0,
+              globalCount = 0,
+              displayedCount = 0;
+            let gubRateMultiplier = 1;
+            let feralTimeout;
+            let scoreDirty = false;
+            let lastSentScore = 0;
+            function queueScoreUpdate() {
+              scoreDirty = true;
+            }
+            setInterval(() => {
+              const currentScore = Math.floor(globalCount);
+              if (scoreDirty && currentScore !== lastSentScore) {
+                scoreDirty = false;
+                lastSentScore = currentScore;
+                db.ref(`leaderboard_v3/${uid}`).set({
+                  username,
+                  score: currentScore,
+                });
+              }
+            }, 1000);
 
-resizeHandle.addEventListener('mousedown', initResize);
-resizeHandle.addEventListener('touchstart', initResize);
+            function abbreviateNumber(num) {
+              if (num < 1000) return Math.floor(num).toString();
+              const units = [
+                "",
+                "k",
+                "m",
+                "b",
+                "t",
+                "quad",
+                "quin",
+                "sext",
+                "sept",
+                "octi",
+                "noni",
+                "deci",
+              ];
+              let idx = Math.floor(Math.log10(num) / 3);
+              if (idx >= units.length) idx = units.length - 1;
+              const scaled = num / Math.pow(1000, idx);
+              return scaled.toFixed(2) + units[idx];
+            }
 
-// 7TV emotes
-const emoteMap = {};
-const HARUPI_SET = '01H6Q79JP80007TK4TYM94A0B4';
-fetch(`https://7tv.io/v3/emote-sets/${HARUPI_SET}`)
-  .then(r => r.json())
-  .then(d => {
-    d.emotes.forEach(e => {
-      const url = `https:${e.data.host.url}/2x.webp`;
-      emoteMap[e.name] = url;
-      emoteMap[e.name.toLowerCase()] = url;
-    });
-  });
+            // Load or initialize user's score, migrating any legacy username entries
+            const userRef = db.ref(`leaderboard_v3/${uid}/score`);
+            userRef.once("value").then(async (snap) => {
+              if (snap.exists()) {
+                globalCount = snap.val() || 0;
+              } else {
+                // Try to migrate from old username-based key
+                const legacyRef = db.ref(`leaderboard_v3/${username}/score`);
+                const legacySnap = await legacyRef.once("value");
+                globalCount = legacySnap.val() || 0;
+                if (legacySnap.exists()) {
+                  await legacyRef.parent.remove();
+                }
+              }
+              displayedCount = globalCount;
+              renderCounter();
+              db.ref(`leaderboard_v3/${uid}`).set({
+                username,
+                score: globalCount,
+              });
+              lastSentScore = Math.floor(globalCount);
 
-// Only allow emotes from Harupi's set; no global fallback
-async function getEmoteURL(name) {
-  if (emoteMap[name]) return emoteMap[name];
-  const lower = name.toLowerCase();
-  if (emoteMap[lower]) return emoteMap[lower];
-  return null; // unknown emote: do not fetch from global set
-}
+              // Keep local score in sync with external/manual updates
+              userRef.on("value", (s) => {
+                const v = s.val();
+                if (typeof v === "number") {
+                  globalCount = displayedCount = v;
+                  lastSentScore = Math.floor(v);
+                  scoreDirty = false;
+                  renderCounter();
+                }
+              });
 
-function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[c]));
-}
+              // Real-time leaderboard updates (top 10 only)
+              db.ref("leaderboard_v3")
+                .orderByChild("score")
+                .limitToLast(10)
+                .on("value", (snap) => {
+                  const list = [];
+                  snap.forEach((child) => {
+                    const data = child.val() || {};
+                    const user = sanitizeUsername(data.username || "");
+                    list.push({ user, score: data.score || 0 });
+                    allUsers.add(user);
+                  });
+                  list.sort((a, b) => b.score - a.score);
+                  const lbEl = document.getElementById("leaderboard");
+                  lbEl.innerHTML = "";
+                  const title = document.createElement("strong");
+                  title.textContent = "Leaderboard (Top 10)";
+                  lbEl.appendChild(title);
+                  lbEl.appendChild(document.createElement("br"));
+                  list.forEach((e, i) => {
+                    const line = document.createElement("div");
+                    line.textContent = `${i + 1}. ${e.user}: ${abbreviateNumber(e.score)}`;
+                    lbEl.appendChild(line);
+                  });
+                });
+            });
 
-async function emoteHTML(text) {
-  let safe = escapeHTML(text);
-  const tokens = safe.split(/(\s+)/);
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (/^\s+$/.test(token)) continue;
-    const stripped = token.replace(/^:|:$/g, '');
-    if (/^[A-Za-z0-9_]+$/.test(stripped)) {
-      const url = await getEmoteURL(stripped);
-      if (url) {
-        tokens[i] = `<img class="chat-emote" alt="${stripped}" src="${url}">`;
-      }
-    }
-  }
-  return tokens.join('');
-}
+            // ——— Chat setup ———
+            // 1. References to your Firebase “chat” node and DOM elements
+            const chatRef = db.ref("chat");
+            const messagesEl = document.getElementById("messages");
+            const chatForm = document.getElementById("chatForm");
+            const chatInput = document.getElementById("chatInput");
+            const mentionSuggestions =
+              document.getElementById("mentionSuggestions");
+            const chatBox = document.getElementById("chat");
+            const resizeHandle = document.getElementById("chatResizeHandle");
 
-function updateSuggestions() {
-  const cursor = chatInput.selectionStart;
-  const textBefore = chatInput.value.slice(0, cursor);
-  const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-  if (match) {
-    const prefix = match[1].toLowerCase();
-    const matches = Array.from(allUsers)
-      .filter(u => u.toLowerCase().startsWith(prefix))
-      .sort();
-    if (matches.length > 0) {
-      mentionSuggestions.innerHTML = matches.slice(0,5).map(m => `<div>${m}</div>`).join('');
-      mentionSuggestions.style.display = 'block';
-    } else {
-      mentionSuggestions.style.display = 'none';
-    }
-  } else {
-    mentionSuggestions.style.display = 'none';
-  }
-}
+            // Restore saved chat box size from localStorage
+            const savedChatWidth = localStorage.getItem("chatWidth");
+            const savedChatHeight = localStorage.getItem("chatHeight");
+            if (savedChatWidth) chatBox.style.width = savedChatWidth + "px";
+            if (savedChatHeight) chatBox.style.height = savedChatHeight + "px";
 
-chatInput.addEventListener('input', updateSuggestions);
-chatInput.addEventListener('keydown', e => {
-  if ((e.key === 'Tab' || e.key === ' ' || e.key === 'Enter') && mentionSuggestions.style.display === 'block') {
-    e.preventDefault();
-    const first = mentionSuggestions.firstChild;
-    if (first) {
-      const name = first.textContent + ' ';
-      const cursor = chatInput.selectionStart;
-      const textBefore = chatInput.value.slice(0, cursor);
-      const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-      if (match) {
-        const start = cursor - match[1].length;
-        chatInput.value = chatInput.value.slice(0, start) + name + chatInput.value.slice(cursor);
-        chatInput.selectionStart = chatInput.selectionEnd = start + name.length;
-      }
-      mentionSuggestions.style.display = 'none';
-    }
-  }
-});
+            // Save chat size whenever resizing stops
+            const saveChatSize = () => {
+              localStorage.setItem("chatWidth", chatBox.offsetWidth);
+              localStorage.setItem("chatHeight", chatBox.offsetHeight);
+            };
 
-mentionSuggestions.addEventListener('mousedown', e => {
-  if (e.target && e.target.tagName === 'DIV') {
-    e.preventDefault();
-    const name = e.target.textContent + ' ';
-    const cursor = chatInput.selectionStart;
-    const textBefore = chatInput.value.slice(0, cursor);
-    const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-    if (match) {
-      const start = cursor - match[1].length;
-      chatInput.value = chatInput.value.slice(0, start) + name + chatInput.value.slice(cursor);
-      chatInput.selectionStart = chatInput.selectionEnd = start + name.length;
-    }
-    mentionSuggestions.style.display = 'none';
-    chatInput.focus();
-  }
-});
+            let startX, startY, startWidth, startHeight;
 
-// 2. Listen for new chat messages (last 50), append them in order
-const CHAT_MESSAGE_LIMIT = 50;
-const MAX_CHAT_LENGTH = 200;
-let initialChatLoaded = false;
-chatRef
-  .orderByChild('ts')
-  .limitToLast(CHAT_MESSAGE_LIMIT)
-  .on('child_added', snap => {
-    const { user, text, ts } = snap.val();
-    const safeUser = sanitizeUsername(user);
-    allUsers.add(safeUser);
-    const msgEl = document.createElement('div');
-    const dateObj = new Date(ts);
-    const date = dateObj.toLocaleDateString();
-    const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const mentionRegex = new RegExp(`@${username}\\b`, 'gi');
-    const isMention = mentionRegex.test(text);
-    mentionRegex.lastIndex = 0;
-    const initial = escapeHTML(text).replace(mentionRegex, '<span class="mention-highlight">$&</span>');
-    msgEl.innerHTML = `[${date} ${time}] ${user}: ${initial}`;
-    messagesEl.appendChild(msgEl);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    if (initialChatLoaded && isMention && safeUser !== username) {
-      playMentionSound();
-    }
-    emoteHTML(text).then(processed => {
-      mentionRegex.lastIndex = 0;
-      const final = processed.replace(mentionRegex, '<span class="mention-highlight">$&</span>');
-      msgEl.innerHTML = `[${date} ${time}] ${user}: ${final}`;
-      msgEl.querySelectorAll('img').forEach(img => {
-        if (img.complete) {
-          messagesEl.scrollTop = messagesEl.scrollHeight;
-        } else {
-          img.addEventListener('load', () => {
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-          });
-        }
-      });
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }).catch(() => {
-      // If emote lookup fails, keep the plain text message.
-    });
-  });
+            function initResize(e) {
+              e.preventDefault();
+              const touch = e.touches ? e.touches[0] : e;
+              startX = touch.clientX;
+              startY = touch.clientY;
+              startWidth = chatBox.offsetWidth;
+              startHeight = chatBox.offsetHeight;
+              document.documentElement.addEventListener("mousemove", doResize);
+              document.documentElement.addEventListener("touchmove", doResize);
+              document.documentElement.addEventListener("mouseup", stopResize);
+              document.documentElement.addEventListener("touchend", stopResize);
+            }
 
-chatRef.once('value').then(() => {
-  initialChatLoaded = true;
-});
+            function doResize(e) {
+              const touch = e.touches ? e.touches[0] : e;
+              const newWidth = Math.max(
+                200,
+                startWidth + (touch.clientX - startX),
+              );
+              const newHeight = Math.max(
+                100,
+                startHeight - (touch.clientY - startY),
+              );
+              chatBox.style.width = newWidth + "px";
+              chatBox.style.height = newHeight + "px";
+            }
 
-// 3. Hook up the form so sending pushes a new message
-chatForm.addEventListener('submit', e => {
-  e.preventDefault();
-  const text = chatInput.value.trim().slice(0, MAX_CHAT_LENGTH);
-  if (!text) return;
-  chatRef.push({
-    user: username,
-    text,
-    ts: firebase.database.ServerValue.TIMESTAMP
-  });
-  chatInput.value = '';
-  mentionSuggestions.style.display = 'none';
-});
+            function stopResize() {
+              document.documentElement.removeEventListener(
+                "mousemove",
+                doResize,
+              );
+              document.documentElement.removeEventListener(
+                "touchmove",
+                doResize,
+              );
+              document.documentElement.removeEventListener(
+                "mouseup",
+                stopResize,
+              );
+              document.documentElement.removeEventListener(
+                "touchend",
+                stopResize,
+              );
+              saveChatSize();
+            }
 
-  // Start spawning golden gubs
-  scheduleNextGolden();
+            resizeHandle.addEventListener("mousedown", initResize);
+            resizeHandle.addEventListener("touchstart", initResize);
 
-      function getGoldenGubReward() {
-        return Math.max(10, Math.floor(globalCount * 0.03));
-      }
+            // 7TV emotes
+            const emoteMap = {};
+            const HARUPI_SET = "01H6Q79JP80007TK4TYM94A0B4";
+            fetch(`https://7tv.io/v3/emote-sets/${HARUPI_SET}`)
+              .then((r) => r.json())
+              .then((d) => {
+                d.emotes.forEach((e) => {
+                  const url = `https:${e.data.host.url}/2x.webp`;
+                  emoteMap[e.name] = url;
+                  emoteMap[e.name.toLowerCase()] = url;
+                });
+              });
 
-      // Spawn golden gub and handle clicks
-      function spawnGolden() {
-        const el = document.createElement('img');
-        el.src = images[Math.floor(Math.random()*images.length)];
-        el.className = 'floater';
-        const size = 80 + Math.random()*320;
-        el.style.width = el.style.height = size + 'px';
-        el.style.left = `${Math.random()*(window.innerWidth-size)}px`;
-        el.style.top  = `${Math.random()*(window.innerHeight-size)}px`;
-        el.style.zIndex = 10000;
-        el.style.filter = 'sepia(1) hue-rotate(20deg) saturate(5) brightness(1.2)';
-        el.style.border = '2px solid white';
-        el.style.pointerEvents = 'auto';
-        el.style.opacity = 0;
-        el.style.transition = 'opacity 3s';
-        document.body.appendChild(el);
-        requestAnimationFrame(() => { el.style.opacity = 1; });
-        const timeout = setTimeout(() => {
-          el.style.pointerEvents = 'none';
-          el.style.opacity = 0;
-          setTimeout(() => { el.remove(); scheduleNextGolden(); }, 3000);
-        }, 60000);
-        el.addEventListener('click', (e) => {
-          clearTimeout(timeout);
-          const reward = getGoldenGubReward();
-          const actualReward = reward * gubRateMultiplier;
-          sessionCount += actualReward;
-          gainGubs(reward);
+            // Only allow emotes from Harupi's set; no global fallback
+            async function getEmoteURL(name) {
+              if (emoteMap[name]) return emoteMap[name];
+              const lower = name.toLowerCase();
+              if (emoteMap[lower]) return emoteMap[lower];
+              return null; // unknown emote: do not fetch from global set
+            }
 
-          const plusOne = document.createElement('div');
-          plusOne.textContent = '+' + abbreviateNumber(actualReward);
-          plusOne.className = 'plus-one';
-          plusOne.style.left = `${e.clientX}px`;
-          plusOne.style.top = `${e.clientY}px`;
-          document.body.appendChild(plusOne);
-          setTimeout(() => plusOne.remove(), 1000);
+            function escapeHTML(str) {
+              return str.replace(
+                /[&<>"']/g,
+                (c) =>
+                  ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;",
+                  })[c],
+              );
+            }
 
-          el.remove();
-          scheduleNextGolden();
-        });
-      }
-      // ─── SPECIAL GUB SPAWNER ───────────────────────────────────────────────
-function activateFeralGubMode() {
-  const duration = 30000 + Math.random() * 90000;
-  gubRateMultiplier = 10;
-  renderCounter();
-  mainGub.classList.add('feral-glow');
-  clearTimeout(feralTimeout);
-  feralTimeout = setTimeout(() => {
-    gubRateMultiplier = 1;
-    mainGub.classList.remove('feral-glow');
-    renderCounter();
-  }, duration);
-}
+            async function emoteHTML(text) {
+              let safe = escapeHTML(text);
+              const tokens = safe.split(/(\s+)/);
+              for (let i = 0; i < tokens.length; i++) {
+                const token = tokens[i];
+                if (/^\s+$/.test(token)) continue;
+                const stripped = token.replace(/^:|:$/g, "");
+                if (/^[A-Za-z0-9_]+$/.test(stripped)) {
+                  const url = await getEmoteURL(stripped);
+                  if (url) {
+                    tokens[i] =
+                      `<img class="chat-emote" alt="${stripped}" src="${url}">`;
+                  }
+                }
+              }
+              return tokens.join("");
+            }
 
-function spawnSpecialGub() {
-  // 1. pick the exact same random image
-  const imgSrc = images[Math.floor(Math.random() * images.length)];
+            function updateSuggestions() {
+              const cursor = chatInput.selectionStart;
+              const textBefore = chatInput.value.slice(0, cursor);
+              const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
+              if (match) {
+                const prefix = match[1].toLowerCase();
+                const matches = Array.from(allUsers)
+                  .filter((u) => u.toLowerCase().startsWith(prefix))
+                  .sort();
+                if (matches.length > 0) {
+                  mentionSuggestions.innerHTML = matches
+                    .slice(0, 5)
+                    .map((m) => `<div>${m}</div>`)
+                    .join("");
+                  mentionSuggestions.style.display = "block";
+                } else {
+                  mentionSuggestions.style.display = "none";
+                }
+              } else {
+                mentionSuggestions.style.display = "none";
+              }
+            }
 
-  // 2. container for image + label
-  const container = document.createElement('div');
-  container.className = 'floater special-gub';
-  const size = 80 + Math.random() * 320;
-  container.style.width  = size + 'px';
-  container.style.height = size + 'px';
-  container.style.left   = `${Math.random()*(window.innerWidth-size)}px`;
-  container.style.top    = `${Math.random()*(window.innerHeight-size)}px`;
+            chatInput.addEventListener("input", updateSuggestions);
+            chatInput.addEventListener("keydown", (e) => {
+              if (
+                (e.key === "Tab" || e.key === " " || e.key === "Enter") &&
+                mentionSuggestions.style.display === "block"
+              ) {
+                e.preventDefault();
+                const first = mentionSuggestions.firstChild;
+                if (first) {
+                  const name = first.textContent + " ";
+                  const cursor = chatInput.selectionStart;
+                  const textBefore = chatInput.value.slice(0, cursor);
+                  const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
+                  if (match) {
+                    const start = cursor - match[1].length;
+                    chatInput.value =
+                      chatInput.value.slice(0, start) +
+                      name +
+                      chatInput.value.slice(cursor);
+                    chatInput.selectionStart = chatInput.selectionEnd =
+                      start + name.length;
+                  }
+                  mentionSuggestions.style.display = "none";
+                }
+              }
+            });
 
-  // 3. the image element itself
-  const img = document.createElement('img');
-  img.src           = imgSrc;
-  img.style.width   = '100%';
-  img.style.height  = '100%';
-  img.style.objectFit = 'contain';
-  // orange-ify it
-  img.style.filter  = 'hue-rotate(30deg) saturate(3) brightness(1.3)';
-  container.appendChild(img);
+            mentionSuggestions.addEventListener("mousedown", (e) => {
+              if (e.target && e.target.tagName === "DIV") {
+                e.preventDefault();
+                const name = e.target.textContent + " ";
+                const cursor = chatInput.selectionStart;
+                const textBefore = chatInput.value.slice(0, cursor);
+                const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
+                if (match) {
+                  const start = cursor - match[1].length;
+                  chatInput.value =
+                    chatInput.value.slice(0, start) +
+                    name +
+                    chatInput.value.slice(cursor);
+                  chatInput.selectionStart = chatInput.selectionEnd =
+                    start + name.length;
+                }
+                mentionSuggestions.style.display = "none";
+                chatInput.focus();
+              }
+            });
 
-  // 4. overlay the label
-  const label = document.createElement('div');
-  label.textContent = 'SPESHAL GUB';
-  Object.assign(label.style, {
-    position:      'absolute',
-    top:           '0',
-    left:          '0',
-    width:         '100%',
-    height:        '100%',
-    display:       'flex',
-    alignItems:    'center',
-    justifyContent:'center',
-    fontFamily:    'sans-serif',
-    fontWeight:    'bold',
-    color:         'white',
-    textShadow:    '0 0 5px black',
-    pointerEvents: 'none'
-  });
-  container.appendChild(label);
+            // 2. Listen for new chat messages (last 50), append them in order
+            const CHAT_MESSAGE_LIMIT = 50;
+            const MAX_CHAT_LENGTH = 200;
+            let initialChatLoaded = false;
+            chatRef
+              .orderByChild("ts")
+              .limitToLast(CHAT_MESSAGE_LIMIT)
+              .on("child_added", (snap) => {
+                const { user, text, ts } = snap.val();
+                const safeUser = sanitizeUsername(user);
+                allUsers.add(safeUser);
+                const msgEl = document.createElement("div");
+                const dateObj = new Date(ts);
+                const date = dateObj.toLocaleDateString();
+                const time = dateObj.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                const mentionRegex = new RegExp(`@${username}\\b`, "gi");
+                const isMention = mentionRegex.test(text);
+                mentionRegex.lastIndex = 0;
+                const initial = escapeHTML(text).replace(
+                  mentionRegex,
+                  '<span class="mention-highlight">$&</span>',
+                );
+                msgEl.innerHTML = `[${date} ${time}] ${user}: ${initial}`;
+                messagesEl.appendChild(msgEl);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+                if (initialChatLoaded && isMention && safeUser !== username) {
+                  playMentionSound();
+                }
+                emoteHTML(text)
+                  .then((processed) => {
+                    mentionRegex.lastIndex = 0;
+                    const final = processed.replace(
+                      mentionRegex,
+                      '<span class="mention-highlight">$&</span>',
+                    );
+                    msgEl.innerHTML = `[${date} ${time}] ${user}: ${final}`;
+                    msgEl.querySelectorAll("img").forEach((img) => {
+                      if (img.complete) {
+                        messagesEl.scrollTop = messagesEl.scrollHeight;
+                      } else {
+                        img.addEventListener("load", () => {
+                          messagesEl.scrollTop = messagesEl.scrollHeight;
+                        });
+                      }
+                    });
+                    messagesEl.scrollTop = messagesEl.scrollHeight;
+                  })
+                  .catch(() => {
+                    // If emote lookup fails, keep the plain text message.
+                  });
+              });
 
-  container.style.opacity = 0;
-  container.style.transition = 'opacity 3s';
-  document.body.appendChild(container);
-  requestAnimationFrame(() => { container.style.opacity = 1; });
-  const timeout = setTimeout(() => {
-    container.style.pointerEvents = 'none';
-    container.style.opacity = 0;
-    setTimeout(() => { container.remove(); scheduleNextGolden(); }, 3000);
-  }, 60000);
+            chatRef.once("value").then(() => {
+              initialChatLoaded = true;
+            });
 
-  // 5. click handler triggers feral mode
-  container.addEventListener('click', (e) => {
-    clearTimeout(timeout);
-    activateFeralGubMode();
+            // 3. Hook up the form so sending pushes a new message
+            chatForm.addEventListener("submit", (e) => {
+              e.preventDefault();
+              const text = chatInput.value.trim().slice(0, MAX_CHAT_LENGTH);
+              if (!text) return;
+              chatRef.push({
+                user: username,
+                text,
+                ts: firebase.database.ServerValue.TIMESTAMP,
+              });
+              chatInput.value = "";
+              mentionSuggestions.style.display = "none";
+            });
 
-    const plusOne = document.createElement('div');
-    plusOne.textContent = 'FERAL GUB MODE!';
-    plusOne.className = 'plus-one';
-    plusOne.style.animationDuration = '2s';
-    plusOne.style.left = `${e.clientX}px`;
-    plusOne.style.top = `${e.clientY}px`;
-    document.body.appendChild(plusOne);
-    setTimeout(() => plusOne.remove(), 2000);
+            // Start spawning golden gubs
+            scheduleNextGolden();
 
-    container.remove();
-    scheduleNextGolden();
-  });
-}
+            function getGoldenGubReward() {
+              return Math.max(10, Math.floor(globalCount * 0.03));
+            }
 
-      // ─── UPDATED SCHEDULER ──────────────────
-function scheduleNextGolden() {
-  const min = 300000; // 5 minutes
-  const max = 1500000; // 25 minutes
-  setTimeout(() => {
-    if (Math.random() < 0.05) spawnSpecialGub();
-    else                      spawnGolden();
-  }, min + Math.random() * (max - min));
-}
-      // Elements for displaying totals and rate
-      const gubTotalEl = document.getElementById('gubTotal');
-      let passiveRatePerSec = 0;
+            // Spawn golden gub and handle clicks
+            function spawnGolden() {
+              const el = document.createElement("img");
+              el.src = images[Math.floor(Math.random() * images.length)];
+              el.className = "floater";
+              const size = 80 + Math.random() * 320;
+              el.style.width = el.style.height = size + "px";
+              el.style.left = `${Math.random() * (window.innerWidth - size)}px`;
+              el.style.top = `${Math.random() * (window.innerHeight - size)}px`;
+              el.style.zIndex = 10000;
+              el.style.filter =
+                "sepia(1) hue-rotate(20deg) saturate(5) brightness(1.2)";
+              el.style.border = "2px solid white";
+              el.style.pointerEvents = "auto";
+              el.style.opacity = 0;
+              el.style.transition = "opacity 3s";
+              document.body.appendChild(el);
+              requestAnimationFrame(() => {
+                el.style.opacity = 1;
+              });
+              const timeout = setTimeout(() => {
+                el.style.pointerEvents = "none";
+                el.style.opacity = 0;
+                setTimeout(() => {
+                  el.remove();
+                  scheduleNextGolden();
+                }, 3000);
+              }, 60000);
+              el.addEventListener("click", (e) => {
+                clearTimeout(timeout);
+                const reward = getGoldenGubReward();
+                const actualReward = reward * gubRateMultiplier;
+                sessionCount += actualReward;
+                gainGubs(reward);
 
-      function renderCounter() {
-        const rate = abbreviateNumber(passiveRatePerSec * gubRateMultiplier);
-        gubTotalEl.textContent = 'Gubs: ' + abbreviateNumber(Math.floor(displayedCount)) + ' (' + rate + ' gub/s)';
-      }
+                const plusOne = document.createElement("div");
+                plusOne.textContent = "+" + abbreviateNumber(actualReward);
+                plusOne.className = "plus-one";
+                plusOne.style.left = `${e.clientX}px`;
+                plusOne.style.top = `${e.clientY}px`;
+                document.body.appendChild(plusOne);
+                setTimeout(() => plusOne.remove(), 1000);
 
-      function gainGubs(amount) {
-        amount *= gubRateMultiplier;
-        globalCount += amount;
-        displayedCount += amount;
-        renderCounter();
-        queueScoreUpdate();
-      }
+                el.remove();
+                scheduleNextGolden();
+              });
+            }
+            // ─── SPECIAL GUB SPAWNER ───────────────────────────────────────────────
+            function activateFeralGubMode() {
+              const duration = 30000 + Math.random() * 90000;
+              gubRateMultiplier = 10;
+              renderCounter();
+              mainGub.classList.add("feral-glow");
+              clearTimeout(feralTimeout);
+              feralTimeout = setTimeout(() => {
+                gubRateMultiplier = 1;
+                mainGub.classList.remove("feral-glow");
+                renderCounter();
+              }, duration);
+            }
 
-      function spendGubs(amount) {
-        globalCount -= amount;
-        displayedCount -= amount;
-        renderCounter();
-        queueScoreUpdate();
-      }
-      // main gub handler
-const mainGub = document.getElementById('main-gub');
-const clickMe = document.getElementById('clickMe');
-if (!sessionStorage.getItem('gubClicked')) {
-  clickMe.style.display = 'block';
-}
-let popTimeout;
+            function spawnSpecialGub() {
+              // 1. pick the exact same random image
+              const imgSrc = images[Math.floor(Math.random() * images.length)];
 
-      mainGub.addEventListener('click', (e) => {
-        clickMe.style.display = 'none';
-        sessionStorage.setItem('gubClicked', 'true');
-        const clickGain = gubRateMultiplier;
-        sessionCount += clickGain;
-        gainGubs(1);
+              // 2. container for image + label
+              const container = document.createElement("div");
+              container.className = "floater special-gub";
+              const size = 80 + Math.random() * 320;
+              container.style.width = size + "px";
+              container.style.height = size + "px";
+              container.style.left = `${Math.random() * (window.innerWidth - size)}px`;
+              container.style.top = `${Math.random() * (window.innerHeight - size)}px`;
 
-        const plusOne = document.createElement('div');
-        plusOne.textContent = '+' + abbreviateNumber(clickGain);
-        plusOne.className = 'plus-one';
-        plusOne.style.left = `${e.clientX}px`;
-        plusOne.style.top = `${e.clientY}px`;
-        document.body.appendChild(plusOne);
-        setTimeout(() => plusOne.remove(), 1000);
+              // 3. the image element itself
+              const img = document.createElement("img");
+              img.src = imgSrc;
+              img.style.width = "100%";
+              img.style.height = "100%";
+              img.style.objectFit = "contain";
+              // orange-ify it
+              img.style.filter =
+                "hue-rotate(30deg) saturate(3) brightness(1.3)";
+              container.appendChild(img);
 
-        mainGub.classList.remove('pop-effect');
-        void mainGub.offsetWidth;
-        mainGub.classList.add('pop-effect');
+              // 4. overlay the label
+              const label = document.createElement("div");
+              label.textContent = "SPESHAL GUB";
+              Object.assign(label.style, {
+                position: "absolute",
+                top: "0",
+                left: "0",
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "sans-serif",
+                fontWeight: "bold",
+                color: "white",
+                textShadow: "0 0 5px black",
+                pointerEvents: "none",
+              });
+              container.appendChild(label);
 
-        clearTimeout(popTimeout);
-        popTimeout = setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
-      });
- // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
-    const COST_MULTIPLIER = 1.15; // smoother exponential cost scaling factor
-    const shopItems = [
-      { id: 'passiveMaker', name: 'The Gub', baseCost: 100, rate: 1 },
-      { id: 'guberator',     name: 'Guberator', baseCost: 500, rate: 5 },
-      { id: 'gubmill',       name: 'Gubmill',   baseCost: 2000, rate: 20 },
-      { id: 'gubsolar',    name: 'Solar Gub Panels', baseCost: 10000, rate: 100 },
-      { id: 'gubfactory',       name: 'Gubactory',    baseCost: 50000, rate: 500 },
-      { id: 'gubhydro',      name: 'Hydro Gub Plant',   baseCost: 250000, rate: 2500 },
-      { id: 'gubnuclear',       name: 'Nuclear Gub Plant',    baseCost: 1000000, rate: 10000 },
-      { id: 'gubquantum',    name: 'Quantum Gub Computer', baseCost: 5000000, rate: 50000 },
-      { id: 'gubai',        name: 'GUB AI', caption: '(be careful of gubnet...)', baseCost: 25000000, rate: 250000 },
-      { id: 'gubclone',     name: 'Gub Cloning Facility',    baseCost: 125000000,  rate: 1250000 },
-      { id: 'gubspace',     name: 'Gub Space Program',       baseCost: 625000000,  rate: 6250000 },
-      { id: 'intergalactic', name: 'Intergalactic Gub',        baseCost: 3125000000, rate: 31250000 }
-    ];
-    const shopRef = db.ref(`shop_v2/${uid}`);
-    const owned = {
-      passiveMaker:0,
-      guberator:0,
-      gubmill:0,
-      gubsolar:0,
-      gubfactory:0,
-      gubhydro:0,
-      gubnuclear:0,
-      gubquantum:0,
-      gubai:0,
-      gubclone:0,
-      gubspace:0,
-      intergalactic:0
-    };
+              container.style.opacity = 0;
+              container.style.transition = "opacity 3s";
+              document.body.appendChild(container);
+              requestAnimationFrame(() => {
+                container.style.opacity = 1;
+              });
+              const timeout = setTimeout(() => {
+                container.style.pointerEvents = "none";
+                container.style.opacity = 0;
+                setTimeout(() => {
+                  container.remove();
+                  scheduleNextGolden();
+                }, 3000);
+              }, 60000);
 
-    // Continuous passive income ticker so purchasing items doesn't pause income
-    const PASSIVE_TICK_MS = 100; // update counter 10x per second for responsiveness
+              // 5. click handler triggers feral mode
+              container.addEventListener("click", (e) => {
+                clearTimeout(timeout);
+                activateFeralGubMode();
 
-    setInterval(() => {
-      if (passiveRatePerSec > 0) {
-        gainGubs(passiveRatePerSec * (PASSIVE_TICK_MS / 1000));
-      }
-    }, PASSIVE_TICK_MS);
+                const plusOne = document.createElement("div");
+                plusOne.textContent = "FERAL GUB MODE!";
+                plusOne.className = "plus-one";
+                plusOne.style.animationDuration = "2s";
+                plusOne.style.left = `${e.clientX}px`;
+                plusOne.style.top = `${e.clientY}px`;
+                document.body.appendChild(plusOne);
+                setTimeout(() => plusOne.remove(), 2000);
 
-    function updatePassiveIncome() {
-      const perSecondTotal = shopItems.reduce((sum, item) => sum + owned[item.id] * item.rate, 0);
-      passiveRatePerSec = perSecondTotal;
-      renderCounter();
-    }
+                container.remove();
+                scheduleNextGolden();
+              });
+            }
 
-const shopBtn       = document.getElementById('shopBtn');
-const shopPanel     = document.getElementById('shopPanel');
-const shopContainer = document.getElementById('shopItemsContainer');
-const adminBtn      = document.getElementById('adminBtn');
-const adminPanel    = document.getElementById('adminPanel');
-const adminUser     = document.getElementById('adminUsername');
-const adminScore    = document.getElementById('adminScore');
-const adminUpdate   = document.getElementById('adminUpdate');
-const adminDelete   = document.getElementById('adminDelete');
+            // ─── UPDATED SCHEDULER ──────────────────
+            function scheduleNextGolden() {
+              const min = 300000; // 5 minutes
+              const max = 1500000; // 25 minutes
+              setTimeout(
+                () => {
+                  if (Math.random() < 0.05) spawnSpecialGub();
+                  else spawnGolden();
+                },
+                min + Math.random() * (max - min),
+              );
+            }
+            // Elements for displaying totals and rate
+            const gubTotalEl = document.getElementById("gubTotal");
+            let passiveRatePerSec = 0;
 
-const ADMIN_UIDS = ['sGd1ZHR1nvMKKCw9A1O5bwtbFD23', 'YHtvs4JyAtS3SUtNAUJuPMm3ac22'];
-db.ref('admins/' + uid).once('value').then(snap => {
-  if (!snap.exists() && ADMIN_UIDS.includes(uid)) {
-    db.ref('admins/' + uid).set(true);
-    adminBtn.style.display = 'block';
-  } else if (snap.val()) {
-    adminBtn.style.display = 'block';
-  }
-});
+            function renderCounter() {
+              const rate = abbreviateNumber(
+                passiveRatePerSec * gubRateMultiplier,
+              );
+              gubTotalEl.textContent =
+                "Gubs: " +
+                abbreviateNumber(Math.floor(displayedCount)) +
+                " (" +
+                rate +
+                " gub/s)";
+            }
 
-adminBtn.addEventListener('click', () => {
-  adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
-});
+            function gainGubs(amount) {
+              amount *= gubRateMultiplier;
+              globalCount += amount;
+              displayedCount += amount;
+              renderCounter();
+              queueScoreUpdate();
+            }
 
-adminUpdate.addEventListener('click', () => {
-  const target = sanitizeUsername(adminUser.value);
-  const score  = parseInt(adminScore.value, 10);
-  if (!target || isNaN(score)) return;
-  db.ref('leaderboard_v3').orderByChild('username').equalTo(target).once('value').then(snap => {
-    snap.forEach(child => {
-      child.ref.update({ score });
-    });
-  });
-});
+            function spendGubs(amount) {
+              globalCount -= amount;
+              displayedCount -= amount;
+              renderCounter();
+              queueScoreUpdate();
+            }
+            // main gub handler
+            const mainGub = document.getElementById("main-gub");
+            const clickMe = document.getElementById("clickMe");
+            if (!sessionStorage.getItem("gubClicked")) {
+              clickMe.style.display = "block";
+            }
+            let popTimeout;
 
-adminDelete.addEventListener('click', () => {
-  const target = sanitizeUsername(adminUser.value);
-  if (!target) return;
-  db.ref('leaderboard_v3').orderByChild('username').equalTo(target).once('value').then(snap => {
-    snap.forEach(child => child.ref.remove());
-  });
-});
+            mainGub.addEventListener("click", (e) => {
+              clickMe.style.display = "none";
+              sessionStorage.setItem("gubClicked", "true");
+              const clickGain = gubRateMultiplier;
+              sessionCount += clickGain;
+              gainGubs(1);
 
-shopBtn.addEventListener('click', () => {
-  shopPanel.style.display = shopPanel.style.display === 'block' ? 'none' : 'block';
-});
+              const plusOne = document.createElement("div");
+              plusOne.textContent = "+" + abbreviateNumber(clickGain);
+              plusOne.className = "plus-one";
+              plusOne.style.left = `${e.clientX}px`;
+              plusOne.style.top = `${e.clientY}px`;
+              document.body.appendChild(plusOne);
+              setTimeout(() => plusOne.remove(), 1000);
 
-shopItems.forEach(item => {
-  const div = document.createElement('div');
-  div.innerHTML = `
-    <strong>${item.name}</strong>${item.caption ? ` <span style="color:red;font-size:0.8em;">${item.caption}</span>` : ''}<br>
+              mainGub.classList.remove("pop-effect");
+              void mainGub.offsetWidth;
+              mainGub.classList.add("pop-effect");
+
+              clearTimeout(popTimeout);
+              popTimeout = setTimeout(
+                () => mainGub.classList.remove("pop-effect"),
+                150,
+              );
+            });
+            // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
+            const COST_MULTIPLIER = 1.15; // smoother exponential cost scaling factor
+            const shopItems = [
+              { id: "passiveMaker", name: "The Gub", baseCost: 100, rate: 1 },
+              { id: "guberator", name: "Guberator", baseCost: 500, rate: 5 },
+              { id: "gubmill", name: "Gubmill", baseCost: 2000, rate: 20 },
+              {
+                id: "gubsolar",
+                name: "Solar Gub Panels",
+                baseCost: 10000,
+                rate: 100,
+              },
+              {
+                id: "gubfactory",
+                name: "Gubactory",
+                baseCost: 50000,
+                rate: 500,
+              },
+              {
+                id: "gubhydro",
+                name: "Hydro Gub Plant",
+                baseCost: 250000,
+                rate: 2500,
+              },
+              {
+                id: "gubnuclear",
+                name: "Nuclear Gub Plant",
+                baseCost: 1000000,
+                rate: 10000,
+              },
+              {
+                id: "gubquantum",
+                name: "Quantum Gub Computer",
+                baseCost: 5000000,
+                rate: 50000,
+              },
+              {
+                id: "gubai",
+                name: "GUB AI",
+                caption: "(be careful of gubnet...)",
+                baseCost: 25000000,
+                rate: 250000,
+              },
+              {
+                id: "gubclone",
+                name: "Gub Cloning Facility",
+                baseCost: 125000000,
+                rate: 1250000,
+              },
+              {
+                id: "gubspace",
+                name: "Gub Space Program",
+                baseCost: 625000000,
+                rate: 6250000,
+              },
+              {
+                id: "intergalactic",
+                name: "Intergalactic Gub",
+                baseCost: 3125000000,
+                rate: 31250000,
+              },
+            ];
+            const shopRef = db.ref(`shop_v2/${uid}`);
+            const owned = {
+              passiveMaker: 0,
+              guberator: 0,
+              gubmill: 0,
+              gubsolar: 0,
+              gubfactory: 0,
+              gubhydro: 0,
+              gubnuclear: 0,
+              gubquantum: 0,
+              gubai: 0,
+              gubclone: 0,
+              gubspace: 0,
+              intergalactic: 0,
+            };
+
+            // Continuous passive income ticker so purchasing items doesn't pause income
+            const PASSIVE_TICK_MS = 100; // update counter 10x per second for responsiveness
+
+            setInterval(() => {
+              if (passiveRatePerSec > 0) {
+                gainGubs(passiveRatePerSec * (PASSIVE_TICK_MS / 1000));
+              }
+            }, PASSIVE_TICK_MS);
+
+            function updatePassiveIncome() {
+              const perSecondTotal = shopItems.reduce(
+                (sum, item) => sum + owned[item.id] * item.rate,
+                0,
+              );
+              passiveRatePerSec = perSecondTotal;
+              renderCounter();
+            }
+
+            const shopBtn = document.getElementById("shopBtn");
+            const shopPanel = document.getElementById("shopPanel");
+            const shopContainer = document.getElementById("shopItemsContainer");
+            const adminBtn = document.getElementById("adminBtn");
+            const adminPanel = document.getElementById("adminPanel");
+            const adminUser = document.getElementById("adminUsername");
+            const adminScore = document.getElementById("adminScore");
+            const adminUpdate = document.getElementById("adminUpdate");
+            const adminDelete = document.getElementById("adminDelete");
+
+            const ADMIN_UIDS = [
+              "sGd1ZHR1nvMKKCw9A1O5bwtbFD23",
+              "YHtvs4JyAtS3SUtNAUJuPMm3ac22",
+            ];
+            db.ref("admins/" + uid)
+              .once("value")
+              .then((snap) => {
+                if (!snap.exists() && ADMIN_UIDS.includes(uid)) {
+                  db.ref("admins/" + uid).set(true);
+                  adminBtn.style.display = "block";
+                } else if (snap.val()) {
+                  adminBtn.style.display = "block";
+                }
+              });
+
+            adminBtn.addEventListener("click", () => {
+              adminPanel.style.display =
+                adminPanel.style.display === "block" ? "none" : "block";
+            });
+
+            adminUpdate.addEventListener("click", () => {
+              const target = sanitizeUsername(adminUser.value);
+              const score = parseInt(adminScore.value, 10);
+              if (!target || isNaN(score)) return;
+              db.ref("leaderboard_v3")
+                .orderByChild("username")
+                .equalTo(target)
+                .once("value")
+                .then((snap) => {
+                  snap.forEach((child) => {
+                    child.ref.update({ score });
+                  });
+                });
+            });
+
+            adminDelete.addEventListener("click", () => {
+              const target = sanitizeUsername(adminUser.value);
+              if (!target) return;
+              db.ref("leaderboard_v3")
+                .orderByChild("username")
+                .equalTo(target)
+                .once("value")
+                .then((snap) => {
+                  snap.forEach((child) => child.ref.remove());
+                });
+            });
+
+            shopBtn.addEventListener("click", () => {
+              shopPanel.style.display =
+                shopPanel.style.display === "block" ? "none" : "block";
+            });
+
+            shopItems.forEach((item) => {
+              const div = document.createElement("div");
+              div.innerHTML = `
+    <strong>${item.name}</strong>${item.caption ? ` <span style="color:red;font-size:0.8em;">${item.caption}</span>` : ""}<br>
     Cost: <span id="cost-${item.id}"></span> Gubs<br>
     Rate: ${abbreviateNumber(item.rate)} Gub/s<br>
     Owned: <span id="owned-${item.id}">0</span><br>
@@ -1250,298 +1581,423 @@ shopItems.forEach(item => {
     <button id="buy-${item.id}-all">All</button>
     <hr style="border-color:#444">
   `;
-  shopContainer.appendChild(div);
+              shopContainer.appendChild(div);
 
-  const buy1   = div.querySelector(`#buy-${item.id}`);
-  const buy10  = div.querySelector(`#buy-${item.id}-x10`);
-  const buy100 = div.querySelector(`#buy-${item.id}-x100`);
-  const buyAll = div.querySelector(`#buy-${item.id}-all`);
-  const costSpan = div.querySelector(`#cost-${item.id}`);
+              const buy1 = div.querySelector(`#buy-${item.id}`);
+              const buy10 = div.querySelector(`#buy-${item.id}-x10`);
+              const buy100 = div.querySelector(`#buy-${item.id}-x100`);
+              const buyAll = div.querySelector(`#buy-${item.id}-all`);
+              const costSpan = div.querySelector(`#cost-${item.id}`);
 
-  function currentCost() {
-    return Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]));
-  }
+              function currentCost() {
+                return Math.floor(
+                  item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]),
+                );
+              }
 
-  function totalCost(quantity) {
-    let cost = 0;
-    for (let i = 0; i < quantity; i++) {
-      cost += Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id] + i));
-    }
-    return cost;
-  }
+              function totalCost(quantity) {
+                let cost = 0;
+                for (let i = 0; i < quantity; i++) {
+                  cost += Math.floor(
+                    item.baseCost *
+                      Math.pow(COST_MULTIPLIER, owned[item.id] + i),
+                  );
+                }
+                return cost;
+              }
 
-  function updateCostDisplay() {
-    costSpan.textContent = abbreviateNumber(currentCost());
-  }
+              function updateCostDisplay() {
+                costSpan.textContent = abbreviateNumber(currentCost());
+              }
 
-  function attemptPurchase(quantity) {
-    const cost = totalCost(quantity);
-    if (globalCount >= cost) {
-      spendGubs(cost);
-      owned[item.id] += quantity;
-      document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
-      db.ref(`shop_v2/${uid}/${item.id}`).set(owned[item.id]);
-      updatePassiveIncome();
-      updateCostDisplay();
-    }
-  }
+              function attemptPurchase(quantity) {
+                const cost = totalCost(quantity);
+                if (globalCount >= cost) {
+                  spendGubs(cost);
+                  owned[item.id] += quantity;
+                  document.getElementById(`owned-${item.id}`).textContent =
+                    owned[item.id];
+                  db.ref(`shop_v2/${uid}/${item.id}`).set(owned[item.id]);
+                  updatePassiveIncome();
+                  updateCostDisplay();
+                }
+              }
 
-  function maxAffordable() {
-    let qty = 0;
-    let accumulated = 0;
-    while (true) {
-      const next = Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id] + qty));
-      if (accumulated + next > globalCount) break;
-      accumulated += next;
-      qty++;
-    }
-    return qty;
-  }
+              function maxAffordable() {
+                let qty = 0;
+                let accumulated = 0;
+                while (true) {
+                  const next = Math.floor(
+                    item.baseCost *
+                      Math.pow(COST_MULTIPLIER, owned[item.id] + qty),
+                  );
+                  if (accumulated + next > globalCount) break;
+                  accumulated += next;
+                  qty++;
+                }
+                return qty;
+              }
 
-  buy1.addEventListener('click',   () => attemptPurchase(1));
-  buy10.addEventListener('click',  () => attemptPurchase(10));
-  buy100.addEventListener('click', () => attemptPurchase(100));
-  buyAll.addEventListener('click', () => {
-    const qty = maxAffordable();
-    if (qty > 0) attemptPurchase(qty);
-  });
-  updateCostDisplay();
-});
+              buy1.addEventListener("click", () => attemptPurchase(1));
+              buy10.addEventListener("click", () => attemptPurchase(10));
+              buy100.addEventListener("click", () => attemptPurchase(100));
+              buyAll.addEventListener("click", () => {
+                const qty = maxAffordable();
+                if (qty > 0) attemptPurchase(qty);
+              });
+              updateCostDisplay();
+            });
 
-shopRef.once('value').then(snapshot => {
-  const stored = snapshot.val() || {};
-  shopItems.forEach(item => {
-    owned[item.id] = stored[item.id] || 0;
-    document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
-    const costSpan = document.getElementById(`cost-${item.id}`);
-    if (costSpan) {
-      costSpan.textContent = abbreviateNumber(Math.floor(item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id])));
-    }
-  });
-  updatePassiveIncome();
-});
-    // passive income handled via a single interval
-    // ──────────────────────────────────────────────────────────────────────
+            shopRef.once("value").then((snapshot) => {
+              const stored = snapshot.val() || {};
+              shopItems.forEach((item) => {
+                owned[item.id] = stored[item.id] || 0;
+                document.getElementById(`owned-${item.id}`).textContent =
+                  owned[item.id];
+                const costSpan = document.getElementById(`cost-${item.id}`);
+                if (costSpan) {
+                  costSpan.textContent = abbreviateNumber(
+                    Math.floor(
+                      item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]),
+                    ),
+                  );
+                }
+              });
+              updatePassiveIncome();
+            });
+            // passive income handled via a single interval
+            // ──────────────────────────────────────────────────────────────────────
 
-  // Feedback submission
-  const feedbackBtn = document.getElementById('feedbackBtn');
-  const feedbackModal = document.getElementById('feedbackModal');
-  const feedbackInput = document.getElementById('feedbackInput');
-  const feedbackSubmit = document.getElementById('feedbackSubmit');
-  const feedbackSee = document.getElementById('feedbackSee');
-  const feedbackAnon = document.getElementById('feedbackAnon');
-  const feedbackCounter = document.getElementById('feedbackCounter');
+            // Feedback submission
+            const feedbackBtn = document.getElementById("feedbackBtn");
+            const feedbackModal = document.getElementById("feedbackModal");
+            const feedbackInput = document.getElementById("feedbackInput");
+            const feedbackSubmit = document.getElementById("feedbackSubmit");
+            const feedbackSee = document.getElementById("feedbackSee");
+            const feedbackAnon = document.getElementById("feedbackAnon");
+            const feedbackCounter = document.getElementById("feedbackCounter");
 
-  feedbackInput.addEventListener('input', () => {
-    const remaining = 200 - feedbackInput.value.length;
-    feedbackCounter.textContent = `${remaining} characters remaining`;
-  });
+            feedbackInput.addEventListener("input", () => {
+              const remaining = 200 - feedbackInput.value.length;
+              feedbackCounter.textContent = `${remaining} characters remaining`;
+            });
 
-  feedbackBtn.addEventListener('click', () => {
-    feedbackModal.style.display = feedbackModal.style.display === 'block' ? 'none' : 'block';
-  });
+            feedbackBtn.addEventListener("click", () => {
+              feedbackModal.style.display =
+                feedbackModal.style.display === "block" ? "none" : "block";
+            });
 
-  feedbackSee.addEventListener('click', () => {
-    window.open('feedback-list/', '_blank');
-    feedbackModal.style.display = 'none';
-  });
+            feedbackSee.addEventListener("click", () => {
+              window.open("feedback-list/", "_blank");
+              feedbackModal.style.display = "none";
+            });
 
-  feedbackSubmit.addEventListener('click', () => {
-    const text = feedbackInput.value.trim();
-    if (!text) return;
-    const who = feedbackAnon.checked ? 'Anon' : username;
-    db.ref('feedback').push({
-      user: who,
-      text,
-      ts: Date.now()
-    });
-    feedbackInput.value = '';
-    feedbackAnon.checked = false;
-    feedbackCounter.textContent = '200 characters remaining';
-    feedbackModal.style.display = 'none';
-  });
+            feedbackSubmit.addEventListener("click", () => {
+              const text = feedbackInput.value.trim();
+              if (!text) return;
+              const who = feedbackAnon.checked ? "Anon" : username;
+              db.ref("feedback").push({
+                user: who,
+                text,
+                ts: Date.now(),
+              });
+              feedbackInput.value = "";
+              feedbackAnon.checked = false;
+              feedbackCounter.textContent = "200 characters remaining";
+              feedbackModal.style.display = "none";
+            });
+          })
+          .catch((err) => console.error("Auth Error", err));
 
-}).catch(err => console.error('Auth Error', err));
-
-    // --- Game Logic & Controls (unchanged) ---
-    const highImages = ['floater1.jpg','floater2.jpg','floater3.jpg','floater4.png','floater5.jpg','floater6.jpg','floater7.jpg','floater8.jpg','floater9.jpg','floater10.jpg','floater11.jpg','floater12.jpg','floater13.jpg','floater14.jpg','floater15.jpg','floater16.jpg','floater17.png','floater18.jpg'];
-    const lowImages  = ['low_floater1.jpg','low_floater2.jpg','low_floater3.jpg','floater4.png','low_floater5.jpg','low_floater6.jpg','low_floater7.jpg','low_floater8.jpg','low_floater9.jpg','low_floater10.jpg','low_floater11.jpg','low_floater12.jpg','low_floater13.jpg','low_floater14.jpg','low_floater15.jpg','low_floater16.jpg','low_floater17.jpg','low_floater18.jpg'];
-    let useHighQuality = localStorage.getItem('gubHighQuality') === 'true';
-    let images = useHighQuality ? highImages : lowImages;
-    const texts = ["bark","barke","gubbling","good boye","sniffa","shidded","gubb","gubbing","i'm gonna gub","he do be gubbin","were my salami go","Gub Gubtaro Pissboy420 Bong or Die","bork","aaaAAa","im gubbing it im gubbing it", "bug", "lil gublets", "FUCKYOU BAILEY", "ish true ish true", "gub needs the funny 3 numbers on the back of ur credit card"];
-    let speedMultiplier = 2, numFloaters = NUM_FLOATERS;
-    const floaters = [];
-    function createEntity(isText=false){
-      const elem = document.createElement('div');
-      const size = 80 + Math.random() * 320;
-      elem.style.width = elem.style.height = size + 'px';
-      elem.style.left = Math.random() * (window.innerWidth - size) + 'px';
-      elem.style.top  = Math.random() * (window.innerHeight - size) + 'px';
-      let imgIdx = null;
-      if(isText){
-        elem.className = 'rainbow-text';
-        elem.textContent = texts[Math.floor(Math.random()*texts.length)];
-      } else {
-        elem.className = 'floater';
-        const img = document.createElement('img');
-        imgIdx = Math.floor(Math.random()*images.length);
-        img.src = images[imgIdx];
-        elem.appendChild(img);
-      }
-      document.body.appendChild(elem);
-      floaters.push({ elem, x: parseFloat(elem.style.left), y: parseFloat(elem.style.top), vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, width: size, height: size, isText, imgIdx });
-    }
-    function removeEntity(){ const f = floaters.pop(); if(f) f.elem.remove(); }
-    function animate(){
-      floaters.forEach(f => {
-        f.x += f.vx * speedMultiplier;
-        f.y += f.vy * speedMultiplier;
-        if(f.x <= 0 || f.x + f.width >= window.innerWidth) f.vx *= -1;
-        if(f.y <= 0 || f.y + f.height >= window.innerHeight) f.vy *= -1;
-        f.elem.style.left = f.x + 'px';
-        f.elem.style.top  = f.y + 'px';
-      });
-      requestAnimationFrame(animate);
-    }
-    for(let i=0; i<NUM_FLOATERS; i++){ createEntity(false); createEntity(true);}   
-    animate();
-    // Controls
-    const settingsBtn = document.getElementById('lowPerfBtn');
-    const perfMenu   = document.getElementById('perfMenu');
-    const spdDec     = document.getElementById('spdDec');
-    const spdInc     = document.getElementById('spdInc');
-    const imgDec     = document.getElementById('imgDec');
-    const imgInc     = document.getElementById('imgInc');
-    const spdVal     = document.getElementById('spdVal');
-    const imgVal     = document.getElementById('imgVal');
-    const moveToggle = document.getElementById('moveToggle');
-    const qualityBtn = document.getElementById('qualityBtn');
-
-    let movementPaused = false;
-    let storedSpeed = speedMultiplier;
-    qualityBtn.textContent = useHighQuality ? 'High Quality: On' : 'High Quality: Off';
-    qualityBtn.onclick = () => {
-      useHighQuality = !useHighQuality;
-      localStorage.setItem('gubHighQuality', useHighQuality);
-      images = useHighQuality ? highImages : lowImages;
-      qualityBtn.textContent = useHighQuality ? 'High Quality: On' : 'High Quality: Off';
-      floaters.forEach(f => {
-        if(!f.isText && f.imgIdx !== null){
-          const img = f.elem.querySelector('img');
-          img.src = images[f.imgIdx];
+        // --- Game Logic & Controls (unchanged) ---
+        const highImages = [
+          "floater1.jpg",
+          "floater2.jpg",
+          "floater3.jpg",
+          "floater4.png",
+          "floater5.jpg",
+          "floater6.jpg",
+          "floater7.jpg",
+          "floater8.jpg",
+          "floater9.jpg",
+          "floater10.jpg",
+          "floater11.jpg",
+          "floater12.jpg",
+          "floater13.jpg",
+          "floater14.jpg",
+          "floater15.jpg",
+          "floater16.jpg",
+          "floater17.png",
+          "floater18.jpg",
+        ];
+        const lowImages = [
+          "low_floater1.jpg",
+          "low_floater2.jpg",
+          "low_floater3.jpg",
+          "floater4.png",
+          "low_floater5.jpg",
+          "low_floater6.jpg",
+          "low_floater7.jpg",
+          "low_floater8.jpg",
+          "low_floater9.jpg",
+          "low_floater10.jpg",
+          "low_floater11.jpg",
+          "low_floater12.jpg",
+          "low_floater13.jpg",
+          "low_floater14.jpg",
+          "low_floater15.jpg",
+          "low_floater16.jpg",
+          "low_floater17.jpg",
+          "low_floater18.jpg",
+        ];
+        let useHighQuality = localStorage.getItem("gubHighQuality") === "true";
+        let images = useHighQuality ? highImages : lowImages;
+        const texts = [
+          "bark",
+          "barke",
+          "gubbling",
+          "good boye",
+          "sniffa",
+          "shidded",
+          "gubb",
+          "gubbing",
+          "i'm gonna gub",
+          "he do be gubbin",
+          "were my salami go",
+          "Gub Gubtaro Pissboy420 Bong or Die",
+          "bork",
+          "aaaAAa",
+          "im gubbing it im gubbing it",
+          "bug",
+          "lil gublets",
+          "FUCKYOU BAILEY",
+          "ish true ish true",
+          "gub needs the funny 3 numbers on the back of ur credit card",
+        ];
+        let speedMultiplier = 2,
+          numFloaters = NUM_FLOATERS;
+        const floaters = [];
+        function createEntity(isText = false) {
+          const elem = document.createElement("div");
+          const size = 80 + Math.random() * 320;
+          elem.style.width = elem.style.height = size + "px";
+          elem.style.left = Math.random() * (window.innerWidth - size) + "px";
+          elem.style.top = Math.random() * (window.innerHeight - size) + "px";
+          let imgIdx = null;
+          if (isText) {
+            elem.className = "rainbow-text";
+            elem.textContent = texts[Math.floor(Math.random() * texts.length)];
+          } else {
+            elem.className = "floater";
+            const img = document.createElement("img");
+            imgIdx = Math.floor(Math.random() * images.length);
+            img.src = images[imgIdx];
+            elem.appendChild(img);
+          }
+          document.body.appendChild(elem);
+          floaters.push({
+            elem,
+            x: parseFloat(elem.style.left),
+            y: parseFloat(elem.style.top),
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            width: size,
+            height: size,
+            isText,
+            imgIdx,
+          });
         }
-      });
-    };
+        function removeEntity() {
+          const f = floaters.pop();
+          if (f) f.elem.remove();
+        }
+        function animate() {
+          floaters.forEach((f) => {
+            f.x += f.vx * speedMultiplier;
+            f.y += f.vy * speedMultiplier;
+            if (f.x <= 0 || f.x + f.width >= window.innerWidth) f.vx *= -1;
+            if (f.y <= 0 || f.y + f.height >= window.innerHeight) f.vy *= -1;
+            f.elem.style.left = f.x + "px";
+            f.elem.style.top = f.y + "px";
+          });
+          requestAnimationFrame(animate);
+        }
+        for (let i = 0; i < NUM_FLOATERS; i++) {
+          createEntity(false);
+          createEntity(true);
+        }
+        animate();
+        // Controls
+        const settingsBtn = document.getElementById("lowPerfBtn");
+        const perfMenu = document.getElementById("perfMenu");
+        const spdDec = document.getElementById("spdDec");
+        const spdInc = document.getElementById("spdInc");
+        const imgDec = document.getElementById("imgDec");
+        const imgInc = document.getElementById("imgInc");
+        const spdVal = document.getElementById("spdVal");
+        const imgVal = document.getElementById("imgVal");
+        const moveToggle = document.getElementById("moveToggle");
+        const qualityBtn = document.getElementById("qualityBtn");
 
-    settingsBtn.onclick = () => { perfMenu.style.display = perfMenu.style.display==='block' ? 'none' : 'block'; };
-    function updateLabels(){ spdVal.textContent = speedMultiplier; imgVal.textContent = numFloaters; }
-    function adjustSpeed(d){
-      if(movementPaused){
-        storedSpeed = Math.max(1, storedSpeed + d);
-      } else {
-        speedMultiplier = Math.max(1, speedMultiplier + d);
-      }
-      updateLabels();
-    }
-    function adjustImages(d){
-      const newVal = Math.max(0, numFloaters + d);
-      if(newVal !== numFloaters){
-        if(d>0) for(let i=0; i<d; i++){ createEntity(false); createEntity(true); }
-        else     for(let i=0; i<-d; i++){ removeEntity(); removeEntity(); }
-        numFloaters = newVal;
+        let movementPaused = false;
+        let storedSpeed = speedMultiplier;
+        qualityBtn.textContent = useHighQuality
+          ? "High Quality: On"
+          : "High Quality: Off";
+        qualityBtn.onclick = () => {
+          useHighQuality = !useHighQuality;
+          localStorage.setItem("gubHighQuality", useHighQuality);
+          images = useHighQuality ? highImages : lowImages;
+          qualityBtn.textContent = useHighQuality
+            ? "High Quality: On"
+            : "High Quality: Off";
+          floaters.forEach((f) => {
+            if (!f.isText && f.imgIdx !== null) {
+              const img = f.elem.querySelector("img");
+              img.src = images[f.imgIdx];
+            }
+          });
+        };
+
+        settingsBtn.onclick = () => {
+          perfMenu.style.display =
+            perfMenu.style.display === "block" ? "none" : "block";
+        };
+        function updateLabels() {
+          spdVal.textContent = speedMultiplier;
+          imgVal.textContent = numFloaters;
+        }
+        function adjustSpeed(d) {
+          if (movementPaused) {
+            storedSpeed = Math.max(1, storedSpeed + d);
+          } else {
+            speedMultiplier = Math.max(1, speedMultiplier + d);
+          }
+          updateLabels();
+        }
+        function adjustImages(d) {
+          const newVal = Math.max(0, numFloaters + d);
+          if (newVal !== numFloaters) {
+            if (d > 0)
+              for (let i = 0; i < d; i++) {
+                createEntity(false);
+                createEntity(true);
+              }
+            else
+              for (let i = 0; i < -d; i++) {
+                removeEntity();
+                removeEntity();
+              }
+            numFloaters = newVal;
+            updateLabels();
+          }
+        }
+        spdDec.onclick = () => adjustSpeed(-1);
+        spdInc.onclick = () => adjustSpeed(1);
+        imgDec.onclick = () => adjustImages(-2);
+        imgInc.onclick = () => adjustImages(2);
+        moveToggle.onclick = () => {
+          if (!movementPaused) {
+            storedSpeed = speedMultiplier;
+            speedMultiplier = 0;
+            moveToggle.textContent = "Resume Movement";
+          } else {
+            speedMultiplier = storedSpeed;
+            moveToggle.textContent = "Pause Movement";
+          }
+          movementPaused = !movementPaused;
+          updateLabels();
+        };
         updateLabels();
-      }
-    }
-    spdDec.onclick = () => adjustSpeed(-1);
-    spdInc.onclick = () => adjustSpeed(1);
-    imgDec.onclick = () => adjustImages(-2);
-    imgInc.onclick = () => adjustImages(2);
-    moveToggle.onclick = () => {
-      if(!movementPaused){
-        storedSpeed = speedMultiplier;
-        speedMultiplier = 0;
-        moveToggle.textContent = 'Resume Movement';
-      } else {
-        speedMultiplier = storedSpeed;
-        moveToggle.textContent = 'Pause Movement';
-      }
-      movementPaused = !movementPaused;
-      updateLabels();
-    };
-    updateLabels();
 
-    // Twitch & Chaos Mode
-    const chaosBtn  = document.getElementById('chaosBtn');
-    const twitchBtn = document.getElementById('twitchBtn');
-    const twitchBox = document.getElementById('twitchPlayer');
-    let twitchShown = false;
+        // Twitch & Chaos Mode
+        const chaosBtn = document.getElementById("chaosBtn");
+        const twitchBtn = document.getElementById("twitchBtn");
+        const twitchBox = document.getElementById("twitchPlayer");
+        let twitchShown = false;
 
-    twitchBtn.onclick = () => {
-      if(!twitchShown){
-        twitchBox.style.display = 'block';
-        new Twitch.Embed('twitchPlayer',{ width:'100%', height:'100%', channel:'harupi', layout:'video', parent:[location.hostname] });
-        twitchBtn.textContent = 'Hide Stream';
-      } else {
-        twitchBox.innerHTML = '';
-        twitchBox.style.display = 'none';
-        twitchBtn.textContent = 'Show Stream';
-      }
-      twitchShown = !twitchShown;
-    };
-   
+        twitchBtn.onclick = () => {
+          if (!twitchShown) {
+            twitchBox.style.display = "block";
+            new Twitch.Embed("twitchPlayer", {
+              width: "100%",
+              height: "100%",
+              channel: "harupi",
+              layout: "video",
+              parent: [location.hostname],
+            });
+            twitchBtn.textContent = "Hide Stream";
+          } else {
+            twitchBox.innerHTML = "";
+            twitchBox.style.display = "none";
+            twitchBtn.textContent = "Show Stream";
+          }
+          twitchShown = !twitchShown;
+        };
 
+        chaosBtn.addEventListener("click", () => {
+          flashing = !flashing;
 
-chaosBtn.addEventListener('click', () => {
-  flashing = !flashing;
+          floaters.forEach((f) => {
+            const dur = (0.3 + Math.random() * 0.7).toFixed(2);
+            const dir = Math.random() > 0.5 ? "alternate" : "alternate-reverse";
+            const ease = Math.random() > 0.5 ? "ease-in" : "ease-out";
+            if (flashing) {
+              // turn ON chaos: add animations
+              if (f.elem.classList.contains("rainbow-text")) {
+                f.elem.style.animation = `rainbow 5s linear infinite, spinmove ${dur}s infinite ${dir} ${ease}`;
+              } else {
+                f.elem.style.animation = `spinmove ${dur}s infinite ${dir} ${ease}`;
+              }
+            } else {
+              // turn OFF chaos: remove any animation
+              f.elem.style.animation = "";
+            }
+          });
 
-  floaters.forEach(f => {
-    const dur  = (0.3 + Math.random() * 0.7).toFixed(2);
-    const dir  = Math.random() > 0.5 ? 'alternate' : 'alternate-reverse';
-    const ease = Math.random() > 0.5 ? 'ease-in'   : 'ease-out';
-    if (flashing) {
-      // turn ON chaos: add animations
-      if (f.elem.classList.contains('rainbow-text')) {
-        f.elem.style.animation = `rainbow 5s linear infinite, spinmove ${dur}s infinite ${dir} ${ease}`;
-      } else {
-        f.elem.style.animation = `spinmove ${dur}s infinite ${dir} ${ease}`;
-      }
-    } else {
-      // turn OFF chaos: remove any animation
-      f.elem.style.animation = '';
-    }
-  });
+          if (flashing) {
+            document.body.style.animation = "flash 0.1s infinite alternate";
+            if (audioCtx.state === "suspended") audioCtx.resume();
+            if (!musicPlaying) {
+              chaosAudio.play().catch(() => {});
+              musicPlaying = true;
+            }
+          } else {
+            document.body.style.animation = "none";
+            chaosAudio.pause();
+            musicPlaying = false;
+          }
+          updateLabels();
+        });
 
-  if (flashing) {
-    document.body.style.animation = 'flash 0.1s infinite alternate';
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    if (!musicPlaying) {
-      chaosAudio.play().catch(() => {});
-      musicPlaying = true;
-    }
-  } else {
-    document.body.style.animation = 'none';
-    chaosAudio.pause();
-    musicPlaying = false;
-  }
-  updateLabels();
-});
-
-    const styleEl = document.createElement('style');
-    styleEl.textContent = `@keyframes flash{0%{background:#111}25%{background:#ff0}50%{background:#0ff}75%{background:#f0f}100%{background:#111}}@keyframes spinmove{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}`;
-    document.head.appendChild(styleEl);
-  });
-  </script>
-  <div id="feedbackModal">
-    <textarea id="feedbackInput" placeholder="Your suggestion (max 200 chars)" maxlength="200"></textarea>
-    <div id="feedbackCounter">200 characters remaining</div>
-    <label id="feedbackAnonLabel"><input type="checkbox" id="feedbackAnon"> Send anonymously</label>
-    <button id="feedbackSee">See Feedback</button>
-    <button id="feedbackSubmit">Send</button>
-  </div>
-  <div id="discordWrapper">
-    <span id="versionNumber">v0.1.6</span>
-    <button id="feedbackBtn">Feedback</button>
-    <a id="discordBtn" href="https://discord.gg/nutpit" target="_blank" rel="noopener">Discord</a>
-  </div>
-</body>
+        const styleEl = document.createElement("style");
+        styleEl.textContent = `@keyframes flash{0%{background:#111}25%{background:#ff0}50%{background:#0ff}75%{background:#f0f}100%{background:#111}}@keyframes spinmove{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}`;
+        document.head.appendChild(styleEl);
+      });
+    </script>
+    <div id="feedbackModal">
+      <textarea
+        id="feedbackInput"
+        placeholder="Your suggestion (max 200 chars)"
+        maxlength="200"
+      ></textarea>
+      <div id="feedbackCounter">200 characters remaining</div>
+      <label id="feedbackAnonLabel"
+        ><input type="checkbox" id="feedbackAnon" /> Send anonymously</label
+      >
+      <button id="feedbackSee">See Feedback</button>
+      <button id="feedbackSubmit">Send</button>
+    </div>
+    <div id="discordWrapper">
+      <span id="versionNumber">v0.1.6</span>
+      <button id="feedbackBtn">Feedback</button>
+      <a
+        id="discordBtn"
+        href="https://discord.gg/nutpit"
+        target="_blank"
+        rel="noopener"
+        >Discord</a
+      >
+    </div>
+  </body>
 </html>
