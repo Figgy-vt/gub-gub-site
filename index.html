@@ -502,6 +502,18 @@ chaosAudio.volume = isNaN(stored) ? 0.5 : stored;
     drawVis();
     // ─────────────────────────────────────────────────────────────────────
 
+    function playMentionSound() {
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
 
 // ─── SPECIAL GUB STYLE ───────────────────────────────────────────────────
 const specialStyle = document.createElement('style');
@@ -774,7 +786,7 @@ function updateSuggestions() {
 
 chatInput.addEventListener('input', updateSuggestions);
 chatInput.addEventListener('keydown', e => {
-  if ((e.key === 'Tab' || e.key === ' ') && mentionSuggestions.style.display === 'block') {
+  if ((e.key === 'Tab' || e.key === ' ' || e.key === 'Enter') && mentionSuggestions.style.display === 'block') {
     e.preventDefault();
     const first = mentionSuggestions.firstChild;
     if (first) {
@@ -824,11 +836,17 @@ chatRef
     const date = dateObj.toLocaleDateString();
     const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const mentionRegex = new RegExp(`@${username}\\b`, 'gi');
+    const isMention = mentionRegex.test(text);
+    mentionRegex.lastIndex = 0;
     const initial = escapeHTML(text).replace(mentionRegex, '<span class="mention-highlight">$&</span>');
     msgEl.innerHTML = `[${date} ${time}] ${user}: ${initial}`;
     messagesEl.appendChild(msgEl);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+    if (isMention && safeUser !== username) {
+      playMentionSound();
+    }
     emoteHTML(text).then(processed => {
+      mentionRegex.lastIndex = 0;
       const final = processed.replace(mentionRegex, '<span class="mention-highlight">$&</span>');
       msgEl.innerHTML = `[${date} ${time}] ${user}: ${final}`;
       msgEl.querySelectorAll('img').forEach(img => {
