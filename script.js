@@ -409,6 +409,9 @@ window.addEventListener("DOMContentLoaded", () => {
             emoteMap[e.name] = url;
             emoteMap[e.name.toLowerCase()] = url;
           });
+        })
+        .catch((err) => {
+          console.error("Failed to load 7TV emote set", err);
         });
 
       // Only allow emotes from Harupi's set; no global fallback
