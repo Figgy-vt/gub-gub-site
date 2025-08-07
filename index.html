@@ -286,7 +286,9 @@
 
 #chat {
   width: 420px;
-  max-height: 200px;   /* expanded for better readability */
+  height: 200px;         /* initial size, can be resized by user */
+  resize: both;
+  overflow: auto;
   border-radius: 8px;
   background: rgba(0,0,0,0.6);
   color: #fff;
@@ -718,6 +720,21 @@ const messagesEl = document.getElementById('messages');
 const chatForm   = document.getElementById('chatForm');
 const chatInput  = document.getElementById('chatInput');
 const mentionSuggestions = document.getElementById('mentionSuggestions');
+const chatBox    = document.getElementById('chat');
+
+// Restore saved chat box size from localStorage
+const savedChatWidth  = localStorage.getItem('chatWidth');
+const savedChatHeight = localStorage.getItem('chatHeight');
+if (savedChatWidth)  chatBox.style.width  = savedChatWidth + 'px';
+if (savedChatHeight) chatBox.style.height = savedChatHeight + 'px';
+
+// Save chat size whenever resizing stops
+const saveChatSize = () => {
+  localStorage.setItem('chatWidth', chatBox.offsetWidth);
+  localStorage.setItem('chatHeight', chatBox.offsetHeight);
+};
+chatBox.addEventListener('mouseup', saveChatSize);
+chatBox.addEventListener('touchend', saveChatSize);
 
 // 7TV emotes
 const emoteMap = {};
