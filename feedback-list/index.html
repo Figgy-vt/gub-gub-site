@@ -1,72 +1,131 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>Feedback</title>
-  <style>
-    body { font-family: sans-serif; background:#111; color:#fff; padding:20px; }
-    .suggestion { background: rgba(255,255,255,0.1); padding:10px; margin-bottom:10px; border-radius:6px; position:relative; }
-    .meta { font-size:12px; color:#ccc; margin-top:4px; }
-    .votes { margin-top:6px; }
-    .votes button { margin-right:5px; }
-    .votes .active { font-weight:bold; }
-    .delete { position:absolute; top:5px; right:5px; background:none; border:none; color:#f44; cursor:pointer; }
-    .comments { margin-top:6px; padding-left:10px; }
-    .comment { margin-top:4px; }
-    .comment .meta { font-size:12px; color:#ccc; }
-    .commentForm { margin-top:6px; }
-    .commentForm input { width:80%; }
-    .commentForm button { width:18%; }
-  </style>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-</head>
-<body>
-  <h1>Feedback</h1>
-  <div id="list"></div>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM",
-      authDomain: "gub-leaderboard.firebaseapp.com",
-      databaseURL: "https://gub-leaderboard-default-rtdb.firebaseio.com",
-      projectId: "gub-leaderboard",
-      storageBucket: "gub-leaderboard.firebasestorage.app",
-      messagingSenderId: "851465760203",
-      appId: "1:851465760203:web:1fc30c730a93c0fab25a4e",
-      measurementId: "G-95SE4H7EEW"
-    };
-    firebase.initializeApp(firebaseConfig);
-    firebase.auth().signInAnonymously().then(() => {
-      const db = firebase.database();
-      const uid = firebase.auth().currentUser.uid;
-      function sanitizeUsername(name) {
-        return (name || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0,20);
+  <head>
+    <meta charset="UTF-8" />
+    <title>Feedback</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #111;
+        color: #fff;
+        padding: 20px;
       }
-        const username = sanitizeUsername(localStorage.getItem('gubUser')) || 'Anon';
-        const listEl = document.getElementById('list');
-        const feedbackRef = db.ref('feedback');
-        let isAdmin = false;
-
-        const ADMIN_UIDS = ['sGd1ZHR1nvMKKCw9A1O5bwtbFD23', 'YHtvs4JyAtS3SUtNAUJuPMm3ac22'];
-        db.ref('admins/' + uid).once('value').then(snap => {
-          if (!snap.exists() && ADMIN_UIDS.includes(uid)) {
-            db.ref('admins/' + uid).set(true);
-            isAdmin = true;
-          } else {
-            isAdmin = !!snap.val();
+      .suggestion {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        position: relative;
+      }
+      .meta {
+        font-size: 12px;
+        color: #ccc;
+        margin-top: 4px;
+      }
+      .votes {
+        margin-top: 6px;
+      }
+      .votes button {
+        margin-right: 5px;
+      }
+      .votes .active {
+        font-weight: bold;
+      }
+      .delete {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: none;
+        border: none;
+        color: #f44;
+        cursor: pointer;
+      }
+      .comments {
+        margin-top: 6px;
+        padding-left: 10px;
+      }
+      .comment {
+        margin-top: 4px;
+      }
+      .comment .meta {
+        font-size: 12px;
+        color: #ccc;
+      }
+      .commentForm {
+        margin-top: 6px;
+      }
+      .commentForm input {
+        width: 80%;
+      }
+      .commentForm button {
+        width: 18%;
+      }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  </head>
+  <body>
+    <h1>Feedback</h1>
+    <div id="list"></div>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM",
+        authDomain: "gub-leaderboard.firebaseapp.com",
+        databaseURL: "https://gub-leaderboard-default-rtdb.firebaseio.com",
+        projectId: "gub-leaderboard",
+        storageBucket: "gub-leaderboard.firebasestorage.app",
+        messagingSenderId: "851465760203",
+        appId: "1:851465760203:web:1fc30c730a93c0fab25a4e",
+        measurementId: "G-95SE4H7EEW",
+      };
+      firebase.initializeApp(firebaseConfig);
+      firebase
+        .auth()
+        .signInAnonymously()
+        .then(() => {
+          const db = firebase.database();
+          const uid = firebase.auth().currentUser.uid;
+          function sanitizeUsername(name) {
+            return (name || "")
+              .toLowerCase()
+              .replace(/[^a-z0-9_]/g, "")
+              .slice(0, 20);
           }
-          feedbackRef.on('child_added', snap => render(snap.key, snap.val()));
-          feedbackRef.on('child_changed', snap => render(snap.key, snap.val()));
-        });
+          const username =
+            sanitizeUsername(localStorage.getItem("gubUser")) || "Anon";
+          const listEl = document.getElementById("list");
+          const feedbackRef = db.ref("feedback");
+          let isAdmin = false;
 
-      function render(id, data) {
-        let div = document.getElementById('fb-' + id);
-        if (!div) {
-          div = document.createElement('div');
-          div.id = 'fb-' + id;
-          div.className = 'suggestion';
-          div.innerHTML = `
+          const ADMIN_UIDS = [
+            "sGd1ZHR1nvMKKCw9A1O5bwtbFD23",
+            "YHtvs4JyAtS3SUtNAUJuPMm3ac22",
+          ];
+          db.ref("admins/" + uid)
+            .once("value")
+            .then((snap) => {
+              if (!snap.exists() && ADMIN_UIDS.includes(uid)) {
+                db.ref("admins/" + uid).set(true);
+                isAdmin = true;
+              } else {
+                isAdmin = !!snap.val();
+              }
+              feedbackRef.on("child_added", (snap) =>
+                render(snap.key, snap.val()),
+              );
+              feedbackRef.on("child_changed", (snap) =>
+                render(snap.key, snap.val()),
+              );
+            });
+
+          function render(id, data) {
+            let div = document.getElementById("fb-" + id);
+            if (!div) {
+              div = document.createElement("div");
+              div.id = "fb-" + id;
+              div.className = "suggestion";
+              div.innerHTML = `
             <button class="delete" style="display:none">✖</button>
             <div class="text"></div>
             <div class="meta"></div>
@@ -79,67 +138,76 @@
               <input class="commentInput" placeholder="Add comment" maxlength="200">
               <button class="commentSubmit">Post</button>
             </div>`;
-          listEl.appendChild(div);
+              listEl.appendChild(div);
 
-          const commentInput = div.querySelector('.commentInput');
-          const commentSubmit = div.querySelector('.commentSubmit');
-          commentSubmit.onclick = () => {
-            const text = commentInput.value.trim();
-            if (!text) return;
-            db.ref(`feedback/${id}/comments`).push({
-              user: username,
-              text,
-              ts: Date.now()
-            });
-            commentInput.value = '';
-          };
-          commentInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              commentSubmit.click();
-            }
-          });
+              const commentInput = div.querySelector(".commentInput");
+              const commentSubmit = div.querySelector(".commentSubmit");
+              commentSubmit.onclick = () => {
+                const text = commentInput.value.trim();
+                if (!text) return;
+                db.ref(`feedback/${id}/comments`).push({
+                  user: username,
+                  text,
+                  ts: Date.now(),
+                });
+                commentInput.value = "";
+              };
+              commentInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commentSubmit.click();
+                }
+              });
 
-          const deleteBtn = div.querySelector('.delete');
-          if (isAdmin) {
-            deleteBtn.style.display = 'block';
-            deleteBtn.onclick = () => {
-              if (confirm('Delete this suggestion?')) {
-                db.ref(`feedback/${id}`).remove();
+              const deleteBtn = div.querySelector(".delete");
+              if (isAdmin) {
+                deleteBtn.style.display = "block";
+                deleteBtn.onclick = () => {
+                  if (confirm("Delete this suggestion?")) {
+                    db.ref(`feedback/${id}`).remove();
+                  }
+                };
               }
+
+              db.ref(`feedback/${id}/comments`).on("child_added", (snap) => {
+                const c = snap.val();
+                const commentsDiv = div.querySelector(".comments");
+                const el = document.createElement("div");
+                el.className = "comment";
+                el.innerHTML = `<div>${c.text}</div><div class="meta">${c.user} - ${new Date(c.ts).toLocaleString()}</div>`;
+                commentsDiv.appendChild(el);
+              });
+            }
+            div.querySelector(".text").textContent = data.text;
+            div.querySelector(".meta").textContent =
+              `${data.user} - ${new Date(data.ts).toLocaleString()}`;
+            const votes = data.votes || {};
+            let ups = 0,
+              downs = 0;
+            Object.values(votes).forEach((v) => {
+              if (v === 1) ups++;
+              else if (v === -1) downs++;
+            });
+            div.querySelector(".upCount").textContent = ups;
+            div.querySelector(".downCount").textContent = downs;
+            const upBtn = div.querySelector(".up");
+            const downBtn = div.querySelector(".down");
+            upBtn.classList.toggle("active", votes[uid] === 1);
+            downBtn.classList.toggle("active", votes[uid] === -1);
+            upBtn.onclick = () => {
+              const current = votes[uid];
+              db.ref(`feedback/${id}/votes/${uid}`).set(
+                current === 1 ? null : 1,
+              );
+            };
+            downBtn.onclick = () => {
+              const current = votes[uid];
+              db.ref(`feedback/${id}/votes/${uid}`).set(
+                current === -1 ? null : -1,
+              );
             };
           }
-
-          db.ref(`feedback/${id}/comments`).on('child_added', snap => {
-            const c = snap.val();
-            const commentsDiv = div.querySelector('.comments');
-            const el = document.createElement('div');
-            el.className = 'comment';
-            el.innerHTML = `<div>${c.text}</div><div class="meta">${c.user} - ${new Date(c.ts).toLocaleString()}</div>`;
-            commentsDiv.appendChild(el);
-          });
-        }
-        div.querySelector('.text').textContent = data.text;
-        div.querySelector('.meta').textContent = `${data.user} - ${new Date(data.ts).toLocaleString()}`;
-        const votes = data.votes || {};
-        let ups = 0, downs = 0;
-        Object.values(votes).forEach(v => { if (v === 1) ups++; else if (v === -1) downs++; });
-        div.querySelector('.upCount').textContent = ups;
-        div.querySelector('.downCount').textContent = downs;
-        const upBtn = div.querySelector('.up');
-        const downBtn = div.querySelector('.down');
-        upBtn.classList.toggle('active', votes[uid] === 1);
-        downBtn.classList.toggle('active', votes[uid] === -1);
-        upBtn.onclick = () => {
-          const current = votes[uid];
-          db.ref(`feedback/${id}/votes/${uid}`).set(current === 1 ? null : 1);
-        };
-        downBtn.onclick = () => {
-          const current = votes[uid];
-          db.ref(`feedback/${id}/votes/${uid}`).set(current === -1 ? null : -1);
-        };
-      }
-    });
-  </script>
-</body>
+        });
+    </script>
+  </body>
 </html>
