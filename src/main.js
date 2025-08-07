@@ -836,15 +836,21 @@ window.addEventListener("DOMContentLoaded", () => {
   let movementPaused = false;
   const floaters = [];
 
-  const savedSpeed = parseInt(localStorage.getItem("gubSpeed"), 10);
-  const savedImages = parseInt(localStorage.getItem("gubImages"), 10);
+  const savedSpeedStr = localStorage.getItem("gubSpeed");
+  const savedImagesStr = localStorage.getItem("gubImages");
 
-  if (!Number.isNaN(savedSpeed)) {
-    speedMultiplier = savedSpeed;
+  if (savedSpeedStr !== null) {
+    const parsedSpeed = parseInt(savedSpeedStr, 10);
+    if (!Number.isNaN(parsedSpeed)) {
+      speedMultiplier = parsedSpeed;
+    }
   }
 
-  if (!Number.isNaN(savedImages)) {
-    numFloaters = savedImages;
+  if (savedImagesStr !== null) {
+    const parsedImages = parseInt(savedImagesStr, 10);
+    if (!Number.isNaN(parsedImages)) {
+      numFloaters = parsedImages;
+    }
   }
 
   movementPaused = localStorage.getItem("gubPaused") === "true";
