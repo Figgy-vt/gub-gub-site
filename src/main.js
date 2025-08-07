@@ -1,100 +1,14 @@
+import { initAudio } from "./audio.js";
+import { initChat } from "./chat.js";
+
 window.addEventListener("DOMContentLoaded", () => {
   const CLIENT_VERSION = "0.1.6";
-  document.getElementById("versionNumber").textContent =
-    `v${CLIENT_VERSION}`;
+  document.getElementById("versionNumber").textContent = `v${CLIENT_VERSION}`;
   const isMobile = window.innerWidth < 768;
   const NUM_FLOATERS = isMobile ? 5 : 20;
-  const chaosAudio = new Audio("music.mp3");
-  chaosAudio.loop = true;
-  // restore saved volume or default to 0.5
-  const stored = parseFloat(localStorage.getItem("gubVolume"));
-  chaosAudio.volume = isNaN(stored) ? 0.5 : stored;
 
-  const volumeSlider = document.getElementById("volumeSlider"); // 1a: grab the slider element
-  volumeSlider.value = chaosAudio.volume; // 1b: initialize its position
-  volumeSlider.addEventListener("input", () => {
-    // 1c: listen for changes
-    chaosAudio.volume = volumeSlider.value;
-    localStorage.setItem("gubVolume", volumeSlider.value);
-  });
-
-  let flashing = false;
-  let musicPlaying = false;
-
-  // ─── VISUALIZER SETUP ────────────────────────────────────────────────
-  const canvas = document.getElementById("visualizer");
-  const ctx = canvas.getContext("2d");
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = 100;
-  }
-  window.addEventListener("resize", resize);
-  resize();
-
-  // Hook the visualizer up to our chaosAudio element
-  const audioCtx = new (window.AudioContext ||
-    window.webkitAudioContext)();
-  const analyser = audioCtx.createAnalyser();
-  const sourceNode = audioCtx.createMediaElementSource(chaosAudio);
-  sourceNode.connect(analyser);
-  analyser.connect(audioCtx.destination);
-  analyser.fftSize = 256;
-
-  window.addEventListener(
-    "touchstart",
-    () => {
-      if (audioCtx.state === "suspended") audioCtx.resume();
-    },
-    { once: true },
-  );
-  window.addEventListener(
-    "click",
-    () => {
-      if (audioCtx.state === "suspended") audioCtx.resume();
-    },
-    { once: true },
-  );
-  window.addEventListener(
-    "keydown",
-    () => {
-      if (audioCtx.state === "suspended") audioCtx.resume();
-    },
-    { once: true },
-  );
-
-  const bufferLength = analyser.frequencyBinCount;
-  const dataArray = new Uint8Array(bufferLength);
-
-  function drawVis() {
-    requestAnimationFrame(drawVis);
-    analyser.getByteFrequencyData(dataArray);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const barWidth = canvas.width / bufferLength;
-    for (let i = 0; i < bufferLength; i++) {
-      const h = dataArray[i];
-      ctx.fillStyle = `hsl(${i * 3},100%,50%)`;
-      ctx.fillRect(i * barWidth, canvas.height - h, barWidth - 1, h);
-    }
-  }
-  drawVis();
-  // ─────────────────────────────────────────────────────────────────────
-
-  function playMentionSound() {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 880;
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      audioCtx.currentTime + 0.2,
-    );
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.2);
-  }
-
+  const audio = initAudio();
+  const { playMentionSound } = audio;
   // ─── SPECIAL GUB STYLE ───────────────────────────────────────────────────
   const specialStyle = document.createElement("style");
   specialStyle.textContent = `
@@ -323,279 +237,13 @@ window.addEventListener("DOMContentLoaded", () => {
           });
       });
 
-      // ——— Chat setup ———
-      // 1. References to your Firebase “chat” node and DOM elements
-      const chatRef = db.ref("chat");
-      const messagesEl = document.getElementById("messages");
-      const chatForm = document.getElementById("chatForm");
-      const chatInput = document.getElementById("chatInput");
-      const mentionSuggestions =
-        document.getElementById("mentionSuggestions");
-      const chatBox = document.getElementById("chat");
-      const resizeHandle = document.getElementById("chatResizeHandle");
 
-      // Restore saved chat box size from localStorage
-      const savedChatWidth = localStorage.getItem("chatWidth");
-      const savedChatHeight = localStorage.getItem("chatHeight");
-      if (savedChatWidth) chatBox.style.width = savedChatWidth + "px";
-      if (savedChatHeight) chatBox.style.height = savedChatHeight + "px";
-
-      // Save chat size whenever resizing stops
-      const saveChatSize = () => {
-        localStorage.setItem("chatWidth", chatBox.offsetWidth);
-        localStorage.setItem("chatHeight", chatBox.offsetHeight);
-      };
-
-      let startX, startY, startWidth, startHeight;
-
-      function initResize(e) {
-        e.preventDefault();
-        const touch = e.touches ? e.touches[0] : e;
-        startX = touch.clientX;
-        startY = touch.clientY;
-        startWidth = chatBox.offsetWidth;
-        startHeight = chatBox.offsetHeight;
-        document.documentElement.addEventListener("mousemove", doResize);
-        document.documentElement.addEventListener("touchmove", doResize);
-        document.documentElement.addEventListener("mouseup", stopResize);
-        document.documentElement.addEventListener("touchend", stopResize);
-      }
-
-      function doResize(e) {
-        const touch = e.touches ? e.touches[0] : e;
-        const newWidth = Math.max(
-          200,
-          startWidth + (touch.clientX - startX),
-        );
-        const newHeight = Math.max(
-          100,
-          startHeight - (touch.clientY - startY),
-        );
-        chatBox.style.width = newWidth + "px";
-        chatBox.style.height = newHeight + "px";
-      }
-
-      function stopResize() {
-        document.documentElement.removeEventListener(
-          "mousemove",
-          doResize,
-        );
-        document.documentElement.removeEventListener(
-          "touchmove",
-          doResize,
-        );
-        document.documentElement.removeEventListener(
-          "mouseup",
-          stopResize,
-        );
-        document.documentElement.removeEventListener(
-          "touchend",
-          stopResize,
-        );
-        saveChatSize();
-      }
-
-      resizeHandle.addEventListener("mousedown", initResize);
-      resizeHandle.addEventListener("touchstart", initResize);
-
-      // 7TV emotes
-      const emoteMap = {};
-      const HARUPI_SET = "01H6Q79JP80007TK4TYM94A0B4";
-      fetch(`https://7tv.io/v3/emote-sets/${HARUPI_SET}`)
-        .then((r) => r.json())
-        .then((d) => {
-          d.emotes.forEach((e) => {
-            const url = `https:${e.data.host.url}/2x.webp`;
-            emoteMap[e.name] = url;
-            emoteMap[e.name.toLowerCase()] = url;
-          });
-        })
-        .catch((err) => {
-          console.error("Failed to load 7TV emote set", err);
-        });
-
-      // Only allow emotes from Harupi's set; no global fallback
-      async function getEmoteURL(name) {
-        if (emoteMap[name]) return emoteMap[name];
-        const lower = name.toLowerCase();
-        if (emoteMap[lower]) return emoteMap[lower];
-        return null; // unknown emote: do not fetch from global set
-      }
-
-      function escapeHTML(str) {
-        return str.replace(
-          /[&<>"']/g,
-          (c) =>
-            ({
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#39;",
-            })[c],
-        );
-      }
-
-      async function emoteHTML(text) {
-        let safe = escapeHTML(text);
-        const tokens = safe.split(/(\s+)/);
-        for (let i = 0; i < tokens.length; i++) {
-          const token = tokens[i];
-          if (/^\s+$/.test(token)) continue;
-          const stripped = token.replace(/^:|:$/g, "");
-          if (/^[A-Za-z0-9_]+$/.test(stripped)) {
-            const url = await getEmoteURL(stripped);
-            if (url) {
-              tokens[i] =
-                `<img class="chat-emote" alt="${stripped}" src="${url}">`;
-            }
-          }
-        }
-        return tokens.join("");
-      }
-
-      function updateSuggestions() {
-        const cursor = chatInput.selectionStart;
-        const textBefore = chatInput.value.slice(0, cursor);
-        const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-        if (match) {
-          const prefix = match[1].toLowerCase();
-          const matches = Array.from(allUsers)
-            .filter((u) => u.toLowerCase().startsWith(prefix))
-            .sort();
-          if (matches.length > 0) {
-            mentionSuggestions.innerHTML = matches
-              .slice(0, 5)
-              .map((m) => `<div>${m}</div>`)
-              .join("");
-            mentionSuggestions.style.display = "block";
-          } else {
-            mentionSuggestions.style.display = "none";
-          }
-        } else {
-          mentionSuggestions.style.display = "none";
-        }
-      }
-
-      chatInput.addEventListener("input", updateSuggestions);
-      chatInput.addEventListener("keydown", (e) => {
-        if (
-          (e.key === "Tab" || e.key === " " || e.key === "Enter") &&
-          mentionSuggestions.style.display === "block"
-        ) {
-          e.preventDefault();
-          const first = mentionSuggestions.firstChild;
-          if (first) {
-            const name = first.textContent + " ";
-            const cursor = chatInput.selectionStart;
-            const textBefore = chatInput.value.slice(0, cursor);
-            const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-            if (match) {
-              const start = cursor - match[1].length;
-              chatInput.value =
-                chatInput.value.slice(0, start) +
-                name +
-                chatInput.value.slice(cursor);
-              chatInput.selectionStart = chatInput.selectionEnd =
-                start + name.length;
-            }
-            mentionSuggestions.style.display = "none";
-          }
-        }
-      });
-
-      mentionSuggestions.addEventListener("mousedown", (e) => {
-        if (e.target && e.target.tagName === "DIV") {
-          e.preventDefault();
-          const name = e.target.textContent + " ";
-          const cursor = chatInput.selectionStart;
-          const textBefore = chatInput.value.slice(0, cursor);
-          const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-          if (match) {
-            const start = cursor - match[1].length;
-            chatInput.value =
-              chatInput.value.slice(0, start) +
-              name +
-              chatInput.value.slice(cursor);
-            chatInput.selectionStart = chatInput.selectionEnd =
-              start + name.length;
-          }
-          mentionSuggestions.style.display = "none";
-          chatInput.focus();
-        }
-      });
-
-      // 2. Listen for new chat messages (last 50), append them in order
-      const CHAT_MESSAGE_LIMIT = 50;
-      const MAX_CHAT_LENGTH = 200;
-      let initialChatLoaded = false;
-      chatRef
-        .orderByChild("ts")
-        .limitToLast(CHAT_MESSAGE_LIMIT)
-        .on("child_added", (snap) => {
-          const { user, text, ts } = snap.val();
-          const safeUser = sanitizeUsername(user);
-          allUsers.add(safeUser);
-          const msgEl = document.createElement("div");
-          const dateObj = new Date(ts);
-          const date = dateObj.toLocaleDateString();
-          const time = dateObj.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-          const mentionRegex = new RegExp(`@${username}\\b`, "gi");
-          const isMention = mentionRegex.test(text);
-          mentionRegex.lastIndex = 0;
-          const initial = escapeHTML(text).replace(
-            mentionRegex,
-            '<span class="mention-highlight">$&</span>',
-          );
-          msgEl.innerHTML = `[${date} ${time}] ${user}: ${initial}`;
-          messagesEl.appendChild(msgEl);
-          messagesEl.scrollTop = messagesEl.scrollHeight;
-          if (initialChatLoaded && isMention && safeUser !== username) {
-            playMentionSound();
-          }
-          emoteHTML(text)
-            .then((processed) => {
-              mentionRegex.lastIndex = 0;
-              const final = processed.replace(
-                mentionRegex,
-                '<span class="mention-highlight">$&</span>',
-              );
-              msgEl.innerHTML = `[${date} ${time}] ${user}: ${final}`;
-              msgEl.querySelectorAll("img").forEach((img) => {
-                if (img.complete) {
-                  messagesEl.scrollTop = messagesEl.scrollHeight;
-                } else {
-                  img.addEventListener("load", () => {
-                    messagesEl.scrollTop = messagesEl.scrollHeight;
-                  });
-                }
-              });
-              messagesEl.scrollTop = messagesEl.scrollHeight;
-            })
-            .catch(() => {
-              // If emote lookup fails, keep the plain text message.
-            });
-        });
-
-      chatRef.once("value").then(() => {
-        initialChatLoaded = true;
-      });
-
-      // 3. Hook up the form so sending pushes a new message
-      chatForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const text = chatInput.value.trim().slice(0, MAX_CHAT_LENGTH);
-        if (!text) return;
-        chatRef.push({
-          user: username,
-          text,
-          ts: firebase.database.ServerValue.TIMESTAMP,
-        });
-        chatInput.value = "";
-        mentionSuggestions.style.display = "none";
+      initChat({
+        db,
+        username,
+        allUsers,
+        sanitizeUsername,
+        playMentionSound
       });
 
       // Start spawning golden gubs
@@ -1345,13 +993,13 @@ window.addEventListener("DOMContentLoaded", () => {
   };
 
   chaosBtn.addEventListener("click", () => {
-    flashing = !flashing;
+    audio.state.flashing = !audio.state.flashing;
 
     floaters.forEach((f) => {
       const dur = (0.3 + Math.random() * 0.7).toFixed(2);
       const dir = Math.random() > 0.5 ? "alternate" : "alternate-reverse";
       const ease = Math.random() > 0.5 ? "ease-in" : "ease-out";
-      if (flashing) {
+      if (audio.state.flashing) {
         // turn ON chaos: add animations
         if (f.elem.classList.contains("rainbow-text")) {
           f.elem.style.animation = `rainbow 5s linear infinite, spinmove ${dur}s infinite ${dir} ${ease}`;
@@ -1364,17 +1012,17 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    if (flashing) {
+    if (audio.state.flashing) {
       document.body.style.animation = "flash 0.1s infinite alternate";
-      if (audioCtx.state === "suspended") audioCtx.resume();
-      if (!musicPlaying) {
-        chaosAudio.play().catch(() => {});
-        musicPlaying = true;
+      if (audio.audioCtx.state === "suspended") audio.audioCtx.resume();
+      if (!audio.state.musicPlaying) {
+        audio.chaosAudio.play().catch(() => {});
+        audio.state.musicPlaying = true;
       }
     } else {
       document.body.style.animation = "none";
-      chaosAudio.pause();
-      musicPlaying = false;
+      audio.chaosAudio.pause();
+      audio.state.musicPlaying = false;
     }
     updateLabels();
   });
