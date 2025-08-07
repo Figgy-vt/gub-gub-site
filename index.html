@@ -287,7 +287,6 @@
 #chat {
   width: 420px;
   height: 200px;         /* initial size, can be resized by user */
-  resize: both;
   overflow: auto;
   border-radius: 8px;
   background: rgba(0,0,0,0.6);
@@ -298,6 +297,17 @@
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+#chatResizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  background: rgba(255,255,255,0.6);
+  border-bottom-left-radius: 4px;
 }
 #messages {
   flex: 1;
@@ -426,6 +436,7 @@
   <div id="bottom-ui">
     <div id="leaderboard"><strong>Leaderboard</strong><br>Loading…</div>
     <div id="chat">
+      <div id="chatResizeHandle"></div>
       <div id="messages"></div>
       <div id="mentionSuggestions"></div>
       <form id="chatForm">
@@ -721,6 +732,7 @@ const chatForm   = document.getElementById('chatForm');
 const chatInput  = document.getElementById('chatInput');
 const mentionSuggestions = document.getElementById('mentionSuggestions');
 const chatBox    = document.getElementById('chat');
+const resizeHandle = document.getElementById('chatResizeHandle');
 
 // Restore saved chat box size from localStorage
 const savedChatWidth  = localStorage.getItem('chatWidth');
@@ -733,8 +745,40 @@ const saveChatSize = () => {
   localStorage.setItem('chatWidth', chatBox.offsetWidth);
   localStorage.setItem('chatHeight', chatBox.offsetHeight);
 };
-chatBox.addEventListener('mouseup', saveChatSize);
-chatBox.addEventListener('touchend', saveChatSize);
+
+let startX, startY, startWidth, startHeight;
+
+function initResize(e) {
+  e.preventDefault();
+  const touch = e.touches ? e.touches[0] : e;
+  startX = touch.clientX;
+  startY = touch.clientY;
+  startWidth = chatBox.offsetWidth;
+  startHeight = chatBox.offsetHeight;
+  document.documentElement.addEventListener('mousemove', doResize);
+  document.documentElement.addEventListener('touchmove', doResize);
+  document.documentElement.addEventListener('mouseup', stopResize);
+  document.documentElement.addEventListener('touchend', stopResize);
+}
+
+function doResize(e) {
+  const touch = e.touches ? e.touches[0] : e;
+  const newWidth = Math.max(200, startWidth + (touch.clientX - startX));
+  const newHeight = Math.max(100, startHeight - (touch.clientY - startY));
+  chatBox.style.width = newWidth + 'px';
+  chatBox.style.height = newHeight + 'px';
+}
+
+function stopResize() {
+  document.documentElement.removeEventListener('mousemove', doResize);
+  document.documentElement.removeEventListener('touchmove', doResize);
+  document.documentElement.removeEventListener('mouseup', stopResize);
+  document.documentElement.removeEventListener('touchend', stopResize);
+  saveChatSize();
+}
+
+resizeHandle.addEventListener('mousedown', initResize);
+resizeHandle.addEventListener('touchstart', initResize);
 
 // 7TV emotes
 const emoteMap = {};
