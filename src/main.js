@@ -137,16 +137,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
       let sessionCount = 0,
         globalCount = 0,
-        displayedCount = 0;
+        displayedCount = 0,
+        unsyncedDelta = 0;
       let gubRateMultiplier = 1;
       let feralTimeout;
       let scoreDirty = false;
 
       async function syncGubsFromServer() {
         try {
-          const res = await syncGubsFn();
+          const res = await syncGubsFn({ delta: unsyncedDelta });
           if (res.data && typeof res.data.score === "number") {
             globalCount = displayedCount = res.data.score;
+            unsyncedDelta = 0;
             renderCounter();
           }
         } catch (err) {
@@ -444,6 +446,7 @@ window.addEventListener("DOMContentLoaded", () => {
         amount *= gubRateMultiplier;
         globalCount += amount;
         displayedCount += amount;
+        unsyncedDelta += amount;
         renderCounter();
         queueScoreUpdate();
       }
@@ -451,6 +454,7 @@ window.addEventListener("DOMContentLoaded", () => {
       function spendGubs(amount) {
         globalCount -= amount;
         displayedCount -= amount;
+        unsyncedDelta -= amount;
         renderCounter();
         queueScoreUpdate();
       }
