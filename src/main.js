@@ -692,7 +692,8 @@ window.addEventListener("DOMContentLoaded", () => {
           costSpan.textContent = abbreviateNumber(currentCost());
         }
 
-        function attemptPurchase(quantity) {
+        async function attemptPurchase(quantity) {
+          await syncGubsFromServer();
           const cost = totalCost(quantity);
           if (globalCount >= cost) {
             spendGubs(cost);
@@ -702,6 +703,7 @@ window.addEventListener("DOMContentLoaded", () => {
             db.ref(`shop_v2/${uid}/${item.id}`).set(owned[item.id]);
             updatePassiveIncome();
             updateCostDisplay();
+            await syncGubsFromServer();
           }
         }
 
