@@ -34,7 +34,8 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const snap = await userRef.once('value');
   const { score = 0, lastUpdated = Date.now() } = snap.val() || {};
   const now = Date.now();
-  const earned = rate * ((now - lastUpdated) / 1000);
+  const elapsed = delta === 0 ? now - lastUpdated : 0;
+  const earned = rate * (elapsed / 1000);
   const newScore = Math.max(0, Math.floor(score + earned + delta));
   await userRef.update({ score: newScore, lastUpdated: now });
   return { score: newScore };
