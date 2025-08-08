@@ -143,16 +143,25 @@ window.addEventListener("DOMContentLoaded", () => {
       let feralTimeout;
       let scoreDirty = false;
 
+      let syncing = false;
       async function syncGubsFromServer() {
+        if (syncing) return;
+        syncing = true;
+        const delta = unsyncedDelta;
+        unsyncedDelta = 0;
         try {
-          const res = await syncGubsFn({ delta: unsyncedDelta });
+          const res = await syncGubsFn({ delta });
           if (res.data && typeof res.data.score === "number") {
-            globalCount = displayedCount = res.data.score;
-            unsyncedDelta = 0;
+            globalCount = displayedCount = res.data.score + unsyncedDelta;
             renderCounter();
+          } else {
+            unsyncedDelta += delta;
           }
         } catch (err) {
+          unsyncedDelta += delta;
           console.error("syncGubs failed", err);
+        } finally {
+          syncing = false;
         }
       }
 
