@@ -2,11 +2,12 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.syncGubs = functions.https.onCall(async (_, ctx) => {
+exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError('unauthenticated');
   }
+  const delta = typeof data?.delta === 'number' ? data.delta : 0;
 
   const db = admin.database();
   const userRef = db.ref(`leaderboard_v3/${uid}`);
@@ -34,7 +35,7 @@ exports.syncGubs = functions.https.onCall(async (_, ctx) => {
   const { score = 0, lastUpdated = Date.now() } = snap.val() || {};
   const now = Date.now();
   const earned = rate * ((now - lastUpdated) / 1000);
-  const newScore = Math.floor(score + earned);
+  const newScore = Math.max(0, Math.floor(score + earned + delta));
   await userRef.update({ score: newScore, lastUpdated: now });
   return { score: newScore };
 });
