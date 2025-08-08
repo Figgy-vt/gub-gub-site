@@ -147,18 +147,21 @@ window.addEventListener("DOMContentLoaded", () => {
       async function syncGubsFromServer() {
         if (syncing) return;
         syncing = true;
-        const delta = unsyncedDelta;
-        unsyncedDelta = 0;
+        // Only sync whole gubs to avoid dropping fractional amounts
+        const sendDelta = Math.floor(unsyncedDelta);
+        unsyncedDelta -= sendDelta; // keep remainder locally
         try {
-          const res = await syncGubsFn({ delta });
+          const res = await syncGubsFn({ delta: sendDelta });
           if (res.data && typeof res.data.score === "number") {
+            // Server stores integer scores, so re-add any local remainder
             globalCount = displayedCount = res.data.score + unsyncedDelta;
             renderCounter();
           } else {
-            unsyncedDelta += delta;
+            // Revert on failure to ensure no loss
+            unsyncedDelta += sendDelta;
           }
         } catch (err) {
-          unsyncedDelta += delta;
+          unsyncedDelta += sendDelta;
           console.error("syncGubs failed", err);
         } finally {
           syncing = false;
