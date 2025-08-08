@@ -68,6 +68,8 @@ window.addEventListener("DOMContentLoaded", () => {
     .signInAnonymously()
     .then(() => {
       const db = firebase.database();
+      const functions = firebase.functions();
+      const syncGubsFn = functions.httpsCallable("syncGubs");
       const uid = firebase.auth().currentUser.uid;
       const allUsers = new Set([username]);
 
@@ -139,21 +141,32 @@ window.addEventListener("DOMContentLoaded", () => {
       let gubRateMultiplier = 1;
       let feralTimeout;
       let scoreDirty = false;
-      let lastSentScore = 0;
+
+      async function syncGubsFromServer() {
+        try {
+          const res = await syncGubsFn();
+          if (res.data && typeof res.data.score === "number") {
+            globalCount = displayedCount = res.data.score;
+            renderCounter();
+          }
+        } catch (err) {
+          console.error("syncGubs failed", err);
+        }
+      }
+
       function queueScoreUpdate() {
         scoreDirty = true;
       }
+
       setInterval(() => {
-        const currentScore = Math.floor(globalCount);
-        if (scoreDirty && currentScore !== lastSentScore) {
+        if (scoreDirty) {
           scoreDirty = false;
-          lastSentScore = currentScore;
-          db.ref(`leaderboard_v3/${uid}`).set({
-            username,
-            score: currentScore,
-          });
+          syncGubsFromServer();
         }
       }, 1000);
+
+      // Regularly pull server-side gub totals even if no local actions
+      setInterval(syncGubsFromServer, 10000);
 
       function abbreviateNumber(num) {
         if (num < 1000) return Math.floor(num).toString();
@@ -193,18 +206,13 @@ window.addEventListener("DOMContentLoaded", () => {
         }
         displayedCount = globalCount;
         renderCounter();
-        db.ref(`leaderboard_v3/${uid}`).set({
-          username,
-          score: globalCount,
-        });
-        lastSentScore = Math.floor(globalCount);
+        syncGubsFromServer();
 
         // Keep local score in sync with external/manual updates
         userRef.on("value", (s) => {
           const v = s.val();
           if (typeof v === "number") {
             globalCount = displayedCount = v;
-            lastSentScore = Math.floor(v);
             scoreDirty = false;
             renderCounter();
           }
@@ -408,6 +416,18 @@ window.addEventListener("DOMContentLoaded", () => {
       const gubTotalEl = document.getElementById("gubTotal");
       let passiveRatePerSec = 0;
 
+      const passiveWorker = new Worker(
+        new URL("./passiveWorker.js", import.meta.url),
+        { type: "module" },
+      );
+      passiveWorker.onmessage = (e) => {
+        const { earned } = e.data || {};
+        if (typeof earned === "number" && earned > 0) {
+          gainGubs(earned);
+        }
+      };
+      passiveWorker.postMessage({ type: "rate", value: passiveRatePerSec });
+
       function renderCounter() {
         const rate = abbreviateNumber(
           passiveRatePerSec * gubRateMultiplier,
@@ -434,6 +454,13 @@ window.addEventListener("DOMContentLoaded", () => {
         renderCounter();
         queueScoreUpdate();
       }
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          passiveWorker.postMessage({ type: "reset" });
+          syncGubsFromServer();
+        }
+      });
       // main gub handler
       const mainGub = document.getElementById("main-gub");
       const clickMe = document.getElementById("clickMe");
@@ -545,22 +572,16 @@ window.addEventListener("DOMContentLoaded", () => {
         intergalactic: 0,
       };
 
-      // Continuous passive income ticker so purchasing items doesn't pause income
-      const PASSIVE_TICK_MS = 100; // update counter 10x per second for responsiveness
-
-      setInterval(() => {
-        if (passiveRatePerSec > 0) {
-          gainGubs(passiveRatePerSec * (PASSIVE_TICK_MS / 1000));
-        }
-      }, PASSIVE_TICK_MS);
-
+      // Recompute passive gub rate and sync to server
       function updatePassiveIncome() {
         const perSecondTotal = shopItems.reduce(
           (sum, item) => sum + owned[item.id] * item.rate,
           0,
         );
         passiveRatePerSec = perSecondTotal;
+        passiveWorker.postMessage({ type: "rate", value: passiveRatePerSec });
         renderCounter();
+        queueScoreUpdate();
       }
 
       const shopBtn = document.getElementById("shopBtn");
@@ -722,7 +743,7 @@ window.addEventListener("DOMContentLoaded", () => {
         });
         updatePassiveIncome();
       });
-      // passive income handled via a single interval
+      // passive income handled by the Web Worker
       // ──────────────────────────────────────────────────────────────────────
 
       // Feedback submission
