@@ -3,7 +3,17 @@
     "leaderboard_v3": {
       ".read": true,
       "$uid": {
-        ".write": false
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "score": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "username": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
+        },
+        "lastUpdated": {
+          ".validate": "newData.isNumber()"
+        }
       }
     },
     "presence": {
