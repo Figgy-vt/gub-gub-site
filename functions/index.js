@@ -56,6 +56,7 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const db = admin.database();
   const now = Date.now();
 
+
   // simple rate limiting stored in RTDB; failure to update should not break sync
   const rlRef = db.ref(`rateLimits/syncGubs/${uid}`);
   try {
@@ -123,10 +124,12 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const delta = clicks + goldenReward;
   const newScore = Math.max(0, score + delta + offlineEarned);
 
+
   const updates = {};
   updates[`leaderboard_v3/${uid}/score`] = newScore;
   updates[`leaderboard_v3/${uid}/lastUpdated`] = now;
   await db.ref().update(updates);
+
   return { score: newScore, offlineEarned, goldenReward };
 });
 
