@@ -1,9 +1,12 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 const { calculateOfflineGubs } = require('./offline');
 admin.initializeApp();
 
-const MAX_DELTA = 1000; // clamp client-supplied score changes
+const MAX_CLICKS = 100; // clamp client-supplied click counts
+const RATE_LIMIT_MS = 1000; // minimum interval between syncs per user
+const GOLDEN_SECRET = functions.config().golden?.secret || 'dev-secret';
 const COST_MULTIPLIER = 1.15;
 const MAX_QUANTITY = 1000;
 const SHOP_COSTS = {
@@ -29,16 +32,52 @@ function calculateTotalCost(base, owned, quantity) {
   return cost;
 }
 
+function verifyGoldenToken(token) {
+  if (typeof token !== 'string') return null;
+  const parts = token.split(':');
+  if (parts.length !== 3) return null;
+  const [id, rewardStr, sig] = parts;
+  const reward = parseInt(rewardStr, 10);
+  if (!id || !reward || !sig) return null;
+  const expected = crypto
+    .createHmac('sha256', GOLDEN_SECRET)
+    .update(`${id}:${reward}`)
+    .digest('hex');
+  if (sig !== expected) return null;
+  return { id, reward };
+}
+
 exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError('unauthenticated');
   }
-  let delta = typeof data?.delta === 'number' ? Math.floor(data.delta) : 0;
-  delta = Math.max(-MAX_DELTA, Math.min(MAX_DELTA, delta));
-  const requestOffline = !!data?.offline;
 
   const db = admin.database();
+  const now = Date.now();
+
+  // simple rate limiting stored in RTDB; failure to update should not break sync
+  const rlRef = db.ref(`rateLimits/syncGubs/${uid}`);
+  try {
+    const lastCall = (await rlRef.once('value')).val() || 0;
+    if (now - lastCall < RATE_LIMIT_MS) {
+      throw new functions.https.HttpsError(
+        'resource-exhausted',
+        'Too many requests',
+      );
+    }
+    await rlRef.set(now);
+  } catch (e) {
+    functions.logger.warn('rateLimit check failed', e);
+  }
+
+  const clicks = Math.max(
+    0,
+    Math.min(MAX_CLICKS, Math.floor(data?.clicks || 0)),
+  );
+  const requestOffline = !!data?.offline;
+  const goldenToken = data?.goldenToken;
+
   const userRef = db.ref(`leaderboard_v3/${uid}`);
   const shop = (await db.ref(`shop_v2/${uid}`).once('value')).val() || {};
   const rates = {
@@ -61,17 +100,34 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   );
 
   const snap = await userRef.once('value');
-  const { score = 0, lastUpdated = Date.now() } = snap.val() || {};
-  const now = Date.now();
+  const { score = 0, lastUpdated = now } = snap.val() || {};
 
   let offlineEarned = 0;
   if (requestOffline) {
     offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
   }
+
+  let goldenReward = 0;
+  if (typeof goldenToken === 'string') {
+    const verified = verifyGoldenToken(goldenToken);
+    if (verified) {
+      const tokenRef = db.ref(`goldenTokens/${uid}/${verified.id}`);
+      const tokenData = (await tokenRef.once('value')).val();
+      if (tokenData && !tokenData.used && tokenData.reward === verified.reward) {
+        goldenReward = verified.reward;
+        await tokenRef.update({ used: true });
+      }
+    }
+  }
+
+  const delta = clicks + goldenReward;
   const newScore = Math.max(0, score + delta + offlineEarned);
 
-  await userRef.update({ score: newScore, lastUpdated: now });
-  return { score: newScore, offlineEarned };
+  const updates = {};
+  updates[`leaderboard_v3/${uid}/score`] = newScore;
+  updates[`leaderboard_v3/${uid}/lastUpdated`] = now;
+  await db.ref().update(updates);
+  return { score: newScore, offlineEarned, goldenReward };
 });
 
 exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
@@ -118,4 +174,19 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
   updates[`shop_v2/${uid}/${itemId}`] = newCount;
   await db.ref().update(updates);
   return { score: newScore, newCount };
+});
+
+exports.generateGoldenToken = functions.https.onCall(async (data, ctx) => {
+  const uid = ctx.auth?.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError('unauthenticated');
+  }
+  const reward = 100; // fixed reward for now
+  const id = crypto.randomBytes(16).toString('hex');
+  const signature = crypto
+    .createHmac('sha256', GOLDEN_SECRET)
+    .update(`${id}:${reward}`)
+    .digest('hex');
+  await admin.database().ref(`goldenTokens/${uid}/${id}`).set({ reward });
+  return { token: `${id}:${reward}:${signature}` };
 });

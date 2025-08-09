@@ -91,6 +91,14 @@
         }
       }
     },
+    "rateLimits": {
+      ".read": false,
+      ".write": false
+    },
+    "goldenTokens": {
+      ".read": false,
+      ".write": false
+    },
     "config": {
       ".read": true,
       ".write": false
