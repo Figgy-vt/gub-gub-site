@@ -55,7 +55,7 @@ body {
 
 #perfMenu {
   position: absolute;
-  top: 50px;
+  top: 0;
   left: 10px;
   z-index: 9998;
   background: #222;
@@ -281,11 +281,11 @@ body {
 }
 #twitchPlayer {
   position: absolute;
-  top: 50px;
+  top: 0;
   right: 10px;
   width: 500px;
   height: 300px;
-  z-index: 9000;
+  z-index: 20000;
   display: none;
   box-shadow: 0 0 8px #000;
   border-radius: 8px;
