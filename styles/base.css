@@ -253,14 +253,21 @@ body {
   bottom: 10px;
   left: 10px;
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items: flex-end;
+  align-items: flex-start;
   z-index: 10000;
   pointer-events: none;
 }
 
 #bottom-ui > * {
   pointer-events: auto;
+}
+
+#chat-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
 }
 
 #online-users {
@@ -296,10 +303,6 @@ body {
   line-height: 1.2;
 }
 #leaderboard {
-  position: fixed;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
   padding: 12px;
