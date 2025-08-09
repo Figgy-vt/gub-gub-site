@@ -1,0 +1,482 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #111;
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+}
+#gub-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+#main-gub {
+  max-height: 90vh;
+  max-width: 90vw;
+  display: block;
+  transform-origin: center;
+}
+#clickMe {
+  position: absolute;
+  top: 200px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 3rem;
+  pointer-events: none;
+  display: none;
+  white-space: nowrap;
+  z-index: 10001;
+}
+
+#btnRow {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 5px;
+  z-index: 9999;
+}
+#btnRow button {
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-family: sans-serif;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+#perfMenu {
+  position: absolute;
+  top: 50px;
+  left: 10px;
+  z-index: 9998;
+  background: #222;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px;
+  display: none;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+#perfMenu button {
+  margin: 2px 4px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: #444;
+  color: #fff;
+  cursor: pointer;
+}
+
+#perfMenu .setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#perfMenu .setting-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#perfMenu .center-row {
+  display: flex;
+  justify-content: center;
+}
+
+#qualityBtn {
+  width: 140px;
+}
+
+#moveToggle {
+  width: 140px;
+}
+
+#comicBtn {
+  width: 140px;
+}
+
+.rainbow-text {
+  font-size: 2rem;
+  font-weight: bold;
+  font-family: sans-serif;
+  animation: rainbow 5s linear infinite;
+  white-space: nowrap;
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+.floater {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+.floater img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes rainbow {
+  0% {
+    color: red;
+  }
+  20% {
+    color: orange;
+  }
+  40% {
+    color: yellow;
+  }
+  60% {
+    color: green;
+  }
+  80% {
+    color: blue;
+  }
+  100% {
+    color: violet;
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.pop-effect {
+  animation: pop 0.15s ease-out both;
+}
+
+.plus-one {
+  position: absolute;
+  color: #fff;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 2.5rem;
+  pointer-events: none;
+  z-index: 10002;
+  transform: translate(-50%, -50%);
+  animation: fadeUp 1s ease-out forwards;
+}
+@keyframes fadeUp {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-20px);
+  }
+}
+
+#main-gub {
+  cursor: pointer; /* show it’s clickable */
+}
+
+.feral-glow {
+  filter: drop-shadow(0 0 10px gold) drop-shadow(0 0 20px gold);
+}
+@media (max-width: 768px) {
+  #discordWrapper {
+    bottom: 170px !important; /* move it up above the chat */
+    right: 10px !important; /* keep it flush to the right edge */
+  }
+  #golden-counter {
+    top: 60px !important; /* push it down under the btnRow (which sits at 10px + ~40px height) */
+  }
+}
+
+#topRight {
+  position: absolute;
+  top: 40px;
+  right: 10px;
+  display: flex;
+  gap: 0;
+  z-index: 10001;
+}
+#topRight button {
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-weight: bold;
+  font-family: sans-serif;
+  font-size: 16px;
+  cursor: pointer;
+}
+#adminBtn {
+  display: none;
+}
+
+#shopPanel {
+  position: absolute;
+  top: 90px;
+  right: 10px;
+  display: none;
+  background: #222;
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+  z-index: 10001;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+#shopPanel h4 {
+  font-size: 2rem; /* makes it roughly 32px tall */
+  font-weight: bold; /* extra emphasis */
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+#adminPanel {
+  position: absolute;
+  top: 90px;
+  right: 10px;
+  display: none;
+  background: #222;
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+  z-index: 10001;
+}
+#adminPanel h4 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+#adminPanel input {
+  width: 150px;
+  margin-bottom: 4px;
+}
+
+#visualizer {
+  position: fixed;
+  bottom: 0;
+  left: calc(50% + 280px);
+  transform: translateX(-50%);
+  width: 80vw;
+  height: 100px;
+  z-index: 5000;
+  pointer-events: none;
+}
+
+#bottom-ui {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+#bottom-ui > * {
+  pointer-events: auto;
+}
+
+#chat-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+#online-users {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+#twitchPlayer {
+  position: absolute;
+  top: 0;
+  right: 10px;
+  width: 500px;
+  height: 300px;
+  z-index: 20000;
+  display: none;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+}
+#golden-counter {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10000;
+  color: white;
+  font-family: sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: right;
+  line-height: 1.2;
+}
+#leaderboard {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: sans-serif;
+  line-height: 1.4;
+}
+#discordWrapper {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  z-index: 10000;
+}
+#versionNumber {
+  color: #fff;
+  font-family: sans-serif;
+  font-size: 12px;
+  line-height: 1;
+}
+#discordBtn {
+  background: #7289da;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+#discordBtn:hover {
+  background: #5b6eae;
+}
+
+#feedbackBtn {
+  background: #ffa500;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+}
+#feedbackBtn:hover {
+  background: #cc8400;
+}
+
+#feedbackModal {
+  position: fixed;
+  bottom: 60px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  font-family: sans-serif;
+  display: none;
+  z-index: 10000;
+  width: 260px;
+}
+#feedbackModal textarea {
+  width: 100%;
+  height: 80px;
+}
+#feedbackCounter {
+  font-size: 12px;
+  text-align: right;
+}
+#feedbackAnonLabel {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+#feedbackModal button {
+  margin-top: 6px;
+}
+#feedbackSee {
+  float: left;
+}
+
+#offlineModal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  font-family: sans-serif;
+  text-align: center;
+  display: none;
+  z-index: 10002;
+}
+#offlineModal button {
+  margin-top: 10px;
+}
+#feedbackSubmit {
+  float: right;
+}
+
+#usernameOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+}
+
+#usernameModal {
+  background: #222;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  color: #fff;
+  font-family: sans-serif;
+}
+
+#usernameModal input {
+  width: 200px;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 4px;
+}
+
+#usernameModal button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+body.comic-sans,
+body.comic-sans * {
+  font-family: "Comic Sans MS", "Comic Sans", cursive !important;
+}

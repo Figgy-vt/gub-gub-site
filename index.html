@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>The Gub</title>
+    <meta name="description" content="Click da Gub" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gub.cam/" />
+    <meta property="og:title" content="The Gub" />
+    <meta property="og:description" content="click and pet the gub" />
+    <meta property="og:image" content="https://gub.cam/gub_wicked.png" />
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/chat.css" />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <script
+      src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"
+      integrity="sha384-HLJUgAQ2oo6rdMC4QW+Oz2qQfPOtu/lzncKG4sZiq8+2W9uOa3K0b3UGpckKqv7H"
+      crossorigin="anonymous"
+      defer
+    ></script>
+    <script
+      src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"
+      integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0"
+      crossorigin="anonymous"
+      defer
+    ></script>
+    <script
+      src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"
+      integrity="sha384-+/4lqMnmLqwbdHXshvGDmBTeWlNoPRdjXi4ZsiBj10EhQXaTBe3RF5JZktdSjug6"
+      crossorigin="anonymous"
+      defer
+    ></script>
+    <script
+      src="https://www.gstatic.com/firebasejs/9.22.2/firebase-functions-compat.js"
+      integrity="sha384-Cn425IPPqYFT0+lUg71+39dOh8zj/Ebpl97FkjUqrd+P37HLlysOYDvdw+N7tPuj"
+      crossorigin="anonymous"
+      defer
+    ></script>
+  </head>
+  <body>
+    <div id="btnRow">
+      <button id="lowPerfBtn">Settings Menu</button>
+      <button id="chaosBtn">
+        Chaos Mode <span style="font-size: 10px">(epilepsy warning)</span>
+      </button>
+      <button id="twitchBtn">Show Stream</button>
+    </div>
+    <div id="topRight">
+      <button id="adminBtn">Admin</button>
+      <button id="shopBtn">Shop</button>
+    </div>
+
+    <div id="shopPanel">
+      <h4>Shop</h4>
+      <div id="upgradePlaceholder">
+        <img src="gub_wicked.png" alt="Upgrades icon" />
+        Upgrades (coming soon...)
+      </div>
+      <div id="shopItemsContainer"></div>
+    </div>
+
+    <div id="adminPanel">
+      <h4>Admin</h4>
+      <input id="adminUsername" type="text" placeholder="Username" />
+      <input id="adminScore" type="number" placeholder="New Score" />
+      <button id="adminUpdate">Update</button>
+      <button id="adminDelete">Delete</button>
+    </div>
+
+    <div id="perfMenu">
+      <div class="setting-row">
+        <span class="setting-label">Speed:</span>
+        <span class="setting-controls">
+          <button id="spdDec">-</button><span id="spdVal">2</span
+          ><button id="spdInc">+</button>
+        </span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Images:</span>
+        <span class="setting-controls">
+          <button id="imgDec">-</button><span id="imgVal">20</span
+          ><button id="imgInc">+</button>
+        </span>
+      </div>
+      <div class="center-row">
+        <button id="moveToggle">Pause Movement</button>
+      </div>
+      <div class="center-row">
+        <button id="qualityBtn">High Quality: Off</button>
+      </div>
+      <div class="center-row">
+        <button id="comicBtn">Comic Sans: Off</button>
+      </div>
+      <label
+        for="volumeSlider"
+        style="margin-top: 8px; display: block; color: #fff; font-weight: bold"
+      >
+        Chaos Volume
+      </label>
+      <input
+        id="volumeSlider"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        style="width: 100%; margin-top: 4px"
+      />
+    </div>
+    <div id="golden-counter">
+      <div id="gubTotal">Gubs: 0 (0 gub/s)</div>
+    </div>
+    <div id="bottom-ui">
+      <div id="leaderboard"><strong>Leaderboard</strong><br />Loading…</div>
+      <div id="chat-row">
+        <div id="chat">
+          <div id="chatResizeHandle"></div>
+          <div id="messages"></div>
+          <div id="mentionSuggestions"></div>
+          <form id="chatForm">
+            <input
+              id="chatInput"
+              type="text"
+              placeholder="Type a message…"
+              autocomplete="off"
+              maxlength="200"
+            />
+            <button type="submit">Send</button>
+          </form>
+        </div>
+        <div id="online-users">Online: …</div>
+      </div>
+    </div>
+    <div id="twitchPlayer"></div>
+    <div id="gub-wrapper">
+      <img id="main-gub" src="gub_wicked.png" alt="wickeding gub" />
+    </div>
+    <div id="clickMe">click me</div>
+    <canvas id="visualizer"></canvas>
+    <div id="usernameOverlay" style="display: none">
+      <div id="usernameModal">
+        <h2>Choose a username</h2>
+        <input
+          id="usernameInput"
+          type="text"
+          maxlength="20"
+          placeholder="Username"
+        />
+        <button id="usernameSubmit">Start</button>
+      </div>
+    </div>
+    <script src="https://embed.twitch.tv/embed/v1.js"></script>
+    <script type="module" src="src/main.js"></script>
+    <div id="offlineModal">
+      <div id="offlineMessage"></div>
+      <button id="offlineClose">OK</button>
+    </div>
+    <div id="feedbackModal">
+      <textarea
+        id="feedbackInput"
+        placeholder="Your suggestion (max 200 chars)"
+        maxlength="200"
+      ></textarea>
+      <div id="feedbackCounter">200 characters remaining</div>
+      <label id="feedbackAnonLabel"
+        ><input type="checkbox" id="feedbackAnon" /> Send anonymously</label
+      >
+      <button id="feedbackSee">See Feedback</button>
+      <button id="feedbackSubmit">Send</button>
+    </div>
+    <div id="discordWrapper">
+      <span id="versionNumber">v0.1.6</span>
+      <button id="feedbackBtn">Feedback</button>
+      <a
+        id="discordBtn"
+        href="https://discord.gg/nutpit"
+        target="_blank"
+        rel="noopener"
+        >Discord</a
+      >
+    </div>
+  </body>
+</html>

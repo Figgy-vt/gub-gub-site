@@ -1,0 +1,3 @@
+src/*
+!src/utils.js
+!src/__tests__/**
