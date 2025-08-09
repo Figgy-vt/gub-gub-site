@@ -56,13 +56,21 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const db = admin.database();
   const now = Date.now();
 
-  // simple rate limiting
+
+  // simple rate limiting stored in RTDB; failure to update should not break sync
   const rlRef = db.ref(`rateLimits/syncGubs/${uid}`);
-  const lastCall = (await rlRef.once('value')).val() || 0;
-  if (now - lastCall < RATE_LIMIT_MS) {
-    throw new functions.https.HttpsError('resource-exhausted', 'Too many requests');
+  try {
+    const lastCall = (await rlRef.once('value')).val() || 0;
+    if (now - lastCall < RATE_LIMIT_MS) {
+      throw new functions.https.HttpsError(
+        'resource-exhausted',
+        'Too many requests',
+      );
+    }
+    await rlRef.set(now);
+  } catch (e) {
+    functions.logger.warn('rateLimit check failed', e);
   }
-  await rlRef.set(now);
 
   const clicks = Math.max(
     0,
@@ -116,7 +124,12 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const delta = clicks + goldenReward;
   const newScore = Math.max(0, score + delta + offlineEarned);
 
-  await userRef.update({ score: newScore, lastUpdated: now });
+
+  const updates = {};
+  updates[`leaderboard_v3/${uid}/score`] = newScore;
+  updates[`leaderboard_v3/${uid}/lastUpdated`] = now;
+  await db.ref().update(updates);
+
   return { score: newScore, offlineEarned, goldenReward };
 });
 
