@@ -260,8 +260,9 @@ window.addEventListener("DOMContentLoaded", () => {
         userRef.on("value", (s) => {
           const v = s.val();
           if (typeof v === "number") {
-            globalCount = displayedCount = v;
-            scoreDirty = false;
+            const total = v + unsyncedDelta;
+            globalCount = displayedCount = total;
+            scoreDirty = unsyncedDelta !== 0;
             renderCounter();
           }
         });
