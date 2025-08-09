@@ -102,6 +102,10 @@ body {
   width: 140px;
 }
 
+#comicBtn {
+  width: 140px;
+}
+
 .rainbow-text {
   font-size: 2rem;
   font-weight: bold;
@@ -470,4 +474,9 @@ body {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+}
+
+body.comic-sans,
+body.comic-sans * {
+  font-family: "Comic Sans MS", "Comic Sans", cursive !important;
 }

@@ -882,6 +882,10 @@ window.addEventListener("DOMContentLoaded", () => {
     "low_floater18.jpg",
   ];
   let useHighQuality = localStorage.getItem("gubHighQuality") === "true";
+  let useComicSans = localStorage.getItem("gubComicSans") === "true";
+  if (useComicSans) {
+    document.body.classList.add("comic-sans");
+  }
   let images = useHighQuality ? highImages : lowImages;
   const texts = [
     "bark",
@@ -993,9 +997,11 @@ window.addEventListener("DOMContentLoaded", () => {
   const imgVal = document.getElementById("imgVal");
   const moveToggle = document.getElementById("moveToggle");
   const qualityBtn = document.getElementById("qualityBtn");
+  const comicBtn = document.getElementById("comicBtn");
   qualityBtn.textContent = useHighQuality
     ? "High Quality: On"
     : "High Quality: Off";
+  comicBtn.textContent = useComicSans ? "Comic Sans: On" : "Comic Sans: Off";
   qualityBtn.onclick = () => {
     useHighQuality = !useHighQuality;
     localStorage.setItem("gubHighQuality", useHighQuality);
@@ -1009,6 +1015,14 @@ window.addEventListener("DOMContentLoaded", () => {
         img.src = images[f.imgIdx];
       }
     });
+  };
+  comicBtn.onclick = () => {
+    useComicSans = !useComicSans;
+    document.body.classList.toggle("comic-sans", useComicSans);
+    comicBtn.textContent = useComicSans
+      ? "Comic Sans: On"
+      : "Comic Sans: Off";
+    localStorage.setItem("gubComicSans", useComicSans);
   };
 
   settingsBtn.onclick = () => {
