@@ -4,14 +4,16 @@
       ".read": true,
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid",
         "score": {
+          ".write": false,
           ".validate": "newData.isNumber() && newData.val() >= 0"
         },
         "username": {
+          ".write": "auth != null && auth.uid === $uid",
           ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,20}$/)"
         },
         "lastUpdated": {
+          ".write": false,
           ".validate": "newData.isNumber()"
         }
       }

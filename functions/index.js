@@ -3,12 +3,15 @@ const admin = require('firebase-admin');
 const { calculateOfflineGubs } = require('./offline');
 admin.initializeApp();
 
+const MAX_DELTA = 1000; // clamp client-supplied score changes
+
 exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError('unauthenticated');
   }
-  const delta = typeof data?.delta === 'number' ? data.delta : 0;
+  let delta = typeof data?.delta === 'number' ? Math.floor(data.delta) : 0;
+  delta = Math.max(-MAX_DELTA, Math.min(MAX_DELTA, delta));
   const requestOffline = !!data?.offline;
 
   const db = admin.database();
