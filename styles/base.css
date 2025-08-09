@@ -287,8 +287,6 @@ body {
   height: 300px;
   z-index: 20000;
   display: none;
-  box-shadow: 0 0 8px #000;
-  border-radius: 8px;
   overflow: hidden;
 }
 #golden-counter {
