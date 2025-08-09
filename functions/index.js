@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const { calculateOfflineGubs } = require('./offline');
 admin.initializeApp();
 
 exports.syncGubs = functions.https.onCall(async (data, ctx) => {
@@ -38,9 +39,7 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
 
   let offlineEarned = 0;
   if (requestOffline) {
-    const elapsed = now - lastUpdated;
-    const earned = rate * 0.0025 * (elapsed / 1000);
-    offlineEarned = Math.floor(earned);
+    offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
   }
   const newScore = Math.max(0, score + delta + offlineEarned);
 
