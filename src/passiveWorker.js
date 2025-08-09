@@ -23,14 +23,15 @@ function tick() {
   const now = performance.now();
   const deltaSec = (now - last) / 1000;
   last = now;
+  let whole = 0;
   if (rate > 0 && deltaSec > 0) {
     buffer += rate * deltaSec;
-    const whole = Math.floor(buffer);
+    whole = Math.floor(buffer);
     if (whole > 0) {
       buffer -= whole;
-      self.postMessage({ earned: whole });
     }
   }
+  self.postMessage({ earned: whole });
   // Run more frequently to smooth out timing jitter.
   setTimeout(tick, 250);
 }

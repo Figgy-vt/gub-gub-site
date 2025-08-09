@@ -87,6 +87,8 @@ window.addEventListener("DOMContentLoaded", () => {
       const purchaseItemFn = functions.httpsCallable("purchaseItem");
       const uid = firebase.auth().currentUser.uid;
       const allUsers = new Set([username]);
+      const SYNC_URL =
+        "https://us-central1-gub-leaderboard.cloudfunctions.net/syncGubs";
 
       const offlineModal = document.getElementById("offlineModal");
       const offlineMessage = document.getElementById("offlineMessage");
@@ -163,9 +165,10 @@ window.addEventListener("DOMContentLoaded", () => {
         unsyncedDelta = 0;
       let offlineShown = false;
       let gubRateMultiplier = 1;
-      let feralTimeout;
+      let feralExpiresAt = 0;
       let scoreDirty = false;
       let hiddenStart = 0;
+      let mainGub;
 
       let syncing = false;
       async function syncGubsFromServer(requestOffline = false) {
@@ -363,14 +366,9 @@ window.addEventListener("DOMContentLoaded", () => {
       function activateFeralGubMode() {
         const duration = 30000 + Math.random() * 90000;
         gubRateMultiplier = 10;
+        feralExpiresAt = Date.now() + duration;
         renderCounter();
-        mainGub.classList.add("feral-glow");
-        clearTimeout(feralTimeout);
-        feralTimeout = setTimeout(() => {
-          gubRateMultiplier = 1;
-          mainGub.classList.remove("feral-glow");
-          renderCounter();
-        }, duration);
+        if (mainGub) mainGub.classList.add("feral-glow");
       }
 
       function spawnSpecialGub() {
@@ -472,8 +470,9 @@ window.addEventListener("DOMContentLoaded", () => {
         { type: "module" },
       );
       passiveWorker.onmessage = (e) => {
-        const { earned } = e.data || {};
-        if (typeof earned === "number" && earned > 0) {
+        checkFeralExpiry();
+        const { earned = 0 } = e.data || {};
+        if (earned > 0) {
           gainGubs(earned);
         }
       };
@@ -508,21 +507,68 @@ window.addEventListener("DOMContentLoaded", () => {
         queueScoreUpdate();
       }
 
+      function checkFeralExpiry() {
+        if (feralExpiresAt && Date.now() >= feralExpiresAt) {
+          gubRateMultiplier = 1;
+          feralExpiresAt = 0;
+          if (mainGub) mainGub.classList.remove("feral-glow");
+          renderCounter();
+        }
+      }
+
+      function reconcileHiddenTime() {
+        if (hiddenStart) {
+          const elapsedSec = (Date.now() - hiddenStart) / 1000;
+          gainGubs(passiveRatePerSec * elapsedSec);
+          hiddenStart = 0;
+        }
+      }
+
+      function flushUnsynced() {
+        const sendDelta = Math.floor(unsyncedDelta);
+        const blob = new Blob(
+          [JSON.stringify({ data: { delta: sendDelta } })],
+          { type: "application/json" },
+        );
+        navigator.sendBeacon(SYNC_URL, blob);
+        unsyncedDelta -= sendDelta;
+      }
+
       document.addEventListener("visibilitychange", () => {
+        checkFeralExpiry();
         if (document.hidden) {
           hiddenStart = Date.now();
         } else {
           passiveWorker.postMessage({ type: "reset" });
-          if (hiddenStart) {
-            const elapsedSec = (Date.now() - hiddenStart) / 1000;
-            gainGubs(passiveRatePerSec * elapsedSec);
-            hiddenStart = 0;
-          }
+          reconcileHiddenTime();
           syncGubsFromServer();
         }
       });
+
+      document.addEventListener("freeze", () => {
+        reconcileHiddenTime();
+        flushUnsynced();
+      });
+
+      document.addEventListener("resume", () => {
+        checkFeralExpiry();
+        reconcileHiddenTime();
+        passiveWorker.postMessage({ type: "reset" });
+        if (document.hidden) {
+          hiddenStart = Date.now();
+        } else {
+          syncGubsFromServer();
+        }
+      });
+
+      function handleUnload() {
+        reconcileHiddenTime();
+        flushUnsynced();
+      }
+      window.addEventListener("pagehide", handleUnload);
+      window.addEventListener("beforeunload", handleUnload);
       // main gub handler
-      const mainGub = document.getElementById("main-gub");
+      mainGub = document.getElementById("main-gub");
       const clickMe = document.getElementById("clickMe");
       if (!sessionStorage.getItem("gubClicked")) {
         clickMe.style.display = "block";
