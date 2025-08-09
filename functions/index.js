@@ -35,6 +35,7 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const snap = await userRef.once('value');
   const { score = 0, lastUpdated = Date.now() } = snap.val() || {};
   const now = Date.now();
+
   let offlineEarned = 0;
   if (requestOffline) {
     const elapsed = now - lastUpdated;
@@ -42,6 +43,7 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
     offlineEarned = Math.floor(earned);
   }
   const newScore = Math.max(0, score + delta + offlineEarned);
+
   await userRef.update({ score: newScore, lastUpdated: now });
   return { score: newScore, offlineEarned };
 });

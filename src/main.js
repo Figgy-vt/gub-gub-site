@@ -38,17 +38,31 @@ window.addEventListener("DOMContentLoaded", () => {
       .slice(0, 20);
   }
 
-  // 1. Prompt & sanitize username
+  // Username handling
   let username = sanitizeUsername(localStorage.getItem("gubUser"));
-  if (!username || username.length < 3) {
-    do {
-      username = sanitizeUsername(
-        prompt("Enter a username for the leaderboard:"),
-      );
-    } while (!username || username.length < 3);
-    localStorage.setItem("gubUser", username);
+
+  function showUsernamePrompt() {
+    const overlay = document.getElementById("usernameOverlay");
+    const input = document.getElementById("usernameInput");
+    const submit = document.getElementById("usernameSubmit");
+    overlay.style.display = "flex";
+    function accept() {
+      const u = sanitizeUsername(input.value);
+      if (u.length >= 3) {
+        username = u;
+        localStorage.setItem("gubUser", username);
+        overlay.style.display = "none";
+        initApp();
+      }
+    }
+    submit.addEventListener("click", accept);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") accept();
+    });
+    input.focus();
   }
 
+  function initApp() {
   // 2. Initialize Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM",
@@ -168,7 +182,9 @@ window.addEventListener("DOMContentLoaded", () => {
             // Server stores integer scores, so re-add any local remainder
             globalCount = displayedCount = score + unsyncedDelta;
             renderCounter();
+
             if (requestOffline && !offlineShown && offlineEarned > 0) {
+
               offlineMessage.textContent =
                 `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
               offlineModal.style.display = "block";
@@ -1117,4 +1133,11 @@ window.addEventListener("DOMContentLoaded", () => {
   const styleEl = document.createElement("style");
   styleEl.textContent = `@keyframes flash{0%{background:#111}25%{background:#ff0}50%{background:#0ff}75%{background:#f0f}100%{background:#111}}@keyframes spinmove{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}`;
   document.head.appendChild(styleEl);
+  }
+
+  if (username && username.length >= 3) {
+    initApp();
+  } else {
+    showUsernamePrompt();
+  }
 });

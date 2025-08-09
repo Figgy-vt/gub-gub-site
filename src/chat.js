@@ -6,7 +6,6 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
   const mentionSuggestions = document.getElementById("mentionSuggestions");
   const chatBox = document.getElementById("chat");
   const resizeHandle = document.getElementById("chatResizeHandle");
-
   const savedChatWidth = localStorage.getItem("chatWidth");
   const savedChatHeight = localStorage.getItem("chatHeight");
   if (savedChatWidth) chatBox.style.width = savedChatWidth + "px";
