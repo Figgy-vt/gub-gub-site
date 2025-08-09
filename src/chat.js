@@ -52,7 +52,7 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
 
   const emoteMap = {};
   const HARUPI_SET = "01H6Q79JP80007TK4TYM94A0B4";
-  fetch(`https://7tv.io/v3/emote-sets/${HARUPI_SET}`)
+  const emotesLoaded = fetch(`https://7tv.io/v3/emote-sets/${HARUPI_SET}`)
     .then((r) => r.json())
     .then((d) => {
       d.emotes.forEach((e) => {
@@ -87,6 +87,7 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
   }
 
   async function emoteHTML(text) {
+    await emotesLoaded;
     let safe = escapeHTML(text);
     const tokens = safe.split(/(\s+)/);
     for (let i = 0; i < tokens.length; i++) {
