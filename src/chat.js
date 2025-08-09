@@ -6,16 +6,9 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
   const mentionSuggestions = document.getElementById("mentionSuggestions");
   const chatBox = document.getElementById("chat");
   const resizeHandle = document.getElementById("chatResizeHandle");
-  const leaderboard = document.getElementById("leaderboard");
-
   const savedChatWidth = localStorage.getItem("chatWidth");
   const savedChatHeight = localStorage.getItem("chatHeight");
-  if (savedChatWidth) {
-    chatBox.style.width = savedChatWidth + "px";
-    leaderboard.style.width = savedChatWidth + "px";
-  } else {
-    leaderboard.style.width = chatBox.offsetWidth + "px";
-  }
+  if (savedChatWidth) chatBox.style.width = savedChatWidth + "px";
   if (savedChatHeight) chatBox.style.height = savedChatHeight + "px";
 
   const saveChatSize = () => {
@@ -44,7 +37,6 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
     const newHeight = Math.max(100, startHeight - (touch.clientY - startY));
     chatBox.style.width = newWidth + "px";
     chatBox.style.height = newHeight + "px";
-    leaderboard.style.width = newWidth + "px";
   }
 
   function stopResize() {
