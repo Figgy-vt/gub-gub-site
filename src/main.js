@@ -1074,22 +1074,32 @@ window.addEventListener("DOMContentLoaded", () => {
   const chaosBtn = document.getElementById("chaosBtn");
   const twitchBtn = document.getElementById("twitchBtn");
   const twitchBox = document.getElementById("twitchPlayer");
+  twitchBox.style.display = "block";
+  twitchBox.style.visibility = "hidden";
+  const twitchEmbed = new Twitch.Embed("twitchPlayer", {
+    width: "100%",
+    height: "100%",
+    channel: "harupi",
+    layout: "video",
+    parent: [location.hostname],
+    autoplay: false,
+    muted: true,
+  });
+  let twitchPlayer;
+  twitchEmbed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
+    twitchPlayer = twitchEmbed.getPlayer();
+    twitchPlayer.setMuted(true);
+  });
   let twitchShown = false;
 
   twitchBtn.onclick = () => {
     if (!twitchShown) {
-      twitchBox.style.display = "block";
-      new Twitch.Embed("twitchPlayer", {
-        width: "100%",
-        height: "100%",
-        channel: "harupi",
-        layout: "video",
-        parent: [location.hostname],
-      });
+      twitchBox.style.visibility = "visible";
+      twitchPlayer && twitchPlayer.play();
       twitchBtn.textContent = "Hide Stream";
     } else {
-      twitchBox.innerHTML = "";
-      twitchBox.style.display = "none";
+      twitchPlayer && twitchPlayer.pause();
+      twitchBox.style.visibility = "hidden";
       twitchBtn.textContent = "Show Stream";
     }
     twitchShown = !twitchShown;
