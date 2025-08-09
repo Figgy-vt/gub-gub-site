@@ -55,7 +55,7 @@ body {
 
 #perfMenu {
   position: absolute;
-  top: 0;
+  top: 50px;
   left: 10px;
   z-index: 9998;
   background: #222;
