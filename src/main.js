@@ -73,6 +73,13 @@ window.addEventListener("DOMContentLoaded", () => {
       const uid = firebase.auth().currentUser.uid;
       const allUsers = new Set([username]);
 
+      const offlineModal = document.getElementById("offlineModal");
+      const offlineMessage = document.getElementById("offlineMessage");
+      const offlineClose = document.getElementById("offlineClose");
+      offlineClose.addEventListener("click", () => {
+        offlineModal.style.display = "none";
+      });
+
       const versionRef = db.ref("config/version");
       versionRef.on("value", (snap) => {
         const serverVersion = snap.val();
@@ -139,23 +146,34 @@ window.addEventListener("DOMContentLoaded", () => {
         globalCount = 0,
         displayedCount = 0,
         unsyncedDelta = 0;
+      let offlineShown = false;
       let gubRateMultiplier = 1;
       let feralTimeout;
       let scoreDirty = false;
 
       let syncing = false;
-      async function syncGubsFromServer() {
+      async function syncGubsFromServer(requestOffline = false) {
         if (syncing) return;
         syncing = true;
         // Only sync whole gubs to avoid dropping fractional amounts
         const sendDelta = Math.floor(unsyncedDelta);
         unsyncedDelta -= sendDelta; // keep remainder locally
         try {
-          const res = await syncGubsFn({ delta: sendDelta });
+          const res = await syncGubsFn({
+            delta: sendDelta,
+            offline: requestOffline,
+          });
           if (res.data && typeof res.data.score === "number") {
+            const { score, offlineEarned = 0 } = res.data;
             // Server stores integer scores, so re-add any local remainder
-            globalCount = displayedCount = res.data.score + unsyncedDelta;
+            globalCount = displayedCount = score + unsyncedDelta;
             renderCounter();
+            if (requestOffline && !offlineShown && offlineEarned > 0) {
+              offlineMessage.textContent =
+                `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
+              offlineModal.style.display = "block";
+              offlineShown = true;
+            }
           } else {
             // Revert on failure to ensure no loss
             unsyncedDelta += sendDelta;
@@ -220,7 +238,7 @@ window.addEventListener("DOMContentLoaded", () => {
         }
         displayedCount = globalCount;
         renderCounter();
-        syncGubsFromServer();
+        syncGubsFromServer(true);
 
         // Keep local score in sync with external/manual updates
         userRef.on("value", (s) => {
@@ -474,7 +492,7 @@ window.addEventListener("DOMContentLoaded", () => {
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) {
           passiveWorker.postMessage({ type: "reset" });
-          syncGubsFromServer();
+          syncGubsFromServer(true);
         }
       });
       // main gub handler
