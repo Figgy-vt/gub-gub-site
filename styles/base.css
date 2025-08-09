@@ -254,7 +254,7 @@ body {
   left: 10px;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 8px;
   align-items: flex-start;
   z-index: 10000;
   pointer-events: none;
@@ -266,8 +266,9 @@ body {
 
 #chat-row {
   display: flex;
-  gap: 10px;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
 }
 
 #online-users {
