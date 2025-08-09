@@ -80,16 +80,26 @@
     </div>
 
     <div id="perfMenu">
-      <div>
-        Speed: <button id="spdDec">-</button><span id="spdVal">2</span
-        ><button id="spdInc">+</button>
+      <div class="setting-row">
+        <span class="setting-label">Speed:</span>
+        <span class="setting-controls">
+          <button id="spdDec">-</button><span id="spdVal">2</span
+          ><button id="spdInc">+</button>
+        </span>
       </div>
-      <div>
-        Images: <button id="imgDec">-</button><span id="imgVal">20</span
-        ><button id="imgInc">+</button>
+      <div class="setting-row">
+        <span class="setting-label">Images:</span>
+        <span class="setting-controls">
+          <button id="imgDec">-</button><span id="imgVal">20</span
+          ><button id="imgInc">+</button>
+        </span>
       </div>
-      <div><button id="moveToggle">Pause Movement</button></div>
-      <div><button id="qualityBtn">High Quality: Off</button></div>
+      <div class="center-row">
+        <button id="moveToggle">Pause Movement</button>
+      </div>
+      <div class="center-row">
+        <button id="qualityBtn">High Quality: Off</button>
+      </div>
       <label
         for="volumeSlider"
         style="margin-top: 8px; display: block; color: #fff; font-weight: bold"
