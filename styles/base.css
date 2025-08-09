@@ -177,7 +177,7 @@ body {
   top: 40px;
   right: 10px;
   display: flex;
-  gap: 10px;
+  gap: 0;
   z-index: 10001;
 }
 #topRight button {
@@ -254,7 +254,7 @@ body {
   left: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
   align-items: flex-start;
   z-index: 10000;
   pointer-events: none;
@@ -308,7 +308,6 @@ body {
   padding: 12px;
   border-radius: 6px;
   font-family: sans-serif;
-  width: 200px;
   line-height: 1.4;
 }
 #discordWrapper {
