@@ -77,6 +77,27 @@ body {
   cursor: pointer;
 }
 
+#perfMenu .setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#perfMenu .setting-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#perfMenu .center-row {
+  display: flex;
+  justify-content: center;
+}
+
+#qualityBtn {
+  width: 140px;
+}
+
 #moveToggle {
   width: 140px;
 }
@@ -450,4 +471,3 @@ body {
   border-radius: 4px;
   cursor: pointer;
 }
-
