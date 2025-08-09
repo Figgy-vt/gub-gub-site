@@ -162,7 +162,7 @@ window.addEventListener("DOMContentLoaded", () => {
       let sessionCount = 0,
         globalCount = 0,
         displayedCount = 0,
-        unsyncedDelta = 0;
+        unsyncedClicks = 0;
       let offlineShown = false;
       let gubRateMultiplier = 1;
       let feralExpiresAt = 0;
@@ -175,17 +175,21 @@ window.addEventListener("DOMContentLoaded", () => {
         if (syncing) return;
         syncing = true;
         // Only sync whole gubs to avoid dropping fractional amounts
-        const sendDelta = Math.floor(unsyncedDelta);
-        unsyncedDelta -= sendDelta; // keep remainder locally
+        const sendClicks = Math.floor(unsyncedClicks);
+        unsyncedClicks -= sendClicks;
         try {
           const res = await syncGubsFn({
-            delta: sendDelta,
+            clicks: sendClicks,
             offline: requestOffline,
           });
           if (res.data && typeof res.data.score === "number") {
-            const { score, offlineEarned = 0 } = res.data;
-            // Server stores integer scores, so re-add any local remainder
-            globalCount = displayedCount = score + unsyncedDelta;
+            const { score, offlineEarned = 0, goldenReward = 0 } = res.data;
+            globalCount = score;
+            displayedCount = score + unsyncedClicks;
+            if (goldenReward) {
+              globalCount += goldenReward;
+              displayedCount += goldenReward;
+            }
             renderCounter();
 
             if (requestOffline && !offlineShown && offlineEarned > 0) {
@@ -197,10 +201,10 @@ window.addEventListener("DOMContentLoaded", () => {
             }
           } else {
             // Revert on failure to ensure no loss
-            unsyncedDelta += sendDelta;
+            unsyncedClicks += sendClicks;
           }
         } catch (err) {
-          unsyncedDelta += sendDelta;
+          unsyncedClicks += sendClicks;
           console.error("syncGubs failed", err);
         } finally {
           syncing = false;
@@ -265,9 +269,9 @@ window.addEventListener("DOMContentLoaded", () => {
         userRef.on("value", (s) => {
           const v = s.val();
           if (typeof v === "number") {
-            const total = v + unsyncedDelta;
+            const total = v + unsyncedClicks;
             globalCount = displayedCount = total;
-            scoreDirty = unsyncedDelta !== 0;
+            scoreDirty = unsyncedClicks !== 0;
             renderCounter();
           }
         });
@@ -494,7 +498,6 @@ window.addEventListener("DOMContentLoaded", () => {
         amount *= gubRateMultiplier;
         globalCount += amount;
         displayedCount += amount;
-        unsyncedDelta += amount;
         renderCounter();
         queueScoreUpdate();
       }
@@ -502,9 +505,14 @@ window.addEventListener("DOMContentLoaded", () => {
       function spendGubs(amount) {
         globalCount -= amount;
         displayedCount -= amount;
-        unsyncedDelta -= amount;
         renderCounter();
         queueScoreUpdate();
+      }
+
+      function registerClick() {
+        sessionCount += gubRateMultiplier;
+        gainGubs(1);
+        unsyncedClicks += 1;
       }
 
       function checkFeralExpiry() {
@@ -525,13 +533,13 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
       function flushUnsynced() {
-        const sendDelta = Math.floor(unsyncedDelta);
+        const sendClicks = Math.floor(unsyncedClicks);
         const blob = new Blob(
-          [JSON.stringify({ data: { delta: sendDelta } })],
+          [JSON.stringify({ data: { clicks: sendClicks } })],
           { type: "application/json" },
         );
         navigator.sendBeacon(SYNC_URL, blob);
-        unsyncedDelta -= sendDelta;
+        unsyncedClicks -= sendClicks;
       }
 
       document.addEventListener("visibilitychange", () => {
@@ -578,12 +586,11 @@ window.addEventListener("DOMContentLoaded", () => {
       mainGub.addEventListener("click", (e) => {
         clickMe.style.display = "none";
         sessionStorage.setItem("gubClicked", "true");
-        const clickGain = gubRateMultiplier;
-        sessionCount += clickGain;
-        gainGubs(1);
+        const gain = gubRateMultiplier;
+        registerClick();
 
         const plusOne = document.createElement("div");
-        plusOne.textContent = "+" + abbreviateNumber(clickGain);
+        plusOne.textContent = "+" + abbreviateNumber(gain);
         plusOne.className = "plus-one";
         plusOne.style.left = `${e.clientX}px`;
         plusOne.style.top = `${e.clientY}px`;
@@ -795,7 +802,7 @@ window.addEventListener("DOMContentLoaded", () => {
               owned[item.id] = newCount;
               document.getElementById(`owned-${item.id}`).textContent = newCount;
               globalCount = displayedCount = score;
-              unsyncedDelta = 0;
+              unsyncedClicks = 0;
               updatePassiveIncome();
               updateCostDisplay();
               renderCounter();
