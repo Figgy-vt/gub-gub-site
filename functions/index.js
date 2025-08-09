@@ -8,6 +8,7 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
     throw new functions.https.HttpsError('unauthenticated');
   }
   const delta = typeof data?.delta === 'number' ? data.delta : 0;
+  const requestOffline = !!data?.offline;
 
   const db = admin.database();
   const userRef = db.ref(`leaderboard_v3/${uid}`);
@@ -34,11 +35,15 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const snap = await userRef.once('value');
   const { score = 0, lastUpdated = Date.now() } = snap.val() || {};
   const now = Date.now();
-  const elapsed = now - lastUpdated;
-  // Award only 0.25% of the normal passive rate while the user was away
-  const earned = rate * 0.0025 * (elapsed / 1000);
-  const offlineEarned = Math.floor(earned);
-  const newScore = Math.max(0, Math.floor(score + earned + delta));
+
+  let offlineEarned = 0;
+  if (requestOffline) {
+    const elapsed = now - lastUpdated;
+    const earned = rate * 0.0025 * (elapsed / 1000);
+    offlineEarned = Math.floor(earned);
+  }
+  const newScore = Math.max(0, score + delta + offlineEarned);
+
   await userRef.update({ score: newScore, lastUpdated: now });
   return { score: newScore, offlineEarned };
 });
