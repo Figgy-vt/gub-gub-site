@@ -59,7 +59,9 @@ async function applyPassiveGubs(db, uid, now = Date.now()) {
   const earned = Math.floor(rate * (elapsed / 1000));
   const newScore = score + earned;
   await userRef.update({ score: newScore, lastUpdated: now });
+
   await db.ref(`leaderboard_v3/${uid}/score`).set(newScore);
+
   return { score: newScore, shop, rate, earned };
 }
 
@@ -82,7 +84,9 @@ exports.clickGub = functions.https.onCall(async (data, ctx) => {
   const { score } = await applyPassiveGubs(db, uid);
   const newScore = score + 1;
   await db.ref(`users/${uid}/score`).set(newScore);
+
   await db.ref(`leaderboard_v3/${uid}/score`).set(newScore);
+
   return { score: newScore };
 });
 
@@ -119,6 +123,8 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     score: newScore,
     [`shop/${itemId}`]: newCount,
   });
+
   await db.ref(`leaderboard_v3/${uid}/score`).set(newScore);
+
   return { score: newScore, newCount };
 });
