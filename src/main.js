@@ -84,6 +84,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const db = firebase.database();
       const functions = firebase.functions();
       const syncGubsFn = functions.httpsCallable("syncGubs");
+      const purchaseItemFn = functions.httpsCallable("purchaseItem");
       const uid = firebase.auth().currentUser.uid;
       const allUsers = new Set([username]);
 
@@ -724,33 +725,29 @@ window.addEventListener("DOMContentLoaded", () => {
           );
         }
 
-        function totalCost(quantity) {
-          let cost = 0;
-          for (let i = 0; i < quantity; i++) {
-            cost += Math.floor(
-              item.baseCost *
-                Math.pow(COST_MULTIPLIER, owned[item.id] + i),
-            );
-          }
-          return cost;
-        }
-
         function updateCostDisplay() {
           costSpan.textContent = abbreviateNumber(currentCost());
         }
 
         async function attemptPurchase(quantity) {
           await syncGubsFromServer();
-          const cost = totalCost(quantity);
-          if (globalCount >= cost) {
-            spendGubs(cost);
-            owned[item.id] += quantity;
-            document.getElementById(`owned-${item.id}`).textContent =
-              owned[item.id];
-            db.ref(`shop_v2/${uid}/${item.id}`).set(owned[item.id]);
-            updatePassiveIncome();
-            updateCostDisplay();
-            await syncGubsFromServer();
+          try {
+            const res = await purchaseItemFn({
+              itemId: item.id,
+              quantity,
+            });
+            if (res.data) {
+              const { score, newCount } = res.data;
+              owned[item.id] = newCount;
+              document.getElementById(`owned-${item.id}`).textContent = newCount;
+              globalCount = displayedCount = score;
+              unsyncedDelta = 0;
+              updatePassiveIncome();
+              updateCostDisplay();
+              renderCounter();
+            }
+          } catch (err) {
+            console.error("purchase failed", err);
           }
         }
 
