@@ -35,8 +35,10 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const { score = 0, lastUpdated = Date.now() } = snap.val() || {};
   const now = Date.now();
   const elapsed = delta === 0 ? now - lastUpdated : 0;
-  const earned = rate * (elapsed / 1000);
+  // Award only 0.25% of the normal passive rate while the user was away
+  const earned = rate * 0.0025 * (elapsed / 1000);
+  const offlineEarned = Math.floor(earned);
   const newScore = Math.max(0, Math.floor(score + earned + delta));
   await userRef.update({ score: newScore, lastUpdated: now });
-  return { score: newScore };
+  return { score: newScore, offlineEarned };
 });
