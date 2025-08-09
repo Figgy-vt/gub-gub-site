@@ -77,6 +77,10 @@ body {
   cursor: pointer;
 }
 
+#moveToggle {
+  width: 140px;
+}
+
 .rainbow-text {
   font-size: 2rem;
   font-weight: bold;
