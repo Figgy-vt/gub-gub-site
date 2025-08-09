@@ -165,6 +165,7 @@ window.addEventListener("DOMContentLoaded", () => {
       let gubRateMultiplier = 1;
       let feralTimeout;
       let scoreDirty = false;
+      let hiddenStart = 0;
 
       let syncing = false;
       async function syncGubsFromServer(requestOffline = false) {
@@ -508,9 +509,16 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
+        if (document.hidden) {
+          hiddenStart = Date.now();
+        } else {
           passiveWorker.postMessage({ type: "reset" });
-          syncGubsFromServer(true);
+          if (hiddenStart) {
+            const elapsedSec = (Date.now() - hiddenStart) / 1000;
+            gainGubs(passiveRatePerSec * elapsedSec);
+            hiddenStart = 0;
+          }
+          syncGubsFromServer();
         }
       });
       // main gub handler
