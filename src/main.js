@@ -84,6 +84,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const db = firebase.database();
       const functions = firebase.functions();
       const syncGubsFn = functions.httpsCallable("syncGubs");
+      const purchaseItemFn = functions.httpsCallable("purchaseItem");
       const uid = firebase.auth().currentUser.uid;
       const allUsers = new Set([username]);
 
@@ -743,14 +744,28 @@ window.addEventListener("DOMContentLoaded", () => {
           await syncGubsFromServer();
           const cost = totalCost(quantity);
           if (globalCount >= cost) {
-            spendGubs(cost);
-            owned[item.id] += quantity;
-            document.getElementById(`owned-${item.id}`).textContent =
-              owned[item.id];
-            db.ref(`shop_v2/${uid}/${item.id}`).set(owned[item.id]);
-            updatePassiveIncome();
-            updateCostDisplay();
-            await syncGubsFromServer();
+            try {
+              const res = await purchaseItemFn({
+                item: item.id,
+                quantity,
+              });
+              if (res.data) {
+                if (typeof res.data.owned === "number") {
+                  owned[item.id] = res.data.owned;
+                  document.getElementById(`owned-${item.id}`).textContent =
+                    owned[item.id];
+                }
+                if (typeof res.data.score === "number") {
+                  globalCount = displayedCount = res.data.score;
+                  unsyncedDelta = 0;
+                  renderCounter();
+                }
+              }
+              updatePassiveIncome();
+              updateCostDisplay();
+            } catch (err) {
+              console.error("purchaseItem failed", err);
+            }
           }
         }
 
