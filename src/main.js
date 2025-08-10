@@ -166,41 +166,42 @@ window.addEventListener("DOMContentLoaded", () => {
       let feralTimeout;
       let scoreDirty = false;
 
-      let syncing = false;
+      let syncPromise = null;
       async function syncGubsFromServer(requestOffline = false) {
-        if (syncing) return;
-        syncing = true;
+        if (syncPromise) return syncPromise;
         // Only sync whole gubs to avoid dropping fractional amounts
         const sendDelta = Math.floor(unsyncedDelta);
         unsyncedDelta -= sendDelta; // keep remainder locally
-        try {
-          const res = await syncGubsFn({
-            delta: sendDelta,
-            offline: requestOffline,
-          });
-          if (res.data && typeof res.data.score === "number") {
-            const { score, offlineEarned = 0 } = res.data;
-            // Server stores integer scores, so re-add any local remainder
-            globalCount = displayedCount = score + unsyncedDelta;
-            renderCounter();
+        syncPromise = (async () => {
+          try {
+            const res = await syncGubsFn({
+              delta: sendDelta,
+              offline: requestOffline,
+            });
+            if (res.data && typeof res.data.score === "number") {
+              const { score, offlineEarned = 0 } = res.data;
+              // Server stores integer scores, so re-add any local remainder
+              globalCount = displayedCount = score + unsyncedDelta;
+              renderCounter();
 
-            if (requestOffline && !offlineShown && offlineEarned > 0) {
-
-              offlineMessage.textContent =
-                `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
-              offlineModal.style.display = "block";
-              offlineShown = true;
+              if (requestOffline && !offlineShown && offlineEarned > 0) {
+                offlineMessage.textContent =
+                  `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
+                offlineModal.style.display = "block";
+                offlineShown = true;
+              }
+            } else {
+              // Revert on failure to ensure no loss
+              unsyncedDelta += sendDelta;
             }
-          } else {
-            // Revert on failure to ensure no loss
+          } catch (err) {
             unsyncedDelta += sendDelta;
+            console.error("syncGubs failed", err);
+          } finally {
+            syncPromise = null;
           }
-        } catch (err) {
-          unsyncedDelta += sendDelta;
-          console.error("syncGubs failed", err);
-        } finally {
-          syncing = false;
-        }
+        })();
+        return syncPromise;
       }
 
       function queueScoreUpdate() {
