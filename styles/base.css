@@ -6,6 +6,19 @@ body {
   height: 100vh;
   width: 100vw;
 }
+#wipBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: red;
+  background: #000;
+  z-index: 10002;
+  font-family: sans-serif;
+  font-weight: bold;
+  padding: 8px 0;
+}
 #gub-wrapper {
   position: absolute;
   top: 50%;
@@ -35,7 +48,7 @@ body {
 
 #btnRow {
   position: absolute;
-  top: 10px;
+  top: 50px;
   left: 10px;
   display: flex;
   gap: 5px;
@@ -55,7 +68,7 @@ body {
 
 #perfMenu {
   position: absolute;
-  top: 50px;
+  top: 90px;
   left: 10px;
   z-index: 9998;
   background: #222;
@@ -197,13 +210,13 @@ body {
     right: 10px !important; /* keep it flush to the right edge */
   }
   #golden-counter {
-    top: 60px !important; /* push it down under the btnRow (which sits at 10px + ~40px height) */
+    top: 100px !important; /* push it down under the banner and btnRow */
   }
 }
 
 #topRight {
   position: absolute;
-  top: 40px;
+  top: 80px;
   right: 10px;
   display: flex;
   gap: 0;
@@ -226,7 +239,7 @@ body {
 
 #shopPanel {
   position: absolute;
-  top: 90px;
+  top: 130px;
   right: 10px;
   display: none;
   background: #222;
@@ -246,7 +259,7 @@ body {
 
 #adminPanel {
   position: absolute;
-  top: 90px;
+  top: 130px;
   right: 10px;
   display: none;
   background: #222;
@@ -323,7 +336,7 @@ body {
 }
 #golden-counter {
   position: absolute;
-  top: 10px;
+  top: 50px;
   right: 10px;
   z-index: 10000;
   color: white;
