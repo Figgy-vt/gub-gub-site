@@ -101,4 +101,31 @@ describe('purchaseItem', () => {
       purchaseItem({ item: 'nope', quantity: 1 }, { auth: { uid } }),
     ).rejects.toHaveProperty('code', 'invalid-argument');
   });
+
+  test('rejects quantities over limit', async () => {
+    const uid = 'user3';
+    rootState = { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} };
+    await expect(
+      purchaseItem({ item: 'passiveMaker', quantity: 1001 }, { auth: { uid } }),
+    ).rejects.toHaveProperty('code', 'invalid-argument');
+  });
+
+  test('rejects negative quantities', async () => {
+    const uid = 'user4';
+    rootState = { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} };
+    await expect(
+      purchaseItem({ item: 'passiveMaker', quantity: -5 }, { auth: { uid } }),
+    ).rejects.toHaveProperty('code', 'invalid-argument');
+  });
+
+  test('rejects non-numeric quantities', async () => {
+    const uid = 'user5';
+    rootState = { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} };
+    await expect(
+      purchaseItem(
+        { item: 'passiveMaker', quantity: 'abc' },
+        { auth: { uid } },
+      ),
+    ).rejects.toHaveProperty('code', 'invalid-argument');
+  });
 });
