@@ -1,13 +1,15 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const { calculateOfflineGubs } = require('./offline');
-const { RATES, COST_MULTIPLIER, SHOP_ITEMS } = require('./config');
-const {
+import * as functions from 'firebase-functions';
+import admin from 'firebase-admin';
+import { calculateOfflineGubs } from './offline.js';
+import { RATES, COST_MULTIPLIER, SHOP_ITEMS } from './config.js';
+import {
   validateSyncGubs,
   validatePurchaseItem,
   validateAdminUpdate,
   validateAdminDelete,
-} = require('./validation');
+} from './validation.js';
+import { totalCost } from '../shared/cost.js';
+
 admin.initializeApp();
 
 function logServerError(error, context = {}) {
@@ -45,7 +47,7 @@ async function logAdminAction(action, context = {}) {
   }
 }
 
-exports.syncGubs = functions.https.onCall(async (data, ctx) => {
+export const syncGubs = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError('unauthenticated');
@@ -85,7 +87,7 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   }
 });
 
-exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
+export const purchaseItem = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError('unauthenticated');
@@ -110,12 +112,12 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     });
 
     // Calculate cost based on pre-transaction values
-    let cost = 0;
-    for (let i = 0; i < quantity; i++) {
-      cost += Math.floor(
-        SHOP_ITEMS[item] * Math.pow(COST_MULTIPLIER, preOwned + i),
-      );
-    }
+    const cost = totalCost(
+      SHOP_ITEMS[item],
+      preOwned,
+      quantity,
+      COST_MULTIPLIER,
+    );
 
     // Ensure the user's recorded score meets the cost before attempting
     // the transactional deduction to avoid unnecessary retries
@@ -186,7 +188,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
   }
 });
 
-exports.updateUserScore = functions.https.onCall(async (data, ctx) => {
+export const updateUserScore = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError('unauthenticated');
@@ -218,7 +220,7 @@ exports.updateUserScore = functions.https.onCall(async (data, ctx) => {
   }
 });
 
-exports.deleteUser = functions.https.onCall(async (data, ctx) => {
+export const deleteUser = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError('unauthenticated');

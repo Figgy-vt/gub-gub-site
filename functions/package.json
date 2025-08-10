@@ -2,6 +2,7 @@
   "name": "functions",
   "description": "Cloud Functions for gub-gub-site",
   "main": "index.js",
+  "type": "module",
   "engines": {
     "node": "18"
   },
