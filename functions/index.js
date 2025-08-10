@@ -98,7 +98,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
   }
   try {
     const db = admin.database();
-    const result = await db.ref().runTransaction((root) => {
+    const result = await db.ref().transaction((root) => {
       if (root === null) root = {};
       const user = root.leaderboard_v3?.[uid] || {};
       const score = user.score || 0;
