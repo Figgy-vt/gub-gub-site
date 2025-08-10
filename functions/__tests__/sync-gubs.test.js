@@ -78,16 +78,24 @@ const { syncGubs } = await import('../index.js');
 describe('syncGubs', () => {
   test('applies increments atomically under concurrent calls', async () => {
     const uid = 'user1';
-    rootState = { leaderboard_v3: { [uid]: { score: 0, lastUpdated: 0 } }, shop_v2: {} };
+    rootState = {
+      leaderboard_v3: { [uid]: { score: 0, lastUpdated: 0 } },
+      shop_v2: {},
+    };
     await Promise.all(
-      Array.from({ length: 5 }, () => syncGubs({ delta: 1 }, { auth: { uid } })),
+      Array.from({ length: 5 }, () =>
+        syncGubs({ delta: 1 }, { auth: { uid } }),
+      ),
     );
     expect(rootState.leaderboard_v3[uid].score).toBe(5);
   });
 
   test('rejects non-finite delta', async () => {
     const uid = 'user2';
-    rootState = { leaderboard_v3: { [uid]: { score: 0, lastUpdated: 0 } }, shop_v2: {} };
+    rootState = {
+      leaderboard_v3: { [uid]: { score: 0, lastUpdated: 0 } },
+      shop_v2: {},
+    };
     await expect(
       syncGubs({ delta: Infinity }, { auth: { uid } }),
     ).rejects.toHaveProperty('code', 'invalid-argument');
@@ -95,10 +103,12 @@ describe('syncGubs', () => {
 
   test('clamps large delta', async () => {
     const uid = 'user3';
-    rootState = { leaderboard_v3: { [uid]: { score: 0, lastUpdated: 0 } }, shop_v2: {} };
+    rootState = {
+      leaderboard_v3: { [uid]: { score: 0, lastUpdated: 0 } },
+      shop_v2: {},
+    };
     const res = await syncGubs({ delta: 1e7 }, { auth: { uid } });
     expect(res).toEqual({ score: 1e6, offlineEarned: 0 });
     expect(rootState.leaderboard_v3[uid].score).toBe(1e6);
   });
 });
-

@@ -1,0 +1,48 @@
+export default {
+  costMultiplier: 1.15,
+  items: [
+    { id: 'passiveMaker', name: 'The Gub', baseCost: 100, rate: 1 },
+    { id: 'guberator', name: 'Guberator', baseCost: 500, rate: 5 },
+    { id: 'gubmill', name: 'Gubmill', baseCost: 2000, rate: 20 },
+    { id: 'gubsolar', name: 'Solar Gub Panels', baseCost: 10000, rate: 100 },
+    { id: 'gubfactory', name: 'Gubactory', baseCost: 50000, rate: 500 },
+    { id: 'gubhydro', name: 'Hydro Gub Plant', baseCost: 250000, rate: 2500 },
+    {
+      id: 'gubnuclear',
+      name: 'Nuclear Gub Plant',
+      baseCost: 1000000,
+      rate: 10000,
+    },
+    {
+      id: 'gubquantum',
+      name: 'Quantum Gub Computer',
+      baseCost: 5000000,
+      rate: 50000,
+    },
+    {
+      id: 'gubai',
+      name: 'GUB AI',
+      caption: '(be careful of gubnet...)',
+      baseCost: 25000000,
+      rate: 250000,
+    },
+    {
+      id: 'gubclone',
+      name: 'Gub Cloning Facility',
+      baseCost: 125000000,
+      rate: 1250000,
+    },
+    {
+      id: 'gubspace',
+      name: 'Gub Space Program',
+      baseCost: 625000000,
+      rate: 6250000,
+    },
+    {
+      id: 'intergalactic',
+      name: 'Intergalactic Gub',
+      baseCost: 3125000000,
+      rate: 31250000,
+    },
+  ],
+};
