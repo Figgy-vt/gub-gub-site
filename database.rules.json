@@ -50,7 +50,7 @@
     "shop_v2": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid",
+        ".write": false,
         "$item": {
           ".validate": "newData.isNumber() && newData.val() >= 0"
         }
