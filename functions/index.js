@@ -102,6 +102,8 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
   try {
     const db = admin.database();
 
+
+
     // Log current values before attempting the transaction so we can compare
     // what the transaction sees versus what's stored in the database.
     const [preScoreSnap, preOwnedSnap] = await Promise.all([
@@ -115,6 +117,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
       item,
       score: preScore,
       owned: preOwned,
+
     });
 
     // Calculate cost based on pre-transaction values
@@ -128,6 +131,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     // Ensure the user's recorded score meets the cost before attempting
     // the transactional deduction to avoid unnecessary retries
     if (preScore < cost) {
+
       await logServerError(new Error('Not enough gubs'), {
         function: 'purchaseItem',
         uid,
@@ -182,6 +186,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
       uid,
       item,
       quantity,
+
       cost,
       score: newScore,
       owned: newOwned,

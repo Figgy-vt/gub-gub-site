@@ -10,6 +10,7 @@ function getVal(path = '') {
   }
   return val;
 }
+
 function setVal(path = '', value) {
   const parts = path.split('/').filter(Boolean);
   if (parts.length === 0) {
@@ -34,6 +35,7 @@ const mockDb = {
         return {
           committed: false,
           snapshot: {
+
             val: () => current,
             child: (childPath) => ({
               val: () => getVal(`${path}/${childPath}`),
