@@ -1,6 +1,5 @@
-/* eslint-env jest */
+import { describe, test, expect, jest } from '@jest/globals';
 
-// Mock firebase-admin before requiring index.js
 let rootState;
 function getVal(path = '') {
   const parts = path.split('/').filter(Boolean);
@@ -57,12 +56,11 @@ const mockDb = {
   })),
 };
 
-jest.mock('firebase-admin', () => ({
-  initializeApp: jest.fn(),
-  database: () => mockDb,
+jest.unstable_mockModule('firebase-admin', () => ({
+  default: { initializeApp: jest.fn(), database: () => mockDb },
 }));
 
-jest.mock('firebase-functions', () => ({
+jest.unstable_mockModule('firebase-functions', () => ({
   https: {
     onCall: (fn) => fn,
     HttpsError: class extends Error {
@@ -75,7 +73,7 @@ jest.mock('firebase-functions', () => ({
   logger: { error: jest.fn(), info: jest.fn() },
 }));
 
-const { purchaseItem } = require('../index');
+const { purchaseItem } = await import('../index.js');
 
 describe('purchaseItem', () => {
   test('handles owned values stored as strings', async () => {

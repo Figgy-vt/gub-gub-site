@@ -1,3 +1,10 @@
+import shopConfig from '../shared/shop-config.js';
+import {
+  currentCost as calcCurrentCost,
+  totalCost as calcTotalCost,
+  maxAffordable as calcMaxAffordable,
+} from '../shared/cost.js';
+
 export function initShop({
   db,
   uid,
@@ -13,67 +20,8 @@ export function initShop({
   logError,
   sanitizeUsername,
 }) {
-  const COST_MULTIPLIER = 1.15; // smoother exponential cost scaling factor
-  const shopItems = [
-    { id: 'passiveMaker', name: 'The Gub', baseCost: 100, rate: 1 },
-    { id: 'guberator', name: 'Guberator', baseCost: 500, rate: 5 },
-    { id: 'gubmill', name: 'Gubmill', baseCost: 2000, rate: 20 },
-    {
-      id: 'gubsolar',
-      name: 'Solar Gub Panels',
-      baseCost: 10000,
-      rate: 100,
-    },
-    {
-      id: 'gubfactory',
-      name: 'Gubactory',
-      baseCost: 50000,
-      rate: 500,
-    },
-    {
-      id: 'gubhydro',
-      name: 'Hydro Gub Plant',
-      baseCost: 250000,
-      rate: 2500,
-    },
-    {
-      id: 'gubnuclear',
-      name: 'Nuclear Gub Plant',
-      baseCost: 1000000,
-      rate: 10000,
-    },
-    {
-      id: 'gubquantum',
-      name: 'Quantum Gub Computer',
-      baseCost: 5000000,
-      rate: 50000,
-    },
-    {
-      id: 'gubai',
-      name: 'GUB AI',
-      caption: '(be careful of gubnet...)',
-      baseCost: 25000000,
-      rate: 250000,
-    },
-    {
-      id: 'gubclone',
-      name: 'Gub Cloning Facility',
-      baseCost: 125000000,
-      rate: 1250000,
-    },
-    {
-      id: 'gubspace',
-      name: 'Gub Space Program',
-      baseCost: 625000000,
-      rate: 6250000,
-    },
-    {
-      id: 'intergalactic',
-      name: 'Intergalactic Gub',
-      baseCost: 3125000000,
-      rate: 31250000,
-    },
-  ];
+  const COST_MULTIPLIER = shopConfig.costMultiplier;
+  const shopItems = shopConfig.items;
   const shopRef = db.ref(`shop_v2/${uid}`);
   const owned = {
     passiveMaker: 0,
@@ -96,7 +44,10 @@ export function initShop({
       0,
     );
     gameState.passiveRatePerSec = perSecondTotal;
-    passiveWorker.postMessage({ type: 'rate', value: gameState.passiveRatePerSec });
+    passiveWorker.postMessage({
+      type: 'rate',
+      value: gameState.passiveRatePerSec,
+    });
     renderCounter();
     queueScoreUpdate();
   }
@@ -186,29 +137,20 @@ export function initShop({
     const buyAll = div.querySelector(`#buy-${item.id}-all`);
     const costSpan = div.querySelector(`#cost-${item.id}`);
 
-    function currentCost() {
-      return Math.floor(
-        item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]),
-      );
-    }
-
-    function totalCost(quantity) {
-      let cost = 0;
-      for (let i = 0; i < quantity; i++) {
-        cost += Math.floor(
-          item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id] + i),
-        );
-      }
-      return cost;
-    }
-
     function updateCostDisplay() {
-      costSpan.textContent = abbreviateNumber(currentCost());
+      costSpan.textContent = abbreviateNumber(
+        calcCurrentCost(item.baseCost, owned[item.id], COST_MULTIPLIER),
+      );
     }
 
     async function attemptPurchase(quantity) {
       await syncGubsFromServer();
-      const cost = totalCost(quantity);
+      const cost = calcTotalCost(
+        item.baseCost,
+        owned[item.id],
+        quantity,
+        COST_MULTIPLIER,
+      );
       if (gameState.globalCount >= cost) {
         try {
           const res = await purchaseItemFn({
@@ -239,26 +181,16 @@ export function initShop({
         }
       }
     }
-
-    function maxAffordable() {
-      let qty = 0;
-      let accumulated = 0;
-      while (true) {
-        const next = Math.floor(
-          item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id] + qty),
-        );
-        if (accumulated + next > gameState.globalCount) break;
-        accumulated += next;
-        qty++;
-      }
-      return qty;
-    }
-
     buy1.addEventListener('click', () => attemptPurchase(1));
     buy10.addEventListener('click', () => attemptPurchase(10));
     buy100.addEventListener('click', () => attemptPurchase(100));
     buyAll.addEventListener('click', () => {
-      const qty = maxAffordable();
+      const qty = calcMaxAffordable(
+        item.baseCost,
+        owned[item.id],
+        gameState.globalCount,
+        COST_MULTIPLIER,
+      );
       if (qty > 0) attemptPurchase(qty);
     });
     updateCostDisplay();
@@ -272,13 +204,10 @@ export function initShop({
       const costSpan = document.getElementById(`cost-${item.id}`);
       if (costSpan) {
         costSpan.textContent = abbreviateNumber(
-          Math.floor(
-            item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]),
-          ),
+          calcCurrentCost(item.baseCost, owned[item.id], COST_MULTIPLIER),
         );
       }
     });
     updatePassiveIncome();
   });
 }
-

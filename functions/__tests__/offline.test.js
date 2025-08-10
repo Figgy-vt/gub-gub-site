@@ -1,5 +1,5 @@
-/* eslint-env jest */
-const { calculateOfflineGubs } = require('../offline');
+import { describe, test, expect } from '@jest/globals';
+import { calculateOfflineGubs } from '../offline.js';
 
 describe('calculateOfflineGubs', () => {
   test('awards 25% of rate per second of elapsed time', () => {

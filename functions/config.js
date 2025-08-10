@@ -1,33 +1,9 @@
-const RATES = {
-  passiveMaker: 1,
-  guberator: 5,
-  gubmill: 20,
-  gubsolar: 100,
-  gubfactory: 500,
-  gubhydro: 2500,
-  gubnuclear: 10000,
-  gubquantum: 50000,
-  gubai: 250000,
-  gubclone: 1250000,
-  gubspace: 6250000,
-  intergalactic: 31250000,
-};
+import shopConfig from '../shared/shop-config.js';
 
-const COST_MULTIPLIER = 1.15;
-
-const SHOP_ITEMS = {
-  passiveMaker: 100,
-  guberator: 500,
-  gubmill: 2000,
-  gubsolar: 10000,
-  gubfactory: 50000,
-  gubhydro: 250000,
-  gubnuclear: 1000000,
-  gubquantum: 5000000,
-  gubai: 25000000,
-  gubclone: 125000000,
-  gubspace: 625000000,
-  intergalactic: 3125000000,
-};
-
-module.exports = { RATES, COST_MULTIPLIER, SHOP_ITEMS };
+export const COST_MULTIPLIER = shopConfig.costMultiplier;
+export const SHOP_ITEMS = Object.fromEntries(
+  shopConfig.items.map((item) => [item.id, item.baseCost]),
+);
+export const RATES = Object.fromEntries(
+  shopConfig.items.map((item) => [item.id, item.rate]),
+);

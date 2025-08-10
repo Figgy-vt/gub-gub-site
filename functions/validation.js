@@ -1,13 +1,13 @@
-const functions = require('firebase-functions');
-const { SHOP_ITEMS } = require('./config');
+import * as functions from 'firebase-functions';
+import { SHOP_ITEMS } from './config.js';
 
-function validateSyncGubs(data = {}) {
+export function validateSyncGubs(data = {}) {
   const delta = typeof data.delta === 'number' ? Math.floor(data.delta) : 0;
   const requestOffline = Boolean(data.offline);
   return { delta, requestOffline };
 }
 
-function validatePurchaseItem(data = {}) {
+export function validatePurchaseItem(data = {}) {
   const item = data.item;
   if (!SHOP_ITEMS[item]) {
     throw new functions.https.HttpsError('invalid-argument', 'Unknown item');
@@ -30,7 +30,7 @@ function validatePurchaseItem(data = {}) {
   return { item, quantity };
 }
 
-function validateAdminUpdate(data = {}) {
+export function validateAdminUpdate(data = {}) {
   const username =
     typeof data.username === 'string' ? data.username.trim() : '';
   const score = Number.isInteger(data.score)
@@ -48,7 +48,7 @@ function validateAdminUpdate(data = {}) {
   return { username, score };
 }
 
-function validateAdminDelete(data = {}) {
+export function validateAdminDelete(data = {}) {
   const username =
     typeof data.username === 'string' ? data.username.trim() : '';
   if (!username || !/^[A-Za-z0-9_]{3,20}$/.test(username)) {
@@ -59,10 +59,3 @@ function validateAdminDelete(data = {}) {
   }
   return { username };
 }
-
-module.exports = {
-  validateSyncGubs,
-  validatePurchaseItem,
-  validateAdminUpdate,
-  validateAdminDelete,
-};
