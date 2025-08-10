@@ -2,7 +2,12 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { calculateOfflineGubs } = require('./offline');
 const { RATES, COST_MULTIPLIER, SHOP_ITEMS } = require('./config');
-const { validateSyncGubs, validatePurchaseItem } = require('./validation');
+const {
+  validateSyncGubs,
+  validatePurchaseItem,
+  validateAdminUpdate,
+  validateAdminDelete,
+} = require('./validation');
 admin.initializeApp();
 
 function logServerError(error, context = {}) {
@@ -17,6 +22,26 @@ function logServerError(error, context = {}) {
   } catch (e) {
     functions.logger.error('Failed to log error', e);
     return Promise.resolve();
+  }
+}
+
+async function isAdmin(uid) {
+  const snap = await admin.database().ref(`admins/${uid}`).once('value');
+  return snap.val() === true;
+}
+
+async function logAdminAction(action, context = {}) {
+  try {
+    await admin
+      .database()
+      .ref('logs/server')
+      .push({
+        timestamp: Date.now(),
+        action,
+        ...context,
+      });
+  } catch (e) {
+    functions.logger.error('Failed to log admin action', e);
   }
 }
 
@@ -157,6 +182,68 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     return { score: newScore, owned: newOwned };
   } catch (err) {
     await logServerError(err, { function: 'purchaseItem', uid, data });
+    throw err;
+  }
+});
+
+exports.updateUserScore = functions.https.onCall(async (data, ctx) => {
+  const uid = ctx.auth?.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError('unauthenticated');
+  }
+  try {
+    if (!(await isAdmin(uid))) {
+      throw new functions.https.HttpsError('permission-denied');
+    }
+    const { username, score } = validateAdminUpdate(data);
+    const db = admin.database();
+    const snap = await db
+      .ref('leaderboard_v3')
+      .orderByChild('username')
+      .equalTo(username)
+      .once('value');
+    if (!snap.exists()) {
+      throw new functions.https.HttpsError('not-found', 'User not found');
+    }
+    const updates = [];
+    snap.forEach((child) => {
+      updates.push(child.ref.update({ score }));
+    });
+    await Promise.all(updates);
+    await logAdminAction('updateUserScore', { admin: uid, username, score });
+    return { success: true };
+  } catch (err) {
+    await logServerError(err, { function: 'updateUserScore', uid, data });
+    throw err;
+  }
+});
+
+exports.deleteUser = functions.https.onCall(async (data, ctx) => {
+  const uid = ctx.auth?.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError('unauthenticated');
+  }
+  try {
+    if (!(await isAdmin(uid))) {
+      throw new functions.https.HttpsError('permission-denied');
+    }
+    const { username } = validateAdminDelete(data);
+    const db = admin.database();
+    const snap = await db
+      .ref('leaderboard_v3')
+      .orderByChild('username')
+      .equalTo(username)
+      .once('value');
+    if (!snap.exists()) {
+      throw new functions.https.HttpsError('not-found', 'User not found');
+    }
+    const removals = [];
+    snap.forEach((child) => removals.push(child.ref.remove()));
+    await Promise.all(removals);
+    await logAdminAction('deleteUser', { admin: uid, username });
+    return { success: true };
+  } catch (err) {
+    await logServerError(err, { function: 'deleteUser', uid, data });
     throw err;
   }
 });
