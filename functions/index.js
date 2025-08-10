@@ -18,8 +18,6 @@ function logServerError(error, context = {}) {
   }
 }
 
-const MAX_DELTA = 1000; // clamp client-supplied score changes
-
 exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
@@ -27,7 +25,6 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   }
   try {
     let delta = typeof data?.delta === 'number' ? Math.floor(data.delta) : 0;
-    delta = Math.max(-MAX_DELTA, Math.min(MAX_DELTA, delta));
     const requestOffline = !!data?.offline;
 
     const db = admin.database();
@@ -60,7 +57,7 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
     if (requestOffline) {
       offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
     }
-    const newScore = Math.max(0, score + delta + offlineEarned);
+    const newScore = score + delta + offlineEarned;
 
     await userRef.update({ score: newScore, lastUpdated: now });
     return { score: newScore, offlineEarned };
