@@ -1,8 +1,14 @@
 const functions = require('firebase-functions');
 const { SHOP_ITEMS } = require('./config');
 
+const MAX_DELTA = 1e6;
+
 function validateSyncGubs(data = {}) {
-  const delta = typeof data.delta === 'number' ? Math.floor(data.delta) : 0;
+  let delta = Number(data.delta);
+  if (!Number.isFinite(delta)) delta = 0;
+  delta = Math.floor(delta);
+  if (delta > MAX_DELTA) delta = MAX_DELTA;
+  if (delta < -MAX_DELTA) delta = -MAX_DELTA;
   const requestOffline = Boolean(data.offline);
   return { delta, requestOffline };
 }
@@ -16,4 +22,4 @@ function validatePurchaseItem(data = {}) {
   return { item, quantity };
 }
 
-module.exports = { validateSyncGubs, validatePurchaseItem };
+module.exports = { validateSyncGubs, validatePurchaseItem, MAX_DELTA };

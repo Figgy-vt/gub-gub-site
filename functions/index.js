@@ -29,24 +29,29 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
     const { delta, requestOffline } = validateSyncGubs(data);
 
     const db = admin.database();
-    const userRef = db.ref(`leaderboard_v3/${uid}`);
+    const scoreRef = db.ref(`leaderboard_v3/${uid}/score`);
+    const lastUpdatedRef = db.ref(`leaderboard_v3/${uid}/lastUpdated`);
     const shop = (await db.ref(`shop_v2/${uid}`).once('value')).val() || {};
     const rate = Object.entries(shop).reduce(
       (sum, [k, v]) => sum + (RATES[k] || 0) * v,
       0,
     );
 
-    const snap = await userRef.once('value');
-    const { score = 0, lastUpdated = Date.now() } = snap.val() || {};
     const now = Date.now();
+    const lastUpdatedSnap = await lastUpdatedRef.once('value');
+    const lastUpdated = Number(lastUpdatedSnap.val()) || now;
 
     let offlineEarned = 0;
     if (requestOffline) {
       offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
     }
-    const newScore = score + delta + offlineEarned;
 
-    await userRef.update({ score: newScore, lastUpdated: now });
+    const txn = await scoreRef.transaction(
+      (curr) => (Number(curr) || 0) + delta + offlineEarned,
+    );
+    const newScore = Number(txn.snapshot.val()) || 0;
+    await lastUpdatedRef.set(now);
+
     functions.logger.info('syncGubs', {
       uid,
       delta,
