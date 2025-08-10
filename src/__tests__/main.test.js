@@ -1,7 +1,16 @@
-const { sum } = require('../utils');
+/**
+ * @jest-environment jsdom
+ */
 
-describe('sum', () => {
-  it('adds two numbers', () => {
-    expect(sum(1, 2)).toBe(3);
+import { sanitizeUsername } from '../main.js';
+
+describe('sanitizeUsername', () => {
+  it('strips invalid characters and lowercases', () => {
+    expect(sanitizeUsername('User!@#')).toBe('user');
+  });
+
+  it('limits username length to 20 chars', () => {
+    const long = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    expect(sanitizeUsername(long)).toBe('abcdefghijklmnopqrst');
   });
 });

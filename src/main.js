@@ -8,6 +8,13 @@ import { initPresenceAndLeaderboard } from './presence.js';
 import { initShop } from './shop.js';
 import { initUIEffects } from './uiEffects.js';
 
+export function sanitizeUsername(name) {
+  return (name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '')
+    .slice(0, 20);
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   const CLIENT_VERSION = '0.1.6';
   document.getElementById('versionNumber').textContent = `v${CLIENT_VERSION}`;
@@ -37,14 +44,6 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 `;
   document.head.appendChild(specialStyle);
-  // Sanitize usernames (letters, numbers, underscore; max 20 chars)
-  function sanitizeUsername(name) {
-    return (name || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '')
-      .slice(0, 20);
-  }
-
   // Username handling
   let username = sanitizeUsername(localStorage.getItem('gubUser'));
 
