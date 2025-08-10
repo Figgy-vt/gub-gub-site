@@ -70,14 +70,14 @@
     <div id="list"></div>
     <script>
       const firebaseConfig = {
-        apiKey: "AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM",
-        authDomain: "gub-leaderboard.firebaseapp.com",
-        databaseURL: "https://gub-leaderboard-default-rtdb.firebaseio.com",
-        projectId: "gub-leaderboard",
-        storageBucket: "gub-leaderboard.firebasestorage.app",
-        messagingSenderId: "851465760203",
-        appId: "1:851465760203:web:1fc30c730a93c0fab25a4e",
-        measurementId: "G-95SE4H7EEW",
+        apiKey: 'AIzaSyBc2cDT3md2pk28dFMDoCeCgw37tpGBEjM',
+        authDomain: 'gub-leaderboard.firebaseapp.com',
+        databaseURL: 'https://gub-leaderboard-default-rtdb.firebaseio.com',
+        projectId: 'gub-leaderboard',
+        storageBucket: 'gub-leaderboard.firebasestorage.app',
+        messagingSenderId: '851465760203',
+        appId: '1:851465760203:web:1fc30c730a93c0fab25a4e',
+        measurementId: 'G-95SE4H7EEW',
       };
       firebase.initializeApp(firebaseConfig);
       firebase
@@ -87,44 +87,49 @@
           const db = firebase.database();
           const uid = firebase.auth().currentUser.uid;
           function sanitizeUsername(name) {
-            return (name || "")
+            return (name || '')
               .toLowerCase()
-              .replace(/[^a-z0-9_]/g, "")
+              .replace(/[^a-z0-9_]/g, '')
               .slice(0, 20);
           }
+          function sanitizeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+          }
           const username =
-            sanitizeUsername(localStorage.getItem("gubUser")) || "Anon";
-          const listEl = document.getElementById("list");
-          const feedbackRef = db.ref("feedback");
+            sanitizeUsername(localStorage.getItem('gubUser')) || 'Anon';
+          const listEl = document.getElementById('list');
+          const feedbackRef = db.ref('feedback');
           let isAdmin = false;
 
           const ADMIN_UIDS = [
-            "sGd1ZHR1nvMKKCw9A1O5bwtbFD23",
-            "YHtvs4JyAtS3SUtNAUJuPMm3ac22",
+            'sGd1ZHR1nvMKKCw9A1O5bwtbFD23',
+            'YHtvs4JyAtS3SUtNAUJuPMm3ac22',
           ];
-          db.ref("admins/" + uid)
-            .once("value")
+          db.ref('admins/' + uid)
+            .once('value')
             .then((snap) => {
               if (!snap.exists() && ADMIN_UIDS.includes(uid)) {
-                db.ref("admins/" + uid).set(true);
+                db.ref('admins/' + uid).set(true);
                 isAdmin = true;
               } else {
                 isAdmin = !!snap.val();
               }
-              feedbackRef.on("child_added", (snap) =>
+              feedbackRef.on('child_added', (snap) =>
                 render(snap.key, snap.val()),
               );
-              feedbackRef.on("child_changed", (snap) =>
+              feedbackRef.on('child_changed', (snap) =>
                 render(snap.key, snap.val()),
               );
             });
 
           function render(id, data) {
-            let div = document.getElementById("fb-" + id);
+            let div = document.getElementById('fb-' + id);
             if (!div) {
-              div = document.createElement("div");
-              div.id = "fb-" + id;
-              div.className = "suggestion";
+              div = document.createElement('div');
+              div.id = 'fb-' + id;
+              div.className = 'suggestion';
               div.innerHTML = `
             <button class="delete" style="display:none">✖</button>
             <div class="text"></div>
@@ -140,8 +145,8 @@
             </div>`;
               listEl.appendChild(div);
 
-              const commentInput = div.querySelector(".commentInput");
-              const commentSubmit = div.querySelector(".commentSubmit");
+              const commentInput = div.querySelector('.commentInput');
+              const commentSubmit = div.querySelector('.commentSubmit');
               commentSubmit.onclick = () => {
                 const text = commentInput.value.trim();
                 if (!text) return;
@@ -150,36 +155,41 @@
                   text,
                   ts: Date.now(),
                 });
-                commentInput.value = "";
+                commentInput.value = '';
               };
-              commentInput.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") {
+              commentInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
                   e.preventDefault();
                   commentSubmit.click();
                 }
               });
 
-              const deleteBtn = div.querySelector(".delete");
+              const deleteBtn = div.querySelector('.delete');
               if (isAdmin) {
-                deleteBtn.style.display = "block";
+                deleteBtn.style.display = 'block';
                 deleteBtn.onclick = () => {
-                  if (confirm("Delete this suggestion?")) {
+                  if (confirm('Delete this suggestion?')) {
                     db.ref(`feedback/${id}`).remove();
                   }
                 };
               }
 
-              db.ref(`feedback/${id}/comments`).on("child_added", (snap) => {
+              db.ref(`feedback/${id}/comments`).on('child_added', (snap) => {
                 const c = snap.val();
-                const commentsDiv = div.querySelector(".comments");
-                const el = document.createElement("div");
-                el.className = "comment";
-                el.innerHTML = `<div>${c.text}</div><div class="meta">${c.user} - ${new Date(c.ts).toLocaleString()}</div>`;
+                const commentsDiv = div.querySelector('.comments');
+                const el = document.createElement('div');
+                el.className = 'comment';
+                const textDiv = document.createElement('div');
+                textDiv.textContent = c.text;
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'meta';
+                metaDiv.textContent = `${c.user} - ${new Date(c.ts).toLocaleString()}`;
+                el.append(textDiv, metaDiv);
                 commentsDiv.appendChild(el);
               });
             }
-            div.querySelector(".text").textContent = data.text;
-            div.querySelector(".meta").textContent =
+            div.querySelector('.text').textContent = data.text;
+            div.querySelector('.meta').textContent =
               `${data.user} - ${new Date(data.ts).toLocaleString()}`;
             const votes = data.votes || {};
             let ups = 0,
@@ -188,12 +198,12 @@
               if (v === 1) ups++;
               else if (v === -1) downs++;
             });
-            div.querySelector(".upCount").textContent = ups;
-            div.querySelector(".downCount").textContent = downs;
-            const upBtn = div.querySelector(".up");
-            const downBtn = div.querySelector(".down");
-            upBtn.classList.toggle("active", votes[uid] === 1);
-            downBtn.classList.toggle("active", votes[uid] === -1);
+            div.querySelector('.upCount').textContent = ups;
+            div.querySelector('.downCount').textContent = downs;
+            const upBtn = div.querySelector('.up');
+            const downBtn = div.querySelector('.down');
+            upBtn.classList.toggle('active', votes[uid] === 1);
+            downBtn.classList.toggle('active', votes[uid] === -1);
             upBtn.onclick = () => {
               const current = votes[uid];
               db.ref(`feedback/${id}/votes/${uid}`).set(
