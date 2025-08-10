@@ -193,20 +193,25 @@ window.addEventListener('DOMContentLoaded', () => {
           // Only sync whole gubs to avoid dropping fractional amounts
           const sendDelta = Math.floor(unsyncedDelta);
           unsyncedDelta -= sendDelta; // keep remainder locally
+
           try {
             const res = await syncGubsFn({
               delta: sendDelta,
               offline: requestOffline,
             });
+
             if (res.data && typeof res.data.score === 'number') {
+
               const { score, offlineEarned = 0 } = res.data;
               // Server stores integer scores, so re-add any local remainder
               globalCount = displayedCount = score + unsyncedDelta;
               renderCounter();
 
               if (requestOffline && !offlineShown && offlineEarned > 0) {
+
                 offlineMessage.textContent = `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
                 offlineModal.style.display = 'block';
+
                 offlineShown = true;
               }
             } else {
@@ -215,6 +220,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
           } catch (err) {
             unsyncedDelta += sendDelta;
+
             console.error('syncGubs failed', err);
             logError(db, {
               message: err.message,
@@ -225,6 +231,7 @@ window.addEventListener('DOMContentLoaded', () => {
             syncing = false;
           }
         }
+
 
         function queueScoreUpdate() {
           scoreDirty = true;
