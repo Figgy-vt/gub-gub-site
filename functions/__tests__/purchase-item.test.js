@@ -2,23 +2,27 @@
 
 // Mock firebase-admin before requiring index.js
 let rootState;
+function getVal(path = '') {
+  const parts = path.split('/').filter(Boolean);
+  let val = rootState;
+  for (const p of parts) {
+    val = val && val[p];
+  }
+  return val;
+}
 const mockDb = {
-  ref: jest.fn(() => ({
+  ref: jest.fn((path = '') => ({
     transaction: (update) => {
+      if (path) throw new Error('transaction only supported on root in mock');
       const res = update(rootState);
       if (res) {
         rootState = res;
         return {
           committed: true,
           snapshot: {
-            child: (path) => {
-              const parts = path.split('/');
-              let val = rootState;
-              for (const p of parts) {
-                val = val && val[p];
-              }
-              return { val: () => val };
-            },
+            child: (childPath) => ({
+              val: () => getVal(childPath),
+            }),
           },
         };
       }
@@ -27,6 +31,7 @@ const mockDb = {
         snapshot: { child: () => ({ val: () => undefined }) },
       };
     },
+    once: async () => ({ val: () => getVal(path) }),
   })),
 };
 

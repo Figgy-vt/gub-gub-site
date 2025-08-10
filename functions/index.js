@@ -101,6 +101,23 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
   }
   try {
     const db = admin.database();
+
+
+    // Log current values before attempting the transaction so we can compare
+    // what the transaction sees versus what's stored in the database.
+    const [preScoreSnap, preOwnedSnap] = await Promise.all([
+      db.ref(`leaderboard_v3/${uid}/score`).once('value'),
+      db.ref(`shop_v2/${uid}/${item}`).once('value'),
+    ]);
+    const preScore = Number(preScoreSnap.val()) || 0;
+    const preOwned = Number(preOwnedSnap.val()) || 0;
+    functions.logger.info('purchaseItem.precheck', {
+      uid,
+      item,
+      score: preScore,
+      owned: preOwned,
+    });
+
     let availableScore = 0;
     let computedCost = 0;
     let ownedBefore = 0;
