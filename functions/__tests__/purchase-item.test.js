@@ -1,0 +1,69 @@
+/* eslint-env jest */
+
+// Mock firebase-admin before requiring index.js
+let rootState;
+const mockDb = {
+  ref: jest.fn(() => ({
+    transaction: (update) => {
+      const res = update(rootState);
+      if (res) {
+        rootState = res;
+        return {
+          committed: true,
+          snapshot: {
+            child: (path) => {
+              const parts = path.split('/');
+              let val = rootState;
+              for (const p of parts) {
+                val = val && val[p];
+              }
+              return { val: () => val };
+            },
+          },
+        };
+      }
+      return {
+        committed: false,
+        snapshot: { child: () => ({ val: () => undefined }) },
+      };
+    },
+  })),
+};
+
+jest.mock('firebase-admin', () => ({
+  initializeApp: jest.fn(),
+  database: () => mockDb,
+}));
+
+jest.mock('firebase-functions', () => ({
+  https: {
+    onCall: (fn) => fn,
+    HttpsError: class extends Error {
+      constructor(code, message) {
+        super(message);
+        this.code = code;
+      }
+    },
+  },
+  logger: { error: jest.fn() },
+}));
+
+const { purchaseItem } = require('../index');
+
+describe('purchaseItem', () => {
+  test('handles owned values stored as strings', async () => {
+    const uid = 'user1';
+    rootState = {
+      leaderboard_v3: { [uid]: { score: 150 } },
+      shop_v2: { [uid]: { passiveMaker: '1' } },
+    };
+
+    const result = await purchaseItem(
+      { item: 'passiveMaker', quantity: 1 },
+      { auth: { uid } },
+    );
+    expect(result).toEqual({ score: 36, owned: 2 });
+    expect(rootState.shop_v2[uid].passiveMaker).toBe(2);
+    expect(rootState.leaderboard_v3[uid].score).toBe(36);
+  });
+});
