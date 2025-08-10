@@ -1,5 +1,7 @@
 import { initAudio } from './audio.js';
 import { initChat } from './chat.js';
+import { initFeedback } from './feedback.js';
+import { initGoldenGubs } from './goldenGub.js';
 import { logError } from './logger.js';
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -183,7 +185,6 @@ window.addEventListener('DOMContentLoaded', () => {
           unsyncedDelta = 0;
         let offlineShown = false;
         let gubRateMultiplier = 1;
-        let feralTimeout;
         let scoreDirty = false;
 
         let syncing = false;
@@ -332,164 +333,6 @@ window.addEventListener('DOMContentLoaded', () => {
           sanitizeUsername,
           playMentionSound,
         });
-
-        // Start spawning golden gubs
-        scheduleNextGolden();
-
-        function getGoldenGubReward() {
-          return Math.max(10, Math.floor(globalCount * 0.03));
-        }
-
-        // Spawn golden gub and handle clicks
-        function spawnGolden() {
-          const el = document.createElement('img');
-          el.src = images[Math.floor(Math.random() * images.length)];
-          el.className = 'floater';
-          const size = 80 + Math.random() * 320;
-          el.style.width = el.style.height = size + 'px';
-          el.style.left = `${Math.random() * (window.innerWidth - size)}px`;
-          el.style.top = `${Math.random() * (window.innerHeight - size)}px`;
-          el.style.zIndex = 10000;
-          el.style.filter =
-            'sepia(1) hue-rotate(20deg) saturate(5) brightness(1.2)';
-          el.style.border = '2px solid white';
-          el.style.pointerEvents = 'auto';
-          el.style.opacity = 0;
-          el.style.transition = 'opacity 3s';
-          document.body.appendChild(el);
-          requestAnimationFrame(() => {
-            el.style.opacity = 1;
-          });
-          const timeout = setTimeout(() => {
-            el.style.pointerEvents = 'none';
-            el.style.opacity = 0;
-            setTimeout(() => {
-              el.remove();
-              scheduleNextGolden();
-            }, 3000);
-          }, 60000);
-          el.addEventListener('click', (e) => {
-            clearTimeout(timeout);
-            const reward = getGoldenGubReward();
-            const actualReward = reward * gubRateMultiplier;
-            sessionCount += actualReward;
-            gainGubs(reward);
-
-            const plusOne = document.createElement('div');
-            plusOne.textContent = '+' + abbreviateNumber(actualReward);
-            plusOne.className = 'plus-one';
-            plusOne.style.left = `${e.clientX}px`;
-            plusOne.style.top = `${e.clientY}px`;
-            document.body.appendChild(plusOne);
-            setTimeout(() => plusOne.remove(), 1000);
-
-            el.remove();
-            scheduleNextGolden();
-          });
-        }
-        // ─── SPECIAL GUB SPAWNER ───────────────────────────────────────────────
-        function activateFeralGubMode() {
-          const duration = 30000 + Math.random() * 90000;
-          gubRateMultiplier = 10;
-          renderCounter();
-          mainGub.classList.add('feral-glow');
-          clearTimeout(feralTimeout);
-          feralTimeout = setTimeout(() => {
-            gubRateMultiplier = 1;
-            mainGub.classList.remove('feral-glow');
-            renderCounter();
-          }, duration);
-        }
-
-        function spawnSpecialGub() {
-          // 1. pick the exact same random image
-          const imgSrc = images[Math.floor(Math.random() * images.length)];
-
-          // 2. container for image + label
-          const container = document.createElement('div');
-          container.className = 'floater special-gub';
-          const size = 80 + Math.random() * 320;
-          container.style.width = size + 'px';
-          container.style.height = size + 'px';
-          container.style.left = `${Math.random() * (window.innerWidth - size)}px`;
-          container.style.top = `${Math.random() * (window.innerHeight - size)}px`;
-
-          // 3. the image element itself
-          const img = document.createElement('img');
-          img.src = imgSrc;
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'contain';
-          // orange-ify it
-          img.style.filter = 'hue-rotate(30deg) saturate(3) brightness(1.3)';
-          container.appendChild(img);
-
-          // 4. overlay the label
-          const label = document.createElement('div');
-          label.textContent = 'SPESHAL GUB';
-          Object.assign(label.style, {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'sans-serif',
-            fontWeight: 'bold',
-            color: 'white',
-            textShadow: '0 0 5px black',
-            pointerEvents: 'none',
-          });
-          container.appendChild(label);
-
-          container.style.opacity = 0;
-          container.style.transition = 'opacity 3s';
-          document.body.appendChild(container);
-          requestAnimationFrame(() => {
-            container.style.opacity = 1;
-          });
-          const timeout = setTimeout(() => {
-            container.style.pointerEvents = 'none';
-            container.style.opacity = 0;
-            setTimeout(() => {
-              container.remove();
-              scheduleNextGolden();
-            }, 3000);
-          }, 60000);
-
-          // 5. click handler triggers feral mode
-          container.addEventListener('click', (e) => {
-            clearTimeout(timeout);
-            activateFeralGubMode();
-
-            const plusOne = document.createElement('div');
-            plusOne.textContent = 'FERAL GUB MODE!';
-            plusOne.className = 'plus-one';
-            plusOne.style.animationDuration = '2s';
-            plusOne.style.left = `${e.clientX}px`;
-            plusOne.style.top = `${e.clientY}px`;
-            document.body.appendChild(plusOne);
-            setTimeout(() => plusOne.remove(), 2000);
-
-            container.remove();
-            scheduleNextGolden();
-          });
-        }
-
-        // ─── UPDATED SCHEDULER ──────────────────
-        function scheduleNextGolden() {
-          const min = 300000; // 5 minutes
-          const max = 1500000; // 25 minutes
-          setTimeout(
-            () => {
-              if (Math.random() < 0.05) spawnSpecialGub();
-              else spawnGolden();
-            },
-            min + Math.random() * (max - min),
-          );
-        }
         // Elements for displaying totals and rate
         const gubTotalEl = document.getElementById('gubTotal');
         let passiveRatePerSec = 0;
@@ -552,7 +395,7 @@ window.addEventListener('DOMContentLoaded', () => {
           sessionStorage.setItem('gubClicked', 'true');
           const clickGain = gubRateMultiplier;
           sessionCount += clickGain;
-          gainGubs(1);
+          gainGubs(clickGain);
 
           const plusOne = document.createElement('div');
           plusOne.textContent = '+' + abbreviateNumber(clickGain);
@@ -572,6 +415,22 @@ window.addEventListener('DOMContentLoaded', () => {
             150,
           );
         });
+        const golden = initGoldenGubs({
+          getImages: () => images,
+          getGlobalCount: () => globalCount,
+          getGubRateMultiplier: () => gubRateMultiplier,
+          setGubRateMultiplier: (v) => {
+            gubRateMultiplier = v;
+          },
+          mainGub,
+          renderCounter,
+          gainGubs,
+          abbreviateNumber,
+          incrementSessionCount: (amt) => {
+            sessionCount += amt;
+          },
+        });
+        golden.scheduleNextGolden();
         // ─── SHOP CODE (moved here!) ─────────────────────────────────────────
         const COST_MULTIPLIER = 1.15; // smoother exponential cost scaling factor
         const shopItems = [
@@ -843,44 +702,7 @@ window.addEventListener('DOMContentLoaded', () => {
         // passive income handled by the Web Worker
         // ──────────────────────────────────────────────────────────────────────
 
-        // Feedback submission
-        const feedbackBtn = document.getElementById('feedbackBtn');
-        const feedbackModal = document.getElementById('feedbackModal');
-        const feedbackInput = document.getElementById('feedbackInput');
-        const feedbackSubmit = document.getElementById('feedbackSubmit');
-        const feedbackSee = document.getElementById('feedbackSee');
-        const feedbackAnon = document.getElementById('feedbackAnon');
-        const feedbackCounter = document.getElementById('feedbackCounter');
-
-        feedbackInput.addEventListener('input', () => {
-          const remaining = 200 - feedbackInput.value.length;
-          feedbackCounter.textContent = `${remaining} characters remaining`;
-        });
-
-        feedbackBtn.addEventListener('click', () => {
-          feedbackModal.style.display =
-            feedbackModal.style.display === 'block' ? 'none' : 'block';
-        });
-
-        feedbackSee.addEventListener('click', () => {
-          window.open('feedback-list/', '_blank');
-          feedbackModal.style.display = 'none';
-        });
-
-        feedbackSubmit.addEventListener('click', () => {
-          const text = feedbackInput.value.trim();
-          if (!text) return;
-          const who = feedbackAnon.checked ? 'Anon' : username;
-          db.ref('feedback').push({
-            user: who,
-            text,
-            ts: Date.now(),
-          });
-          feedbackInput.value = '';
-          feedbackAnon.checked = false;
-          feedbackCounter.textContent = '200 characters remaining';
-          feedbackModal.style.display = 'none';
-        });
+        initFeedback({ db, username });
       })
       .catch((err) => console.error('Auth Error', err));
 
