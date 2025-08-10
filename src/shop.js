@@ -1,4 +1,5 @@
-export function initShop({
+import { currentCost, totalCost, maxAffordable } from '../shared/cost.js';
+export async function initShop({
   db,
   uid,
   purchaseItemFn,
@@ -11,65 +12,83 @@ export function initShop({
   logError,
   sanitizeUsername,
 }) {
-  const COST_MULTIPLIER = 1.15; // smoother exponential cost scaling factor
+  const configUrl = new URL('../shared/shopConfig.json', import.meta.url);
+  const { COST_MULTIPLIER, RATES, SHOP_ITEMS } = await fetch(configUrl).then(
+    (r) => r.json(),
+  );
   const shopItems = [
-    { id: 'passiveMaker', name: 'The Gub', baseCost: 100, rate: 1 },
-    { id: 'guberator', name: 'Guberator', baseCost: 500, rate: 5 },
-    { id: 'gubmill', name: 'Gubmill', baseCost: 2000, rate: 20 },
+    {
+      id: 'passiveMaker',
+      name: 'The Gub',
+      baseCost: SHOP_ITEMS.passiveMaker,
+      rate: RATES.passiveMaker,
+    },
+    {
+      id: 'guberator',
+      name: 'Guberator',
+      baseCost: SHOP_ITEMS.guberator,
+      rate: RATES.guberator,
+    },
+    {
+      id: 'gubmill',
+      name: 'Gubmill',
+      baseCost: SHOP_ITEMS.gubmill,
+      rate: RATES.gubmill,
+    },
     {
       id: 'gubsolar',
       name: 'Solar Gub Panels',
-      baseCost: 10000,
-      rate: 100,
+      baseCost: SHOP_ITEMS.gubsolar,
+      rate: RATES.gubsolar,
     },
     {
       id: 'gubfactory',
       name: 'Gubactory',
-      baseCost: 50000,
-      rate: 500,
+      baseCost: SHOP_ITEMS.gubfactory,
+      rate: RATES.gubfactory,
     },
     {
       id: 'gubhydro',
       name: 'Hydro Gub Plant',
-      baseCost: 250000,
-      rate: 2500,
+      baseCost: SHOP_ITEMS.gubhydro,
+      rate: RATES.gubhydro,
     },
     {
       id: 'gubnuclear',
       name: 'Nuclear Gub Plant',
-      baseCost: 1000000,
-      rate: 10000,
+      baseCost: SHOP_ITEMS.gubnuclear,
+      rate: RATES.gubnuclear,
     },
     {
       id: 'gubquantum',
       name: 'Quantum Gub Computer',
-      baseCost: 5000000,
-      rate: 50000,
+      baseCost: SHOP_ITEMS.gubquantum,
+      rate: RATES.gubquantum,
     },
     {
       id: 'gubai',
       name: 'GUB AI',
       caption: '(be careful of gubnet...)',
-      baseCost: 25000000,
-      rate: 250000,
+      baseCost: SHOP_ITEMS.gubai,
+      rate: RATES.gubai,
     },
     {
       id: 'gubclone',
       name: 'Gub Cloning Facility',
-      baseCost: 125000000,
-      rate: 1250000,
+      baseCost: SHOP_ITEMS.gubclone,
+      rate: RATES.gubclone,
     },
     {
       id: 'gubspace',
       name: 'Gub Space Program',
-      baseCost: 625000000,
-      rate: 6250000,
+      baseCost: SHOP_ITEMS.gubspace,
+      rate: RATES.gubspace,
     },
     {
       id: 'intergalactic',
       name: 'Intergalactic Gub',
-      baseCost: 3125000000,
-      rate: 31250000,
+      baseCost: SHOP_ITEMS.intergalactic,
+      rate: RATES.intergalactic,
     },
   ];
   const shopRef = db.ref(`shop_v2/${uid}`);
@@ -186,29 +205,21 @@ export function initShop({
     const buyAll = div.querySelector(`#buy-${item.id}-all`);
     const costSpan = div.querySelector(`#cost-${item.id}`);
 
-    function currentCost() {
-      return Math.floor(
-        item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]),
-      );
+    function currentItemCost() {
+      return currentCost(item.baseCost, COST_MULTIPLIER, owned[item.id]);
     }
 
-    function totalCost(quantity) {
-      let cost = 0;
-      for (let i = 0; i < quantity; i++) {
-        cost += Math.floor(
-          item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id] + i),
-        );
-      }
-      return cost;
+    function totalItemCost(quantity) {
+      return totalCost(item.baseCost, COST_MULTIPLIER, owned[item.id], quantity);
     }
 
     function updateCostDisplay() {
-      costSpan.textContent = abbreviateNumber(currentCost());
+      costSpan.textContent = abbreviateNumber(currentItemCost());
     }
 
     async function attemptPurchase(quantity) {
       await syncGubsFromServer();
-      const cost = totalCost(quantity);
+      const cost = totalItemCost(quantity);
       if (gameState.globalCount >= cost) {
         try {
           const res = await purchaseItemFn({
@@ -240,25 +251,20 @@ export function initShop({
       }
     }
 
-    function maxAffordable() {
-      let qty = 0;
-      let accumulated = 0;
-      while (true) {
-        const next = Math.floor(
-          item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id] + qty),
-        );
-        if (accumulated + next > gameState.globalCount) break;
-        accumulated += next;
-        qty++;
-      }
-      return qty;
+    function maxAffordableItem() {
+      return maxAffordable(
+        item.baseCost,
+        COST_MULTIPLIER,
+        owned[item.id],
+        gameState.globalCount,
+      );
     }
 
     buy1.addEventListener('click', () => attemptPurchase(1));
     buy10.addEventListener('click', () => attemptPurchase(10));
     buy100.addEventListener('click', () => attemptPurchase(100));
     buyAll.addEventListener('click', () => {
-      const qty = maxAffordable();
+      const qty = maxAffordableItem();
       if (qty > 0) attemptPurchase(qty);
     });
     updateCostDisplay();
@@ -272,9 +278,7 @@ export function initShop({
       const costSpan = document.getElementById(`cost-${item.id}`);
       if (costSpan) {
         costSpan.textContent = abbreviateNumber(
-          Math.floor(
-            item.baseCost * Math.pow(COST_MULTIPLIER, owned[item.id]),
-          ),
+          currentCost(item.baseCost, COST_MULTIPLIER, owned[item.id]),
         );
       }
     });

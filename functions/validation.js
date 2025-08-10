@@ -1,5 +1,5 @@
 const functions = require('firebase-functions');
-const { SHOP_ITEMS } = require('./config');
+const { SHOP_ITEMS } = require('../shared/shopConfig.json');
 
 function validateSyncGubs(data = {}) {
   const delta = typeof data.delta === 'number' ? Math.floor(data.delta) : 0;

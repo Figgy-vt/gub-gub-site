@@ -1,7 +1,11 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { calculateOfflineGubs } = require('./offline');
-const { RATES, COST_MULTIPLIER, SHOP_ITEMS } = require('./config');
+const {
+  RATES,
+  COST_MULTIPLIER,
+  SHOP_ITEMS,
+} = require('../shared/shopConfig.json');
 const { validateSyncGubs, validatePurchaseItem } = require('./validation');
 admin.initializeApp();
 
@@ -85,12 +89,9 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     });
 
     // Calculate cost based on pre-transaction values
-    let cost = 0;
-    for (let i = 0; i < quantity; i++) {
-      cost += Math.floor(
-        SHOP_ITEMS[item] * Math.pow(COST_MULTIPLIER, preOwned + i),
-      );
-    }
+    const { totalCost } = await import('../shared/cost.js');
+    const baseCost = SHOP_ITEMS[item];
+    const cost = totalCost(baseCost, COST_MULTIPLIER, preOwned, quantity);
 
     // Ensure the user's recorded score meets the cost before attempting
     // the transactional deduction to avoid unnecessary retries
