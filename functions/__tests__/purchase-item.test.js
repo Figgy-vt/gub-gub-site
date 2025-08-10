@@ -45,7 +45,7 @@ jest.mock('firebase-functions', () => ({
       }
     },
   },
-  logger: { error: jest.fn() },
+  logger: { error: jest.fn(), info: jest.fn() },
 }));
 
 const { purchaseItem } = require('../index');
