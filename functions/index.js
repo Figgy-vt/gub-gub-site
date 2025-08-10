@@ -103,6 +103,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     const db = admin.database();
 
 
+
     // Log current values before attempting the transaction so we can compare
     // what the transaction sees versus what's stored in the database.
     const [preScoreSnap, preOwnedSnap] = await Promise.all([
@@ -116,65 +117,77 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
       item,
       score: preScore,
       owned: preOwned,
+
     });
+
+    // Calculate cost based on pre-transaction values
+    let cost = 0;
+    for (let i = 0; i < quantity; i++) {
+      cost += Math.floor(
+        SHOP_ITEMS[item] * Math.pow(COST_MULTIPLIER, preOwned + i),
+      );
+    }
+
+    // Ensure the user's recorded score meets the cost before attempting
+    // the transactional deduction to avoid unnecessary retries
+    if (preScore < cost) {
+
+      await logServerError(new Error('Not enough gubs'), {
+        function: 'purchaseItem',
+        uid,
+        data,
+        score: preScore,
+        cost,
+        owned: preOwned,
+      });
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Not enough gubs: have ${preScore}, need ${cost}`,
+      );
+    }
 
     let availableScore = 0;
-    let computedCost = 0;
-    let ownedBefore = 0;
-    const result = await db.ref().transaction((root) => {
-      if (root === null) root = {};
-      const user = root.leaderboard_v3?.[uid] || {};
-      const score = Number(user.score) || 0;
-      const owned = Number(root.shop_v2?.[uid]?.[item]) || 0;
-      availableScore = score;
-      ownedBefore = owned;
-
-      let cost = 0;
-      for (let i = 0; i < quantity; i++) {
-        cost += Math.floor(
-          SHOP_ITEMS[item] * Math.pow(COST_MULTIPLIER, owned + i),
-        );
-      }
-      computedCost = cost;
-      if (score < cost) {
-        return; // abort
-      }
-
-      user.score = score - cost;
-      user.lastUpdated = Date.now();
-      if (!root.leaderboard_v3) root.leaderboard_v3 = {};
-      root.leaderboard_v3[uid] = user;
-
-      if (!root.shop_v2) root.shop_v2 = {};
-      if (!root.shop_v2[uid]) root.shop_v2[uid] = {};
-      root.shop_v2[uid][item] = owned + quantity;
-
-      return root;
+    const userRef = db.ref(`leaderboard_v3/${uid}`);
+    const scoreResult = await userRef.transaction((user) => {
+      user = user || {};
+      const currentScore = Number(user.score) || 0;
+      availableScore = currentScore;
+      if (currentScore < cost) return; // abort
+      return {
+        ...user,
+        score: currentScore - cost,
+        lastUpdated: Date.now(),
+      };
     });
 
-    if (!result.committed) {
+    if (!scoreResult.committed) {
       await logServerError(new Error('Not enough gubs'), {
         function: 'purchaseItem',
         uid,
         data,
         score: availableScore,
-        cost: computedCost,
-        owned: ownedBefore,
+        cost,
+        owned: preOwned,
       });
       throw new functions.https.HttpsError(
         'failed-precondition',
-        `Not enough gubs: have ${availableScore}, need ${computedCost}`,
+        `Not enough gubs: have ${availableScore}, need ${cost}`,
       );
     }
 
-    const newScore =
-      result.snapshot.child(`leaderboard_v3/${uid}/score`).val() || 0;
-    const newOwned = result.snapshot.child(`shop_v2/${uid}/${item}`).val() || 0;
+    const newScore = scoreResult.snapshot.child('score').val() || 0;
+
+    const ownedResult = await db
+      .ref(`shop_v2/${uid}/${item}`)
+      .transaction((curr) => (Number(curr) || 0) + quantity);
+
+    const newOwned = Number(ownedResult.snapshot.val()) || 0;
     functions.logger.info('purchaseItem', {
       uid,
       item,
       quantity,
-      cost: computedCost,
+
+      cost,
       score: newScore,
       owned: newOwned,
     });
