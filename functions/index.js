@@ -60,6 +60,12 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
     const newScore = score + delta + offlineEarned;
 
     await userRef.update({ score: newScore, lastUpdated: now });
+    functions.logger.info('syncGubs', {
+      uid,
+      delta,
+      offlineEarned,
+      newScore,
+    });
     return { score: newScore, offlineEarned };
   } catch (err) {
     await logServerError(err, { function: 'syncGubs', uid, data });
@@ -95,11 +101,16 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
   }
   try {
     const db = admin.database();
+    let availableScore = 0;
+    let computedCost = 0;
+    let ownedBefore = 0;
     const result = await db.ref().transaction((root) => {
       if (root === null) root = {};
       const user = root.leaderboard_v3?.[uid] || {};
       const score = Number(user.score) || 0;
       const owned = Number(root.shop_v2?.[uid]?.[item]) || 0;
+      availableScore = score;
+      ownedBefore = owned;
 
       let cost = 0;
       for (let i = 0; i < quantity; i++) {
@@ -107,6 +118,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
           SHOP_ITEMS[item] * Math.pow(COST_MULTIPLIER, owned + i),
         );
       }
+      computedCost = cost;
       if (score < cost) {
         return; // abort
       }
@@ -124,15 +136,31 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     });
 
     if (!result.committed) {
+      await logServerError(new Error('Not enough gubs'), {
+        function: 'purchaseItem',
+        uid,
+        data,
+        score: availableScore,
+        cost: computedCost,
+        owned: ownedBefore,
+      });
       throw new functions.https.HttpsError(
         'failed-precondition',
-        'Not enough gubs',
+        `Not enough gubs: have ${availableScore}, need ${computedCost}`,
       );
     }
 
     const newScore =
       result.snapshot.child(`leaderboard_v3/${uid}/score`).val() || 0;
     const newOwned = result.snapshot.child(`shop_v2/${uid}/${item}`).val() || 0;
+    functions.logger.info('purchaseItem', {
+      uid,
+      item,
+      quantity,
+      cost: computedCost,
+      score: newScore,
+      owned: newOwned,
+    });
     return { score: newScore, owned: newOwned };
   } catch (err) {
     await logServerError(err, { function: 'purchaseItem', uid, data });
