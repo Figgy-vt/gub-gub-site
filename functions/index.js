@@ -102,6 +102,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
   try {
     const db = admin.database();
 
+
     // Log current values before attempting the transaction so we can compare
     // what the transaction sees versus what's stored in the database.
     const [preScoreSnap, preOwnedSnap] = await Promise.all([
