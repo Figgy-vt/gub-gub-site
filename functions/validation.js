@@ -2,7 +2,11 @@ import * as functions from 'firebase-functions';
 import { SHOP_ITEMS } from './config.js';
 
 export function validateSyncGubs(data = {}) {
-  const delta = typeof data.delta === 'number' ? Math.floor(data.delta) : 0;
+  const rawDelta = data.delta;
+  if (!Number.isFinite(rawDelta)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid delta');
+  }
+  const delta = Math.max(-1e6, Math.min(1e6, Math.floor(rawDelta)));
   const requestOffline = Boolean(data.offline);
   return { delta, requestOffline };
 }

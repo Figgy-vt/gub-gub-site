@@ -63,17 +63,21 @@ export const syncGubs = functions.https.onCall(async (data, ctx) => {
       0,
     );
 
-    const snap = await userRef.once('value');
-    const { score = 0, lastUpdated = Date.now() } = snap.val() || {};
-    const now = Date.now();
-
     let offlineEarned = 0;
-    if (requestOffline) {
-      offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
-    }
-    const newScore = score + delta + offlineEarned;
-
-    await userRef.update({ score: newScore, lastUpdated: now });
+    const now = Date.now();
+    const result = await userRef.transaction((user) => {
+      user = user || {};
+      const { score = 0, lastUpdated = now } = user;
+      if (requestOffline) {
+        offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
+      }
+      return {
+        ...user,
+        score: score + delta + offlineEarned,
+        lastUpdated: now,
+      };
+    });
+    const newScore = result.snapshot.child('score').val() || 0;
     functions.logger.info('syncGubs', {
       uid,
       delta,
