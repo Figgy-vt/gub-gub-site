@@ -1,9 +1,9 @@
-import shopConfig from '../shared/shop-config.js';
 import {
+  shopConfig,
   currentCost as calcCurrentCost,
   totalCost as calcTotalCost,
   maxAffordable as calcMaxAffordable,
-} from '../shared/cost.js';
+} from '../shared/index.js';
 
 export function initShop({
   db,

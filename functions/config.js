@@ -1,4 +1,4 @@
-import shopConfig from './shared/shop-config.js';
+import shopConfig from 'shared/shop-config.js';
 
 export const COST_MULTIPLIER = shopConfig.costMultiplier;
 export const SHOP_ITEMS = Object.fromEntries(
