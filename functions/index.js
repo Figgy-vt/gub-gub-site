@@ -8,7 +8,7 @@ import {
   validateAdminUpdate,
   validateAdminDelete,
 } from './validation.js';
-import { totalCost } from './shared/cost.js';
+import { totalCost } from 'shared/cost.js';
 
 admin.initializeApp();
 
