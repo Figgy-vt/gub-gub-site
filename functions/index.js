@@ -101,8 +101,8 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     const result = await db.ref().transaction((root) => {
       if (root === null) root = {};
       const user = root.leaderboard_v3?.[uid] || {};
-      const score = user.score || 0;
-      const owned = root.shop_v2?.[uid]?.[item] || 0;
+      const score = Number(user.score) || 0;
+      const owned = Number(root.shop_v2?.[uid]?.[item]) || 0;
 
       let cost = 0;
       for (let i = 0; i < quantity; i++) {
