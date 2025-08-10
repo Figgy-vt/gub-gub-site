@@ -1,3 +1,17 @@
+export function escapeHTML(str) {
+  return str.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[c],
+  );
+}
+
 export function initChat({ db, username, allUsers, sanitizeUsername, playMentionSound }) {
   const chatRef = db.ref("chat");
   const messagesEl = document.getElementById("messages");
@@ -70,20 +84,6 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
     const lower = name.toLowerCase();
     if (emoteMap[lower]) return emoteMap[lower];
     return null;
-  }
-
-  function escapeHTML(str) {
-    return str.replace(
-      /[&<>"']/g,
-      (c) =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        })[c],
-    );
   }
 
   async function emoteHTML(text) {
