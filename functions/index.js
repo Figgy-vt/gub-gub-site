@@ -9,42 +9,13 @@ import {
   validateAdminDelete,
 } from './validation.js';
 import { totalCost } from './shared/cost.js';
+import { logError, logAction } from './logging.js';
 
 admin.initializeApp();
-
-function logServerError(error, context = {}) {
-  try {
-    const ref = admin.database().ref('logs/server').push();
-    return ref.set({
-      timestamp: Date.now(),
-      message: error.message,
-      stack: error.stack,
-      ...context,
-    });
-  } catch (e) {
-    functions.logger.error('Failed to log error', e);
-    return Promise.resolve();
-  }
-}
 
 async function isAdmin(uid) {
   const snap = await admin.database().ref(`admins/${uid}`).once('value');
   return snap.val() === true;
-}
-
-async function logAdminAction(action, context = {}) {
-  try {
-    await admin
-      .database()
-      .ref('logs/server')
-      .push({
-        timestamp: Date.now(),
-        action,
-        ...context,
-      });
-  } catch (e) {
-    functions.logger.error('Failed to log admin action', e);
-  }
 }
 
 export const syncGubs = functions.https.onCall(async (data, ctx) => {
@@ -86,7 +57,7 @@ export const syncGubs = functions.https.onCall(async (data, ctx) => {
     });
     return { score: newScore, offlineEarned };
   } catch (err) {
-    await logServerError(err, { function: 'syncGubs', uid, data });
+    await logError('server', err, { function: 'syncGubs', uid, data });
     throw err;
   }
 });
@@ -126,7 +97,7 @@ export const purchaseItem = functions.https.onCall(async (data, ctx) => {
     // Ensure the user's recorded score meets the cost before attempting
     // the transactional deduction to avoid unnecessary retries
     if (preScore < cost) {
-      await logServerError(new Error('Not enough gubs'), {
+      await logError('server', new Error('Not enough gubs'), {
         function: 'purchaseItem',
         uid,
         data,
@@ -155,7 +126,7 @@ export const purchaseItem = functions.https.onCall(async (data, ctx) => {
     });
 
     if (!scoreResult.committed) {
-      await logServerError(new Error('Not enough gubs'), {
+      await logError('server', new Error('Not enough gubs'), {
         function: 'purchaseItem',
         uid,
         data,
@@ -187,7 +158,7 @@ export const purchaseItem = functions.https.onCall(async (data, ctx) => {
     });
     return { score: newScore, owned: newOwned };
   } catch (err) {
-    await logServerError(err, { function: 'purchaseItem', uid, data });
+    await logError('server', err, { function: 'purchaseItem', uid, data });
     throw err;
   }
 });
@@ -216,10 +187,15 @@ export const updateUserScore = functions.https.onCall(async (data, ctx) => {
       updates.push(child.ref.update({ score }));
     });
     await Promise.all(updates);
-    await logAdminAction('updateUserScore', { admin: uid, username, score });
+    await logAction('admin', {
+      action: 'updateUserScore',
+      admin: uid,
+      username,
+      score,
+    });
     return { success: true };
   } catch (err) {
-    await logServerError(err, { function: 'updateUserScore', uid, data });
+    await logError('server', err, { function: 'updateUserScore', uid, data });
     throw err;
   }
 });
@@ -246,10 +222,10 @@ export const deleteUser = functions.https.onCall(async (data, ctx) => {
     const removals = [];
     snap.forEach((child) => removals.push(child.ref.remove()));
     await Promise.all(removals);
-    await logAdminAction('deleteUser', { admin: uid, username });
+    await logAction('admin', { action: 'deleteUser', admin: uid, username });
     return { success: true };
   } catch (err) {
-    await logServerError(err, { function: 'deleteUser', uid, data });
+    await logError('server', err, { function: 'deleteUser', uid, data });
     throw err;
   }
 });

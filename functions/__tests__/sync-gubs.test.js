@@ -53,6 +53,7 @@ const mockDb = {
       };
     },
     once: async () => ({ val: () => getVal(path) }),
+    push: () => ({ set: async () => {} }),
   })),
 };
 
