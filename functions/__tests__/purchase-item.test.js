@@ -101,4 +101,24 @@ describe('purchaseItem', () => {
       purchaseItem({ item: 'nope', quantity: 1 }, { auth: { uid } }),
     ).rejects.toHaveProperty('code', 'invalid-argument');
   });
+
+  test('handles concurrent purchases atomically', async () => {
+    const uid = 'user3';
+    rootState = {
+      leaderboard_v3: { [uid]: { score: 250 } },
+      shop_v2: { [uid]: { passiveMaker: 0 } },
+    };
+
+    const results = await Promise.all([
+      purchaseItem({ item: 'passiveMaker', quantity: 1 }, { auth: { uid } }),
+      purchaseItem({ item: 'passiveMaker', quantity: 1 }, { auth: { uid } }),
+    ]);
+
+    expect(results).toEqual([
+      { score: 36, owned: 2 },
+      { score: 36, owned: 2 },
+    ]);
+    expect(rootState.shop_v2[uid].passiveMaker).toBe(2);
+    expect(rootState.leaderboard_v3[uid].score).toBe(36);
+  });
 });

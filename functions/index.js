@@ -20,6 +20,16 @@ function logServerError(error, context = {}) {
   }
 }
 
+function calculateCost(item, owned, quantity) {
+  let cost = 0;
+  for (let i = 0; i < quantity; i++) {
+    cost += Math.floor(
+      SHOP_ITEMS[item] * Math.pow(COST_MULTIPLIER, owned + i),
+    );
+  }
+  return cost;
+}
+
 exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
@@ -85,12 +95,7 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     });
 
     // Calculate cost based on pre-transaction values
-    let cost = 0;
-    for (let i = 0; i < quantity; i++) {
-      cost += Math.floor(
-        SHOP_ITEMS[item] * Math.pow(COST_MULTIPLIER, preOwned + i),
-      );
-    }
+    let cost = calculateCost(item, preOwned, quantity);
 
     // Ensure the user's recorded score meets the cost before attempting
     // the transactional deduction to avoid unnecessary retries
@@ -110,47 +115,52 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     }
 
     let availableScore = 0;
-    const userRef = db.ref(`leaderboard_v3/${uid}`);
-    const scoreResult = await userRef.transaction((user) => {
-      user = user || {};
-      const currentScore = Number(user.score) || 0;
+    let txnCost = cost;
+    const rootRef = db.ref();
+    const txnResult = await rootRef.transaction((root) => {
+      root = root || {};
+      const currentScore = Number(root.leaderboard_v3?.[uid]?.score) || 0;
+      const currentOwned = Number(root.shop_v2?.[uid]?.[item]) || 0;
       availableScore = currentScore;
-      if (currentScore < cost) return; // abort
-      return {
-        ...user,
-        score: currentScore - cost,
-        lastUpdated: Date.now(),
-      };
+      txnCost = calculateCost(item, currentOwned, quantity);
+      if (currentScore < txnCost) return; // abort
+      // update score
+      root.leaderboard_v3 = root.leaderboard_v3 || {};
+      const userNode = root.leaderboard_v3[uid] || {};
+      userNode.score = currentScore - txnCost;
+      userNode.lastUpdated = Date.now();
+      root.leaderboard_v3[uid] = userNode;
+      // update owned
+      root.shop_v2 = root.shop_v2 || {};
+      root.shop_v2[uid] = root.shop_v2[uid] || {};
+      root.shop_v2[uid][item] = currentOwned + quantity;
+      return root;
     });
 
-    if (!scoreResult.committed) {
+    if (!txnResult.committed) {
       await logServerError(new Error('Not enough gubs'), {
         function: 'purchaseItem',
         uid,
         data,
         score: availableScore,
-        cost,
+        cost: txnCost,
         owned: preOwned,
       });
       throw new functions.https.HttpsError(
         'failed-precondition',
-        `Not enough gubs: have ${availableScore}, need ${cost}`,
+        `Not enough gubs: have ${availableScore}, need ${txnCost}`,
       );
     }
 
-    const newScore = scoreResult.snapshot.child('score').val() || 0;
-
-    const ownedResult = await db
-      .ref(`shop_v2/${uid}/${item}`)
-      .transaction((curr) => (Number(curr) || 0) + quantity);
-
-    const newOwned = Number(ownedResult.snapshot.val()) || 0;
+    const newScore =
+      Number(txnResult.snapshot.child(`leaderboard_v3/${uid}/score`).val()) || 0;
+    const newOwned =
+      Number(txnResult.snapshot.child(`shop_v2/${uid}/${item}`).val()) || 0;
     functions.logger.info('purchaseItem', {
       uid,
       item,
       quantity,
-
-      cost,
+      cost: txnCost,
       score: newScore,
       owned: newOwned,
     });
