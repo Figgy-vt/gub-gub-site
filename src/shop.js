@@ -2,6 +2,8 @@ export function initShop({
   db,
   uid,
   purchaseItemFn,
+  updateUserScoreFn,
+  deleteUserFn,
   syncGubsFromServer,
   gameState,
   renderCounter,
@@ -133,27 +135,25 @@ export function initShop({
     const target = sanitizeUsername(adminUser.value);
     const score = parseInt(adminScore.value, 10);
     if (!target || isNaN(score)) return;
-    db.ref('leaderboard_v3')
-      .orderByChild('username')
-      .equalTo(target)
-      .once('value')
-      .then((snap) => {
-        snap.forEach((child) => {
-          child.ref.update({ score });
-        });
-      });
+    updateUserScoreFn({ username: target, score }).catch((err) =>
+      logError(db, {
+        message: err.message,
+        stack: err.stack,
+        context: 'updateUserScore',
+      }),
+    );
   });
 
   adminDelete.addEventListener('click', () => {
     const target = sanitizeUsername(adminUser.value);
     if (!target) return;
-    db.ref('leaderboard_v3')
-      .orderByChild('username')
-      .equalTo(target)
-      .once('value')
-      .then((snap) => {
-        snap.forEach((child) => child.ref.remove());
-      });
+    deleteUserFn({ username: target }).catch((err) =>
+      logError(db, {
+        message: err.message,
+        stack: err.stack,
+        context: 'deleteUser',
+      }),
+    );
   });
 
   shopBtn.addEventListener('click', () => {

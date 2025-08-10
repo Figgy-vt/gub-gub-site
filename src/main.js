@@ -96,6 +96,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const syncGubsFn = functions.httpsCallable('syncGubs');
         const purchaseItemFn = functions.httpsCallable('purchaseItem');
+        const updateUserScoreFn = functions.httpsCallable('updateUserScore');
+        const deleteUserFn = functions.httpsCallable('deleteUser');
         const uid = auth.currentUser.uid;
         const allUsers = new Set([username]);
 
@@ -397,6 +399,8 @@ window.addEventListener('DOMContentLoaded', () => {
           db,
           uid,
           purchaseItemFn,
+          updateUserScoreFn,
+          deleteUserFn,
           syncGubsFromServer,
           gameState,
           renderCounter,

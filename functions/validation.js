@@ -30,4 +30,39 @@ function validatePurchaseItem(data = {}) {
   return { item, quantity };
 }
 
-module.exports = { validateSyncGubs, validatePurchaseItem };
+function validateAdminUpdate(data = {}) {
+  const username =
+    typeof data.username === 'string' ? data.username.trim() : '';
+  const score = Number.isInteger(data.score)
+    ? data.score
+    : Math.floor(Number(data.score));
+  if (!username || !/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Invalid username',
+    );
+  }
+  if (!Number.isFinite(score)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid score');
+  }
+  return { username, score };
+}
+
+function validateAdminDelete(data = {}) {
+  const username =
+    typeof data.username === 'string' ? data.username.trim() : '';
+  if (!username || !/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Invalid username',
+    );
+  }
+  return { username };
+}
+
+module.exports = {
+  validateSyncGubs,
+  validatePurchaseItem,
+  validateAdminUpdate,
+  validateAdminDelete,
+};
