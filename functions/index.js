@@ -1,6 +1,8 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { calculateOfflineGubs } = require('./offline');
+const { RATES, COST_MULTIPLIER, SHOP_ITEMS } = require('./config');
+const { validateSyncGubs, validatePurchaseItem } = require('./validation');
 admin.initializeApp();
 
 function logServerError(error, context = {}) {
@@ -24,28 +26,13 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
     throw new functions.https.HttpsError('unauthenticated');
   }
   try {
-    let delta = typeof data?.delta === 'number' ? Math.floor(data.delta) : 0;
-    const requestOffline = !!data?.offline;
+    const { delta, requestOffline } = validateSyncGubs(data);
 
     const db = admin.database();
     const userRef = db.ref(`leaderboard_v3/${uid}`);
     const shop = (await db.ref(`shop_v2/${uid}`).once('value')).val() || {};
-    const rates = {
-      passiveMaker: 1,
-      guberator: 5,
-      gubmill: 20,
-      gubsolar: 100,
-      gubfactory: 500,
-      gubhydro: 2500,
-      gubnuclear: 10000,
-      gubquantum: 50000,
-      gubai: 250000,
-      gubclone: 1250000,
-      gubspace: 6250000,
-      intergalactic: 31250000,
-    };
     const rate = Object.entries(shop).reduce(
-      (sum, [k, v]) => sum + (rates[k] || 0) * v,
+      (sum, [k, v]) => sum + (RATES[k] || 0) * v,
       0,
     );
 
@@ -73,37 +60,15 @@ exports.syncGubs = functions.https.onCall(async (data, ctx) => {
   }
 });
 
-const COST_MULTIPLIER = 1.15;
-const SHOP_ITEMS = {
-  passiveMaker: 100,
-  guberator: 500,
-  gubmill: 2000,
-  gubsolar: 10000,
-  gubfactory: 50000,
-  gubhydro: 250000,
-  gubnuclear: 1000000,
-  gubquantum: 5000000,
-  gubai: 25000000,
-  gubclone: 125000000,
-  gubspace: 625000000,
-  intergalactic: 3125000000,
-};
-
 exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
   const uid = ctx.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError('unauthenticated');
   }
-  const item = data?.item;
-  const quantity = Math.max(1, Math.floor(data?.quantity || 1));
-  if (!SHOP_ITEMS[item]) {
-    throw new functions.https.HttpsError('invalid-argument', 'Unknown item');
-  }
+  let item, quantity;
   try {
+    ({ item, quantity } = validatePurchaseItem(data));
     const db = admin.database();
-
-
-
     // Log current values before attempting the transaction so we can compare
     // what the transaction sees versus what's stored in the database.
     const [preScoreSnap, preOwnedSnap] = await Promise.all([
@@ -117,7 +82,6 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
       item,
       score: preScore,
       owned: preOwned,
-
     });
 
     // Calculate cost based on pre-transaction values
@@ -131,7 +95,6 @@ exports.purchaseItem = functions.https.onCall(async (data, ctx) => {
     // Ensure the user's recorded score meets the cost before attempting
     // the transactional deduction to avoid unnecessary retries
     if (preScore < cost) {
-
       await logServerError(new Error('Not enough gubs'), {
         function: 'purchaseItem',
         uid,

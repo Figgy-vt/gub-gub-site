@@ -35,7 +35,6 @@ const mockDb = {
         return {
           committed: false,
           snapshot: {
-
             val: () => current,
             child: (childPath) => ({
               val: () => getVal(`${path}/${childPath}`),
@@ -93,5 +92,13 @@ describe('purchaseItem', () => {
     expect(result).toEqual({ score: 36, owned: 2 });
     expect(rootState.shop_v2[uid].passiveMaker).toBe(2);
     expect(rootState.leaderboard_v3[uid].score).toBe(36);
+  });
+
+  test('rejects unknown shop items', async () => {
+    const uid = 'user2';
+    rootState = { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} };
+    await expect(
+      purchaseItem({ item: 'nope', quantity: 1 }, { auth: { uid } }),
+    ).rejects.toHaveProperty('code', 'invalid-argument');
   });
 });
