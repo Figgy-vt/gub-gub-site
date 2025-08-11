@@ -12,7 +12,9 @@ import { totalCost } from './shared/cost.js';
 import { logError, logAction } from './logging.js';
 import { ADMINS_PATH, LEADERBOARD_PATH, SHOP_PATH } from './paths.js';
 
-admin.initializeApp();
+admin.initializeApp({
+  databaseURL: 'https://gub-leaderboard-default-rtdb.firebaseio.com',
+});
 
 async function isAdmin(uid) {
   const snap = await admin
