@@ -34,18 +34,23 @@ export function validatePurchaseItem(data = {}) {
   return { item, quantity };
 }
 
-export function validateAdminUpdate(data = {}) {
+export function validateUsername(rawUsername) {
   const username =
-    typeof data.username === 'string' ? data.username.trim() : '';
-  const score = Number.isInteger(data.score)
-    ? data.score
-    : Math.floor(Number(data.score));
+    typeof rawUsername === 'string' ? rawUsername.trim() : '';
   if (!username || !/^[A-Za-z0-9_]{3,20}$/.test(username)) {
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Invalid username',
     );
   }
+  return username;
+}
+
+export function validateAdminUpdate(data = {}) {
+  const score = Number.isInteger(data.score)
+    ? data.score
+    : Math.floor(Number(data.score));
+  const username = validateUsername(data.username);
   if (!Number.isFinite(score)) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid score');
   }
@@ -53,13 +58,6 @@ export function validateAdminUpdate(data = {}) {
 }
 
 export function validateAdminDelete(data = {}) {
-  const username =
-    typeof data.username === 'string' ? data.username.trim() : '';
-  if (!username || !/^[A-Za-z0-9_]{3,20}$/.test(username)) {
-    throw new functions.https.HttpsError(
-      'invalid-argument',
-      'Invalid username',
-    );
-  }
+  const username = validateUsername(data.username);
   return { username };
 }
