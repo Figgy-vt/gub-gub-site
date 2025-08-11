@@ -37,6 +37,22 @@ describe('purchaseItem', () => {
     expect(rootState.leaderboard_v3[uid].score).toBe(35);
   });
 
+  test('handles scores stored as raw numbers', async () => {
+    const uid = 'userNum';
+    setVal('', {
+      leaderboard_v3: { [uid]: 200 },
+      shop_v2: {},
+    });
+
+    const result = await purchaseItem(
+      { item: 'passiveMaker', quantity: 1 },
+      { auth: { uid } },
+    );
+    expect(result).toEqual({ score: 100, owned: 1 });
+    expect(rootState.shop_v2[uid].passiveMaker).toBe(1);
+    expect(rootState.leaderboard_v3[uid].score).toBe(100);
+  });
+
   test('rejects unknown shop items', async () => {
     const uid = 'user2';
     setVal('', { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} });
