@@ -95,92 +95,82 @@ export const purchaseItem = functions.https.onCall(
       ({ item, quantity } = validatePurchaseItem(data));
       const db = admin.database();
 
-      // DEBUG: prove what we see before the transaction (once only while debugging)
-      const [lbAnySnap, userNodeSnap] = await Promise.all([
-        db.ref(LEADERBOARD_PATH).limitToFirst(1).once('value'),
-        db.ref(`${LEADERBOARD_PATH}/${uid}`).once('value'),
-      ]);
-      functions.logger.info('purchaseItem.env', {
-        uid,
-        lbExists: lbAnySnap.exists(),
-        userNodeType: typeof userNodeSnap.val(),
-        userNode: userNodeSnap.val(),
-      });
+      const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
+      const itemRef = db.ref(`${SHOP_PATH}/${uid}/${item}`);
 
-      let cost = 0;
+      // Read current owned to compute cost
+      const ownedSnap = await itemRef.once('value');
+      const ownedBefore = Number(ownedSnap.val()) || 0;
 
-      const result = await db.ref().transaction((root) => {
-        const state = root || {};
-        const leaderboard = state[LEADERBOARD_PATH] || {};
-        const shop = state[SHOP_PATH] || {};
+      const baseCost = SHOP_ITEMS[item];
+      const cost = totalCost(baseCost, ownedBefore, quantity, COST_MULTIPLIER);
 
-        // TEMP sanity log – remove after confirming
-        functions.logger.info('purchaseItem.txState', {
-          hasLb: !!state[LEADERBOARD_PATH],
-          type: typeof leaderboard[uid],
-          raw: leaderboard[uid],
-        });
-
-        // Normalize user node if legacy value was a number/null
-        let user = leaderboard[uid];
+      // 1) Deduct score atomically at the user node
+      const scoreTx = await userRef.transaction((curr) => {
+        let user = curr;
         if (typeof user !== 'object' || user === null) {
           user = { score: Number(user) || 0, lastUpdated: Date.now() };
         }
         const currentScore = Number(user.score) || 0;
-
-        const owned = Number(shop[uid]?.[item]) || 0;
-
-        cost = totalCost(SHOP_ITEMS[item], owned, quantity, COST_MULTIPLIER);
-        if (currentScore < cost) return; // abort
-
-        const now = Date.now();
-        const newScore = currentScore - cost;
-        const newOwned = owned + quantity;
-
+        if (currentScore < cost) return; // abort if not enough
         return {
-          ...state,
-          [LEADERBOARD_PATH]: {
-            ...leaderboard,
-            [uid]: { ...user, score: newScore, lastUpdated: now },
-          },
-          [SHOP_PATH]: {
-            ...shop,
-            [uid]: { ...(shop[uid] || {}), [item]: newOwned },
-          },
+          ...user,
+          score: currentScore - cost,
+          lastUpdated: Date.now(),
         };
       });
 
-      // If the transaction aborted, read fresh values for an accurate error
-      if (!result.committed) {
-        const [scoreSnap, ownedSnap] = await Promise.all([
-          admin.database().ref(`${LEADERBOARD_PATH}/${uid}/score`).once('value'),
-          admin.database().ref(`${SHOP_PATH}/${uid}/${item}`).once('value'),
-        ]);
-        const have = Number(scoreSnap.val()) || 0;
-        const owned = Number(ownedSnap.val()) || 0;
-        const need = totalCost(SHOP_ITEMS[item], owned, quantity, COST_MULTIPLIER);
-
+      if (!scoreTx.committed) {
+        // Accurate "have/need" from fresh DB read
+        const haveSnap = await userRef.child('score').once('value');
+        const have = Number(haveSnap.val()) || 0;
         await logError('server', new Error('Not enough gubs'), {
           function: 'purchaseItem',
           uid,
           data,
           score: have,
-          cost: need,
-          owned,
+          cost,
+          owned: ownedBefore,
         });
-
         throw new functions.https.HttpsError(
           'failed-precondition',
-          `Not enough gubs: have ${have}, need ${need}`,
+          `Not enough gubs: have ${have}, need ${cost}`,
         );
       }
 
-      // Success: pull values from the committed snapshot
-      const snapshot = result.snapshot;
       const newScore =
-        Number(snapshot.child(`${LEADERBOARD_PATH}/${uid}/score`).val()) || 0;
-      const newOwned =
-        Number(snapshot.child(`${SHOP_PATH}/${uid}/${item}`).val()) || 0;
+        Number(scoreTx.snapshot.child('score').val()) || 0;
+
+      // 2) Increment owned; if it fails, refund
+      const ownedTx = await itemRef.transaction(
+        (curr) => (Number(curr) || 0) + quantity,
+      );
+
+      if (!ownedTx.committed) {
+        // Refund on failure
+        await userRef.transaction((curr) => {
+          let user = curr;
+          if (typeof user !== 'object' || user === null) {
+            user = { score: Number(user) || 0, lastUpdated: Date.now() };
+          }
+          const refunded = (Number(user.score) || 0) + cost;
+          return { ...user, score: refunded, lastUpdated: Date.now() };
+        });
+
+        await logError('server', new Error('Purchase rollback'), {
+          function: 'purchaseItem',
+          uid,
+          data,
+          reason: 'owned increment failed',
+          cost,
+        });
+        throw new functions.https.HttpsError(
+          'aborted',
+          'Purchase failed, your gubs were refunded.',
+        );
+      }
+
+      const newOwned = Number(ownedTx.snapshot.val()) || 0;
 
       functions.logger.info('purchaseItem.success', {
         uid,
@@ -190,6 +180,7 @@ export const purchaseItem = functions.https.onCall(
         score: newScore,
         owned: newOwned,
       });
+
       return { score: newScore, owned: newOwned };
     } catch (err) {
       await logError('server', err, { function: 'purchaseItem', uid, data });
