@@ -88,31 +88,29 @@ export const purchaseItem = functions.https.onCall(
       const db = admin.database();
 
       let cost = 0;
-      let availableScore = 0;
-      let ownedBefore = 0;
 
       const result = await db.ref().transaction((root) => {
         const state = root || {};
         const leaderboard = state[LEADERBOARD_PATH] || {};
         const shop = state[SHOP_PATH] || {};
 
+        // TEMP sanity log – remove after confirming
+        functions.logger.info('purchaseItem.txState', {
+          hasLb: !!state[LEADERBOARD_PATH],
+          type: typeof leaderboard[uid],
+          raw: leaderboard[uid],
+        });
+
+        // Normalize user node if legacy value was a number/null
         let user = leaderboard[uid];
         if (typeof user !== 'object' || user === null) {
-          user = { score: Number(user) || 0 };
+          user = { score: Number(user) || 0, lastUpdated: Date.now() };
         }
         const currentScore = Number(user.score) || 0;
-        availableScore = currentScore;
 
         const owned = Number(shop[uid]?.[item]) || 0;
-        ownedBefore = owned;
 
-        cost = totalCost(
-          SHOP_ITEMS[item],
-          owned,
-          quantity,
-          COST_MULTIPLIER,
-        );
-
+        cost = totalCost(SHOP_ITEMS[item], owned, quantity, COST_MULTIPLIER);
         if (currentScore < cost) return; // abort
 
         const now = Date.now();
@@ -132,28 +130,39 @@ export const purchaseItem = functions.https.onCall(
         };
       });
 
+      // If the transaction aborted, read fresh values for an accurate error
       if (!result.committed) {
+        const [scoreSnap, ownedSnap] = await Promise.all([
+          admin.database().ref(`${LEADERBOARD_PATH}/${uid}/score`).once('value'),
+          admin.database().ref(`${SHOP_PATH}/${uid}/${item}`).once('value'),
+        ]);
+        const have = Number(scoreSnap.val()) || 0;
+        const owned = Number(ownedSnap.val()) || 0;
+        const need = totalCost(SHOP_ITEMS[item], owned, quantity, COST_MULTIPLIER);
+
         await logError('server', new Error('Not enough gubs'), {
           function: 'purchaseItem',
           uid,
           data,
-          score: availableScore,
-          cost,
-          owned: ownedBefore,
+          score: have,
+          cost: need,
+          owned,
         });
+
         throw new functions.https.HttpsError(
           'failed-precondition',
-          `Not enough gubs: have ${availableScore}, need ${cost}`,
+          `Not enough gubs: have ${have}, need ${need}`,
         );
       }
 
+      // Success: pull values from the committed snapshot
       const snapshot = result.snapshot;
       const newScore =
-        snapshot.child(`${LEADERBOARD_PATH}/${uid}/score`).val() || 0;
+        Number(snapshot.child(`${LEADERBOARD_PATH}/${uid}/score`).val()) || 0;
       const newOwned =
-      Number(snapshot.child(`${SHOP_PATH}/${uid}/${item}`).val()) || 0;
+        Number(snapshot.child(`${SHOP_PATH}/${uid}/${item}`).val()) || 0;
 
-      functions.logger.info('purchaseItem', {
+      functions.logger.info('purchaseItem.success', {
         uid,
         item,
         quantity,
