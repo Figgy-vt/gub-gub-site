@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { sanitizeUsername } from '../main.js';
+import { sanitizeUsername } from '../username.js';
 
 describe('sanitizeUsername', () => {
   it('strips invalid characters and lowercases', () => {
