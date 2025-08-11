@@ -16,6 +16,7 @@ function setupDOM() {
     <button id="adminUpdate"></button>
     <button id="adminDelete"></button>
   `;
+  window.alert = jest.fn();
 }
 
 describe('shop purchasing flow', () => {
@@ -152,6 +153,67 @@ describe('shop purchasing flow', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(purchaseItemFn).not.toHaveBeenCalled();
+    expect(logError).toHaveBeenCalled();
+  });
+
+  test('alerts user when purchase fails', async () => {
+    setupDOM();
+    const uid = 'user123';
+    const refs = {};
+    const db = {
+      ref: (path) => {
+        const ref =
+          refs[path] ||
+          (refs[path] = {
+            on: jest.fn(),
+            once: jest
+              .fn()
+              .mockResolvedValue(
+                path === `shop_v2/${uid}`
+                  ? { val: () => ({}) }
+                  : { val: () => null, exists: () => false },
+              ),
+            set: jest.fn(),
+            onDisconnect: () => ({ remove: jest.fn() }),
+            push: jest.fn(() => ({ set: jest.fn() })),
+            orderByChild: jest.fn().mockReturnThis(),
+            equalTo: jest.fn().mockReturnThis(),
+            update: jest.fn(),
+          });
+        return ref;
+      },
+    };
+    const purchaseItemFn = jest.fn().mockRejectedValue(new Error('nope'));
+    const syncGubsFromServer = jest.fn();
+    const logError = jest.fn();
+    const passiveWorker = { postMessage: jest.fn() };
+    const gameState = {
+      globalCount: 200,
+      displayedCount: 200,
+      unsyncedDelta: 0,
+      passiveRatePerSec: 0,
+    };
+    initShop({
+      db,
+      uid,
+      purchaseItemFn,
+      updateUserScoreFn: jest.fn(),
+      deleteUserFn: jest.fn(),
+      syncGubsFromServer,
+      gameState,
+      renderCounter: jest.fn(),
+      queueScoreUpdate: jest.fn(),
+      abbreviateNumber: (n) => String(n),
+      passiveWorker,
+      logError,
+      sanitizeUsername: (u) => u,
+    });
+    const buyBtn = document.getElementById('buy-passiveMaker');
+    buyBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(purchaseItemFn).toHaveBeenCalled();
+    expect(window.alert).toHaveBeenCalled();
     expect(logError).toHaveBeenCalled();
   });
 });

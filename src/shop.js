@@ -1,7 +1,6 @@
 import {
   shopConfig,
   currentCost as calcCurrentCost,
-  totalCost as calcTotalCost,
   maxAffordable as calcMaxAffordable,
 } from '../shared/index.js';
 
@@ -156,42 +155,36 @@ export function initShop({
             stack: err.stack,
             context: 'attemptPurchase.sync',
           });
+          alert('Failed to sync with server');
           return;
         }
-        const cost = calcTotalCost(
-          item.baseCost,
-          owned[item.id],
-          quantity,
-          COST_MULTIPLIER,
-        );
-        if (gameState.globalCount >= cost) {
-          try {
-            const res = await purchaseItemFn({
-              item: item.id,
-              quantity,
-            });
-            if (res.data) {
-              if (typeof res.data.owned === 'number') {
-                owned[item.id] = res.data.owned;
-                document.getElementById(`owned-${item.id}`).textContent =
-                  owned[item.id];
-              }
-              if (typeof res.data.score === 'number') {
-                gameState.globalCount = gameState.displayedCount = res.data.score;
-                gameState.unsyncedDelta = 0;
-                renderCounter();
-              }
+        try {
+          const res = await purchaseItemFn({
+            item: item.id,
+            quantity,
+          });
+          if (res.data) {
+            if (typeof res.data.owned === 'number') {
+              owned[item.id] = res.data.owned;
+              document.getElementById(`owned-${item.id}`).textContent =
+                owned[item.id];
             }
-            updatePassiveIncome();
-            updateCostDisplay();
-          } catch (err) {
-            console.error('purchaseItem failed', err);
-            logError(db, {
-              message: err.message,
-              stack: err.stack,
-              context: 'attemptPurchase',
-            });
+            if (typeof res.data.score === 'number') {
+              gameState.globalCount = gameState.displayedCount = res.data.score;
+              gameState.unsyncedDelta = 0;
+              renderCounter();
+            }
           }
+          updatePassiveIncome();
+          updateCostDisplay();
+        } catch (err) {
+          console.error('purchaseItem failed', err);
+          logError(db, {
+            message: err.message,
+            stack: err.stack,
+            context: 'attemptPurchase',
+          });
+          alert(`Purchase failed: ${err.message}`);
         }
       } finally {
         gameState.syncPaused = false;

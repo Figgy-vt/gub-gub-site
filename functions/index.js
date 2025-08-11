@@ -86,81 +86,60 @@ export const purchaseItem = functions.https.onCall(
     try {
       ({ item, quantity } = validatePurchaseItem(data));
       const db = admin.database();
-      // Log current values before attempting the transaction so we can compare
-      // what the transaction sees versus what's stored in the database.
-      const [preScoreSnap, preOwnedSnap] = await Promise.all([
-        db.ref(`${LEADERBOARD_PATH}/${uid}`).once('value'),
-        db.ref(`${SHOP_PATH}/${uid}/${item}`).once('value'),
-      ]);
-      const rawScore = preScoreSnap.val();
-      const preScore =
-        typeof rawScore === 'object'
-          ? Number(rawScore?.score) || 0
-          : Number(rawScore) || 0;
-      const preOwned = Number(preOwnedSnap.val()) || 0;
-      functions.logger.info('purchaseItem.precheck', {
-        uid,
-        item,
-        score: preScore,
-        owned: preOwned,
-      });
 
-      // Calculate cost based on pre-transaction values
-      const cost = totalCost(
-        SHOP_ITEMS[item],
-        preOwned,
-        quantity,
-        COST_MULTIPLIER,
-      );
-
-      // Ensure the user's recorded score meets the cost before attempting
-      // the transactional deduction to avoid unnecessary retries
-      if (preScore < cost) {
-        await logError('server', new Error('Not enough gubs'), {
-          function: 'purchaseItem',
-          uid,
-          data,
-          score: preScore,
-          cost,
-          owned: preOwned,
-        });
-        throw new functions.https.HttpsError(
-          'failed-precondition',
-          `Not enough gubs: have ${preScore}, need ${cost}`,
-        );
-      }
-
+      let cost = 0;
       let availableScore = 0;
-      const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
-      const scoreResult = await userRef.transaction((curr) => {
-        let user = curr;
+      let ownedBefore = 0;
+
+      const result = await db.ref().transaction((root) => {
+        const state = root || {};
+        const leaderboard = state[LEADERBOARD_PATH] || {};
+        const shop = state[SHOP_PATH] || {};
+
+        let user = leaderboard[uid];
         if (typeof user !== 'object' || user === null) {
           user = { score: Number(user) || 0 };
         }
         const currentScore = Number(user.score) || 0;
         availableScore = currentScore;
-        functions.logger.info('purchaseItem.transaction', {
-          uid,
-          item,
-          currentScore,
-          cost,
-        });
+
+        const owned = Number(shop[uid]?.[item]) || 0;
+        ownedBefore = owned;
+
+        cost = totalCost(
+          SHOP_ITEMS[item],
+          owned,
+          quantity,
+          COST_MULTIPLIER,
+        );
+
         if (currentScore < cost) return; // abort
+
+        const now = Date.now();
+        const newScore = currentScore - cost;
+        const newOwned = owned + quantity;
+
         return {
-          ...user,
-          score: currentScore - cost,
-          lastUpdated: Date.now(),
+          ...state,
+          [LEADERBOARD_PATH]: {
+            ...leaderboard,
+            [uid]: { ...user, score: newScore, lastUpdated: now },
+          },
+          [SHOP_PATH]: {
+            ...shop,
+            [uid]: { ...(shop[uid] || {}), [item]: newOwned },
+          },
         };
       });
 
-      if (!scoreResult.committed) {
+      if (!result.committed) {
         await logError('server', new Error('Not enough gubs'), {
           function: 'purchaseItem',
           uid,
           data,
           score: availableScore,
           cost,
-          owned: preOwned,
+          owned: ownedBefore,
         });
         throw new functions.https.HttpsError(
           'failed-precondition',
@@ -168,18 +147,16 @@ export const purchaseItem = functions.https.onCall(
         );
       }
 
-      const newScore = scoreResult.snapshot.child('score').val() || 0;
+      const snapshot = result.snapshot;
+      const newScore =
+        snapshot.child(`${LEADERBOARD_PATH}/${uid}/score`).val() || 0;
+      const newOwned =
+      Number(snapshot.child(`${SHOP_PATH}/${uid}/${item}`).val()) || 0;
 
-      const ownedResult = await db
-        .ref(`${SHOP_PATH}/${uid}/${item}`)
-        .transaction((curr) => (Number(curr) || 0) + quantity);
-
-      const newOwned = Number(ownedResult.snapshot.val()) || 0;
       functions.logger.info('purchaseItem', {
         uid,
         item,
         quantity,
-
         cost,
         score: newScore,
         owned: newOwned,
