@@ -10,11 +10,15 @@ import {
 } from './validation.js';
 import { totalCost } from './shared/cost.js';
 import { logError, logAction } from './logging.js';
+import { ADMINS_PATH, LEADERBOARD_PATH, SHOP_PATH } from './paths.js';
 
 admin.initializeApp();
 
 async function isAdmin(uid) {
-  const snap = await admin.database().ref(`admins/${uid}`).once('value');
+  const snap = await admin
+    .database()
+    .ref(`${ADMINS_PATH}/${uid}`)
+    .once('value');
   return snap.val() === true;
 }
 
@@ -34,8 +38,9 @@ export const syncGubs = functions.https.onCall(
       const { delta, requestOffline } = validateSyncGubs(data);
 
       const db = admin.database();
-      const userRef = db.ref(`leaderboard_v3/${uid}`);
-      const shop = (await db.ref(`shop_v2/${uid}`).once('value')).val() || {};
+      const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
+      const shop =
+        (await db.ref(`${SHOP_PATH}/${uid}`).once('value')).val() || {};
       const rate = Object.entries(shop).reduce(
         (sum, [k, v]) => sum + (RATES[k] || 0) * v,
         0,
@@ -79,8 +84,8 @@ export const purchaseItem = functions.https.onCall(
       // Log current values before attempting the transaction so we can compare
       // what the transaction sees versus what's stored in the database.
       const [preScoreSnap, preOwnedSnap] = await Promise.all([
-        db.ref(`leaderboard_v3/${uid}/score`).once('value'),
-        db.ref(`shop_v2/${uid}/${item}`).once('value'),
+        db.ref(`${LEADERBOARD_PATH}/${uid}/score`).once('value'),
+        db.ref(`${SHOP_PATH}/${uid}/${item}`).once('value'),
       ]);
       const preScore = Number(preScoreSnap.val()) || 0;
       const preOwned = Number(preOwnedSnap.val()) || 0;
@@ -117,7 +122,7 @@ export const purchaseItem = functions.https.onCall(
       }
 
       let availableScore = 0;
-      const userRef = db.ref(`leaderboard_v3/${uid}`);
+      const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
       const scoreResult = await userRef.transaction((user) => {
         user = user || {};
         const currentScore = Number(user.score) || 0;
@@ -148,7 +153,7 @@ export const purchaseItem = functions.https.onCall(
       const newScore = scoreResult.snapshot.child('score').val() || 0;
 
       const ownedResult = await db
-        .ref(`shop_v2/${uid}/${item}`)
+        .ref(`${SHOP_PATH}/${uid}/${item}`)
         .transaction((curr) => (Number(curr) || 0) + quantity);
 
       const newOwned = Number(ownedResult.snapshot.val()) || 0;
@@ -178,7 +183,7 @@ export const updateUserScore = functions.https.onCall(
       const { username, score } = validateAdminUpdate(data);
       const db = admin.database();
       const snap = await db
-        .ref('leaderboard_v3')
+        .ref(LEADERBOARD_PATH)
         .orderByChild('username')
         .equalTo(username)
         .once('value');
@@ -213,7 +218,7 @@ export const deleteUser = functions.https.onCall(
       const { username } = validateAdminDelete(data);
       const db = admin.database();
       const snap = await db
-        .ref('leaderboard_v3')
+        .ref(LEADERBOARD_PATH)
         .orderByChild('username')
         .equalTo(username)
         .once('value');
