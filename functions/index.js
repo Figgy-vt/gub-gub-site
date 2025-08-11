@@ -48,9 +48,14 @@ export const syncGubs = functions.https.onCall(
 
       let offlineEarned = 0;
       const now = Date.now();
-      const result = await userRef.transaction((user) => {
-        user = user || {};
-        const { score = 0, lastUpdated = now } = user;
+      const result = await userRef.transaction((curr) => {
+        let user = curr;
+        // Handle legacy scores stored as a raw number instead of an object
+        if (typeof user !== 'object' || user === null) {
+          user = { score: Number(user) || 0 };
+        }
+        const score = Number(user.score) || 0;
+        const lastUpdated = Number(user.lastUpdated) || now;
         if (requestOffline) {
           offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
         }
@@ -84,10 +89,14 @@ export const purchaseItem = functions.https.onCall(
       // Log current values before attempting the transaction so we can compare
       // what the transaction sees versus what's stored in the database.
       const [preScoreSnap, preOwnedSnap] = await Promise.all([
-        db.ref(`${LEADERBOARD_PATH}/${uid}/score`).once('value'),
+        db.ref(`${LEADERBOARD_PATH}/${uid}`).once('value'),
         db.ref(`${SHOP_PATH}/${uid}/${item}`).once('value'),
       ]);
-      const preScore = Number(preScoreSnap.val()) || 0;
+      const rawScore = preScoreSnap.val();
+      const preScore =
+        typeof rawScore === 'object'
+          ? Number(rawScore?.score) || 0
+          : Number(rawScore) || 0;
       const preOwned = Number(preOwnedSnap.val()) || 0;
       functions.logger.info('purchaseItem.precheck', {
         uid,
@@ -123,8 +132,11 @@ export const purchaseItem = functions.https.onCall(
 
       let availableScore = 0;
       const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
-      const scoreResult = await userRef.transaction((user) => {
-        user = user || {};
+      const scoreResult = await userRef.transaction((curr) => {
+        let user = curr;
+        if (typeof user !== 'object' || user === null) {
+          user = { score: Number(user) || 0 };
+        }
         const currentScore = Number(user.score) || 0;
         availableScore = currentScore;
         if (currentScore < cost) return; // abort

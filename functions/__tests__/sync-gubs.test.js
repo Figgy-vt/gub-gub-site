@@ -56,4 +56,12 @@ describe('syncGubs', () => {
     expect(res).toEqual({ score: 1e6, offlineEarned: 0 });
     expect(rootState.leaderboard_v3[uid].score).toBe(1e6);
   });
+
+  test('handles legacy numeric leaderboard entries', async () => {
+    const uid = 'user4';
+    setVal('', { leaderboard_v3: { [uid]: 50 }, shop_v2: {} });
+    const res = await syncGubs({ delta: 10 }, { auth: { uid } });
+    expect(res).toEqual({ score: 60, offlineEarned: 0 });
+    expect(rootState.leaderboard_v3[uid].score).toBe(60);
+  });
 });
