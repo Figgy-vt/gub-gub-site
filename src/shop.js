@@ -144,51 +144,57 @@ export function initShop({
     }
 
     async function attemptPurchase(quantity) {
+      if (gameState.syncPaused) return;
+      gameState.syncPaused = true;
       try {
-        await syncGubsFromServer();
-      } catch (err) {
-        console.error('syncGubsFromServer failed', err);
-        logError(db, {
-          message: err.message,
-          stack: err.stack,
-          context: 'attemptPurchase.sync',
-        });
-        return;
-      }
-      const cost = calcTotalCost(
-        item.baseCost,
-        owned[item.id],
-        quantity,
-        COST_MULTIPLIER,
-      );
-      if (gameState.globalCount >= cost) {
         try {
-          const res = await purchaseItemFn({
-            item: item.id,
-            quantity,
-          });
-          if (res.data) {
-            if (typeof res.data.owned === 'number') {
-              owned[item.id] = res.data.owned;
-              document.getElementById(`owned-${item.id}`).textContent =
-                owned[item.id];
-            }
-            if (typeof res.data.score === 'number') {
-              gameState.globalCount = gameState.displayedCount = res.data.score;
-              gameState.unsyncedDelta = 0;
-              renderCounter();
-            }
-          }
-          updatePassiveIncome();
-          updateCostDisplay();
+          await syncGubsFromServer();
         } catch (err) {
-          console.error('purchaseItem failed', err);
+          console.error('syncGubsFromServer failed', err);
           logError(db, {
             message: err.message,
             stack: err.stack,
-            context: 'attemptPurchase',
+            context: 'attemptPurchase.sync',
           });
+          return;
         }
+        const cost = calcTotalCost(
+          item.baseCost,
+          owned[item.id],
+          quantity,
+          COST_MULTIPLIER,
+        );
+        if (gameState.globalCount >= cost) {
+          try {
+            const res = await purchaseItemFn({
+              item: item.id,
+              quantity,
+            });
+            if (res.data) {
+              if (typeof res.data.owned === 'number') {
+                owned[item.id] = res.data.owned;
+                document.getElementById(`owned-${item.id}`).textContent =
+                  owned[item.id];
+              }
+              if (typeof res.data.score === 'number') {
+                gameState.globalCount = gameState.displayedCount = res.data.score;
+                gameState.unsyncedDelta = 0;
+                renderCounter();
+              }
+            }
+            updatePassiveIncome();
+            updateCostDisplay();
+          } catch (err) {
+            console.error('purchaseItem failed', err);
+            logError(db, {
+              message: err.message,
+              stack: err.stack,
+              context: 'attemptPurchase',
+            });
+          }
+        }
+      } finally {
+        gameState.syncPaused = false;
       }
     }
     buy1.addEventListener('click', () => attemptPurchase(1));

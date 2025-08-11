@@ -139,6 +139,12 @@ export const purchaseItem = functions.https.onCall(
         }
         const currentScore = Number(user.score) || 0;
         availableScore = currentScore;
+        functions.logger.info('purchaseItem.transaction', {
+          uid,
+          item,
+          currentScore,
+          cost,
+        });
         if (currentScore < cost) return; // abort
         return {
           ...user,

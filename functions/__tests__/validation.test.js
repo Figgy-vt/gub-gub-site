@@ -32,31 +32,35 @@ describe('validation utilities', () => {
   });
 
   test('validateSyncGubs rejects non-finite delta', () => {
-    expect(() => validateSyncGubs({ delta: Infinity })).toThrow('Invalid delta');
+    expect(() => validateSyncGubs({ delta: Infinity })).toThrow(
+      'Invalid delta',
+    );
   });
 
   test('validatePurchaseItem validates item and quantity', () => {
-    expect(validatePurchaseItem({ item: 'passiveMaker', quantity: 2 })).toEqual({
-      item: 'passiveMaker',
-      quantity: 2,
-    });
-    expect(() =>
-      validatePurchaseItem({ item: 'nope', quantity: 1 }),
-    ).toThrow('Unknown item');
+    expect(validatePurchaseItem({ item: 'passiveMaker', quantity: 2 })).toEqual(
+      {
+        item: 'passiveMaker',
+        quantity: 2,
+      },
+    );
+    expect(() => validatePurchaseItem({ item: 'nope', quantity: 1 })).toThrow(
+      'Unknown item',
+    );
   });
 
   test('validateUsername and admin helpers', () => {
     expect(validateUsername('Good_User')).toBe('Good_User');
     expect(() => validateUsername('bad user')).toThrow('Invalid username');
-    expect(
-      validateAdminUpdate({ username: 'AdminUser', score: '5' }),
-    ).toEqual({ username: 'AdminUser', score: 5 });
-    expect(() =>
-      validateAdminUpdate({ username: 'x', score: 1 }),
-    ).toThrow('Invalid username');
+    expect(validateAdminUpdate({ username: 'AdminUser', score: '5' })).toEqual({
+      username: 'AdminUser',
+      score: 5,
+    });
+    expect(() => validateAdminUpdate({ username: 'x', score: 1 })).toThrow(
+      'Invalid username',
+    );
     expect(validateAdminDelete({ username: 'DelUser' })).toEqual({
       username: 'DelUser',
     });
   });
 });
-

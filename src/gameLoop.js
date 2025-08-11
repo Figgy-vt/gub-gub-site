@@ -44,6 +44,7 @@ export function initGameLoop({
   let offlineShown = false;
   let gubRateMultiplier = 1;
   let scoreDirty = false;
+  let syncPaused = false;
 
   let syncingPromise = null;
   async function syncGubsFromServer(requestOffline = false) {
@@ -97,14 +98,18 @@ export function initGameLoop({
   }
 
   setInterval(() => {
-    if (scoreDirty) {
+    if (scoreDirty && !syncPaused) {
       scoreDirty = false;
       syncGubsFromServer().catch(() => {});
     }
   }, 1000);
 
   // Regularly pull server-side gub totals even if no local actions
-  setInterval(() => syncGubsFromServer().catch(() => {}), 10000);
+  setInterval(() => {
+    if (!syncPaused) {
+      syncGubsFromServer().catch(() => {});
+    }
+  }, 10000);
 
   function abbreviateNumber(num) {
     if (num < 1000) return Math.floor(num).toString();
@@ -313,6 +318,12 @@ export function initGameLoop({
     },
     set passiveRatePerSec(v) {
       passiveRatePerSec = v;
+    },
+    get syncPaused() {
+      return syncPaused;
+    },
+    set syncPaused(v) {
+      syncPaused = v;
     },
   };
   initShop({

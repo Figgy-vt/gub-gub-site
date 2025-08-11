@@ -35,8 +35,7 @@ export function validatePurchaseItem(data = {}) {
 }
 
 export function validateUsername(rawUsername) {
-  const username =
-    typeof rawUsername === 'string' ? rawUsername.trim() : '';
+  const username = typeof rawUsername === 'string' ? rawUsername.trim() : '';
   if (!username || !/^[A-Za-z0-9_]{3,20}$/.test(username)) {
     throw new functions.https.HttpsError(
       'invalid-argument',
