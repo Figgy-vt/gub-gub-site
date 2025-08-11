@@ -105,41 +105,45 @@ export const purchaseItem = functions.https.onCall(
       const baseCost = SHOP_ITEMS[item];
       const cost = totalCost(baseCost, ownedBefore, quantity, COST_MULTIPLIER);
 
-      // 1) Deduct score atomically at the user node
-      const scoreTx = await userRef.transaction((curr) => {
-        let user = curr;
-        if (typeof user !== 'object' || user === null) {
-          user = { score: Number(user) || 0, lastUpdated: Date.now() };
-        }
-        const currentScore = Number(user.score) || 0;
-        if (currentScore < cost) return; // abort if not enough
-        return {
-          ...user,
-          score: currentScore - cost,
-          lastUpdated: Date.now(),
-        };
-      });
+      // 1) Deduct score with a small retry loop on the /score child
+const scoreRef = userRef.child('score');
 
-      if (!scoreTx.committed) {
-        // Accurate "have/need" from fresh DB read
-        const haveSnap = await userRef.child('score').once('value');
-        const have = Number(haveSnap.val()) || 0;
-        await logError('server', new Error('Not enough gubs'), {
-          function: 'purchaseItem',
-          uid,
-          data,
-          score: have,
-          cost,
-          owned: ownedBefore,
-        });
-        throw new functions.https.HttpsError(
-          'failed-precondition',
-          `Not enough gubs: have ${have}, need ${cost}`,
-        );
-      }
+async function deductScoreWithRetry(ref, cost, maxTries = 5) {
+  let lastHave = 0;
+  for (let i = 0; i < maxTries; i++) {
+    const tx = await ref.transaction((curr) => {
+      const have = Number(curr) || 0;
+      // Only abort if truly unaffordable
+      if (have < cost) return; // abort this attempt
+      return have - cost;
+    });
 
-      const newScore =
-        Number(scoreTx.snapshot.child('score').val()) || 0;
+    if (tx.committed) return Number(tx.snapshot.val()) || 0;
+
+    // Not committed: check fresh value. If affordable, retry; else fail fast.
+    const haveSnap = await ref.once('value');
+    lastHave = Number(haveSnap.val()) || 0;
+    if (lastHave < cost) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Not enough gubs: have ${lastHave}, need ${cost}`,
+      );
+    }
+    // brief retry; no delay needed for RTDB
+  }
+  // Too many retries (very rare)
+  await logError('server', new Error('Deduct retries exhausted'), {
+    function: 'purchaseItem',
+    uid,
+    data,
+    cost,
+    lastHave,
+  });
+  throw new functions.https.HttpsError('aborted', 'Could not complete purchase, please try again.');
+}
+
+const newScore = await deductScoreWithRetry(scoreRef, cost);
+
 
       // 2) Increment owned; if it fails, refund
       const ownedTx = await itemRef.transaction(
