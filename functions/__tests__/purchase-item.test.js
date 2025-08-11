@@ -1,61 +1,5 @@
 import { describe, test, expect, jest } from '@jest/globals';
-
-let rootState;
-function getVal(path = '') {
-  const parts = path.split('/').filter(Boolean);
-  let val = rootState;
-  for (const p of parts) {
-    val = val && val[p];
-  }
-  return val;
-}
-
-function setVal(path = '', value) {
-  const parts = path.split('/').filter(Boolean);
-  if (parts.length === 0) {
-    rootState = value;
-    return;
-  }
-  let obj = rootState;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const p = parts[i];
-    obj[p] = obj[p] || {};
-    obj = obj[p];
-  }
-  obj[parts[parts.length - 1]] = value;
-}
-
-const mockDb = {
-  ref: jest.fn((path = '') => ({
-    transaction: (update) => {
-      const current = getVal(path);
-      const res = update(current);
-      if (res === undefined) {
-        return {
-          committed: false,
-          snapshot: {
-            val: () => current,
-            child: (childPath) => ({
-              val: () => getVal(`${path}/${childPath}`),
-            }),
-          },
-        };
-      }
-      setVal(path, res);
-      return {
-        committed: true,
-        snapshot: {
-          val: () => getVal(path),
-          child: (childPath) => ({
-            val: () => getVal(`${path}/${childPath}`),
-          }),
-        },
-      };
-    },
-    once: async () => ({ val: () => getVal(path) }),
-    push: () => ({ set: async () => {} }),
-  })),
-};
+import { rootState, setVal, mockDb } from './mock-db.js';
 
 jest.unstable_mockModule('firebase-admin', () => ({
   default: { initializeApp: jest.fn(), database: () => mockDb },
@@ -79,10 +23,10 @@ const { purchaseItem } = await import('../index.js');
 describe('purchaseItem', () => {
   test('handles owned values stored as strings', async () => {
     const uid = 'user1';
-    rootState = {
+    setVal('', {
       leaderboard_v3: { [uid]: { score: 150 } },
       shop_v2: { [uid]: { passiveMaker: '1' } },
-    };
+    });
 
     const result = await purchaseItem(
       { item: 'passiveMaker', quantity: 1 },
@@ -95,7 +39,7 @@ describe('purchaseItem', () => {
 
   test('rejects unknown shop items', async () => {
     const uid = 'user2';
-    rootState = { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} };
+    setVal('', { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} });
     await expect(
       purchaseItem({ item: 'nope', quantity: 1 }, { auth: { uid } }),
     ).rejects.toHaveProperty('code', 'invalid-argument');
@@ -103,7 +47,7 @@ describe('purchaseItem', () => {
 
   test('rejects quantities over limit', async () => {
     const uid = 'user3';
-    rootState = { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} };
+    setVal('', { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} });
     await expect(
       purchaseItem({ item: 'passiveMaker', quantity: 1001 }, { auth: { uid } }),
     ).rejects.toHaveProperty('code', 'invalid-argument');
@@ -111,7 +55,7 @@ describe('purchaseItem', () => {
 
   test('rejects negative quantities', async () => {
     const uid = 'user4';
-    rootState = { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} };
+    setVal('', { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} });
     await expect(
       purchaseItem({ item: 'passiveMaker', quantity: -5 }, { auth: { uid } }),
     ).rejects.toHaveProperty('code', 'invalid-argument');
@@ -119,7 +63,7 @@ describe('purchaseItem', () => {
 
   test('rejects non-numeric quantities', async () => {
     const uid = 'user5';
-    rootState = { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} };
+    setVal('', { leaderboard_v3: { [uid]: { score: 1000 } }, shop_v2: {} });
     await expect(
       purchaseItem(
         { item: 'passiveMaker', quantity: 'abc' },
