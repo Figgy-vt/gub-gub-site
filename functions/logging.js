@@ -1,9 +1,10 @@
 import admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
+import { LOGS_PATH } from './paths.js';
 
 export function logError(collection, error, payload = {}) {
   try {
-    const ref = admin.database().ref(`logs/${collection}`).push();
+    const ref = admin.database().ref(`${LOGS_PATH}/${collection}`).push();
     return ref.set({
       timestamp: Date.now(),
       message: error.message,
@@ -18,7 +19,7 @@ export function logError(collection, error, payload = {}) {
 
 export async function logAction(collection, payload = {}) {
   try {
-    const ref = admin.database().ref(`logs/${collection}`).push();
+    const ref = admin.database().ref(`${LOGS_PATH}/${collection}`).push();
     await ref.set({
       timestamp: Date.now(),
       ...payload,
