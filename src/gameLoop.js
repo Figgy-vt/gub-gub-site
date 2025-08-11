@@ -83,6 +83,7 @@ export function initGameLoop({
           stack: err.stack,
           context: 'syncGubsFromServer',
         });
+        throw err;
       } finally {
         syncingPromise = null;
       }
@@ -98,12 +99,12 @@ export function initGameLoop({
   setInterval(() => {
     if (scoreDirty) {
       scoreDirty = false;
-      syncGubsFromServer();
+      syncGubsFromServer().catch(() => {});
     }
   }, 1000);
 
   // Regularly pull server-side gub totals even if no local actions
-  setInterval(syncGubsFromServer, 10000);
+  setInterval(() => syncGubsFromServer().catch(() => {}), 10000);
 
   function abbreviateNumber(num) {
     if (num < 1000) return Math.floor(num).toString();
@@ -143,7 +144,7 @@ export function initGameLoop({
     }
     displayedCount = globalCount;
     renderCounter();
-    syncGubsFromServer(true);
+    syncGubsFromServer(true).catch(() => {});
 
     // Keep local score in sync with external/manual updates
     userRef.on('value', (s) => {
@@ -236,7 +237,7 @@ export function initGameLoop({
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       passiveWorker.postMessage({ type: 'reset' });
-      syncGubsFromServer(true);
+      syncGubsFromServer(true).catch(() => {});
     }
   });
   // main gub handler
