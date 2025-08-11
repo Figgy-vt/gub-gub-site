@@ -16,6 +16,12 @@ admin.initializeApp({
   databaseURL: 'https://gub-leaderboard-default-rtdb.firebaseio.com',
 });
 
+// DEBUG: confirm functions are pointed at the right DB/project
+functions.logger.info('admin.init', {
+  dbURL: admin.app().options.databaseURL,
+  projectId: process.env.GCLOUD_PROJECT,
+});
+
 async function isAdmin(uid) {
   const snap = await admin
     .database()
@@ -88,6 +94,18 @@ export const purchaseItem = functions.https.onCall(
     try {
       ({ item, quantity } = validatePurchaseItem(data));
       const db = admin.database();
+
+      // DEBUG: prove what we see before the transaction (once only while debugging)
+      const [lbAnySnap, userNodeSnap] = await Promise.all([
+        db.ref(LEADERBOARD_PATH).limitToFirst(1).once('value'),
+        db.ref(`${LEADERBOARD_PATH}/${uid}`).once('value'),
+      ]);
+      functions.logger.info('purchaseItem.env', {
+        uid,
+        lbExists: lbAnySnap.exists(),
+        userNodeType: typeof userNodeSnap.val(),
+        userNode: userNodeSnap.val(),
+      });
 
       let cost = 0;
 
