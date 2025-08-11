@@ -144,7 +144,17 @@ export function initShop({
     }
 
     async function attemptPurchase(quantity) {
-      await syncGubsFromServer();
+      try {
+        await syncGubsFromServer();
+      } catch (err) {
+        console.error('syncGubsFromServer failed', err);
+        logError(db, {
+          message: err.message,
+          stack: err.stack,
+          context: 'attemptPurchase.sync',
+        });
+        return;
+      }
       const cost = calcTotalCost(
         item.baseCost,
         owned[item.id],
