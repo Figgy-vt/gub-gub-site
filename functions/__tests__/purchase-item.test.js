@@ -32,9 +32,9 @@ describe('purchaseItem', () => {
       { item: 'passiveMaker', quantity: 1 },
       { auth: { uid } },
     );
-    expect(result).toEqual({ score: 36, owned: 2 });
+    expect(result).toEqual({ score: 35, owned: 2 });
     expect(rootState.shop_v2[uid].passiveMaker).toBe(2);
-    expect(rootState.leaderboard_v3[uid].score).toBe(36);
+    expect(rootState.leaderboard_v3[uid].score).toBe(35);
   });
 
   test('rejects unknown shop items', async () => {

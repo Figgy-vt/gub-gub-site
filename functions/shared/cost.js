@@ -3,23 +3,26 @@ export function currentCost(baseCost, owned, multiplier) {
 }
 
 export function totalCost(baseCost, owned, quantity, multiplier) {
-  let cost = 0;
-  for (let i = 0; i < quantity; i++) {
-    cost += currentCost(baseCost, owned + i, multiplier);
+  if (quantity <= 0) return 0;
+  const startCost = baseCost * Math.pow(multiplier, owned);
+  if (multiplier === 1) {
+    return Math.floor(startCost * quantity);
   }
-  return cost;
+  const total =
+    (startCost * (Math.pow(multiplier, quantity) - 1)) / (multiplier - 1);
+  return Math.floor(total);
 }
 
 export function maxAffordable(baseCost, owned, available, multiplier) {
-  let qty = 0;
-  let accumulated = 0;
-  while (true) {
-    const next = currentCost(baseCost, owned + qty, multiplier);
-    if (accumulated + next > available) break;
-    accumulated += next;
-    qty++;
+  const startCost = baseCost * Math.pow(multiplier, owned);
+  if (startCost > available) return 0;
+  if (multiplier === 1) {
+    return Math.floor(available / startCost);
   }
-  return qty;
+  const qty =
+    Math.log(((available + 1) * (multiplier - 1)) / startCost + 1) /
+    Math.log(multiplier);
+  return Math.floor(qty);
 }
 
 export default { currentCost, totalCost, maxAffordable };
