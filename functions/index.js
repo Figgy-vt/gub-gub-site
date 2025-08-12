@@ -98,53 +98,57 @@ export const purchaseItem = functions.https.onCall(
       const baseCost = SHOP_ITEMS[item];
       const cost = totalCost(baseCost, ownedBefore, quantity, COST_MULTIPLIER);
 
-      // 2) Deduct on the SAME NODE as syncGubs to avoid path conflicts
-      const userTx = await userRef.transaction((curr) => {
-        let user = curr;
-        if (typeof user !== 'object' || user === null) {
-          user = { score: Number(user) || 0, lastUpdated: Date.now() };
-        }
-        const currentScore = Number(user.score) || 0;
-        if (currentScore < cost) return; // abort if truly unaffordable
-        return {
-          ...user,
-          score: currentScore - cost,
-          lastUpdated: Date.now(),
-        };
-      });
+      // Give any already-started syncGubs txn ~200ms to finish after we took the lock
+      await new Promise((r) => setTimeout(r, 200));
 
-      if (!userTx.committed) {
-        // Accurate message from fresh read
-        const have = Number((await userRef.child('score').once('value')).val()) || 0;
-        await logError('server', new Error('Not enough gubs'), {
+      // Deduct on the SAME NODE as syncGubs, with a few retries
+      async function deductWithRetry(maxTries = 5) {
+        for (let i = 0; i < maxTries; i++) {
+          const tx = await userRef.transaction((curr) => {
+            let user = curr;
+            if (typeof user !== 'object' || user === null) {
+              user = { score: Number(user) || 0, lastUpdated: Date.now() };
+            }
+            const currentScore = Number(user.score) || 0;
+            if (currentScore < cost) return; // abort this attempt if truly unaffordable
+            return { ...user, score: currentScore - cost, lastUpdated: Date.now() };
+          });
+
+          if (tx.committed) {
+            return Number(tx.snapshot.child('score').val()) || 0;
+          }
+
+          // Not committed: if still affordable, wait a tick and retry; else fail fast
+          const have = Number((await userRef.child('score').once('value')).val()) || 0;
+          if (have < cost) {
+            throw new functions.https.HttpsError(
+              'failed-precondition',
+              `Not enough gubs: have ${have}, need ${cost}`,
+            );
+          }
+          await new Promise((r) => setTimeout(r, 80));
+        }
+        await logError('server', new Error('Deduct retries exhausted'), {
           function: 'purchaseItem',
           uid,
           data,
-          score: have,
           cost,
-          owned: ownedBefore,
         });
-        throw new functions.https.HttpsError(
-          'failed-precondition',
-          `Not enough gubs: have ${have}, need ${cost}`,
-        );
+        throw new functions.https.HttpsError('aborted', 'Could not complete purchase, please try again.');
       }
 
-      const newScore = Number(userTx.snapshot.child('score').val()) || 0;
+      const newScore = await deductWithRetry();
 
-      // 3) Increment owned; 4) refund if it fails
+      // Increment owned; refund if it fails
       const ownedTx = await itemRef.transaction((curr) => (Number(curr) || 0) + quantity);
       if (!ownedTx.committed) {
-        // Refund at user level
         await userRef.transaction((curr) => {
           let user = curr;
           if (typeof user !== 'object' || user === null) {
             user = { score: Number(user) || 0, lastUpdated: Date.now() };
           }
-          const refunded = (Number(user.score) || 0) + cost;
-          return { ...user, score: refunded, lastUpdated: Date.now() };
+          return { ...user, score: (Number(user.score) || 0) + cost, lastUpdated: Date.now() };
         });
-
         await logError('server', new Error('Purchase rollback'), {
           function: 'purchaseItem',
           uid,
@@ -175,6 +179,7 @@ export const purchaseItem = functions.https.onCall(
     }
   }),
 );
+
 
 export const updateUserScore = functions.https.onCall(
   withAuth(async (uid, data) => {
