@@ -134,49 +134,85 @@ export const purchaseItem = functions.https.onCall(
         const scoreRef = userRef.child('score');
         const itemRef = db.ref(`${SHOP_PATH}/${uid}/${item}`);
 
-        // Read owned to compute cost
+        // Read owned to compute cost once, pre-deduction
         const ownedBefore = Number((await itemRef.once('value')).val()) || 0;
         const baseCost = SHOP_ITEMS[item];
         const cost = totalCost(baseCost, ownedBefore, quantity, COST_MULTIPLIER);
 
-        // Deduct from score (transaction on the user node keeps lastUpdated fresh)
-        const scoreTx = await userRef.transaction((curr) => {
-          let user = curr;
-          if (typeof user !== 'object' || user === null) {
-            user = { score: Number(user) || 0, lastUpdated: Date.now() };
-          }
-          const currentScore = Number(user.score) || 0;
-          if (currentScore < cost) return; // abort
-          return { ...user, score: currentScore - cost, lastUpdated: Date.now() };
-        });
+        // ---- Deduct score with retries ----
+        const MAX_TRIES = 6;
+        let committedScore = null;
 
-        if (!scoreTx.committed) {
-          // Accurate numbers for the error message
+        for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+          const tx = await userRef.transaction((curr) => {
+            let user = curr;
+            if (typeof user !== 'object' || user === null) {
+              user = { score: Number(user) || 0, lastUpdated: Date.now() };
+            }
+            const currentScore = Number(user.score) || 0;
+            if (currentScore < cost) return; // abort (insufficient)
+            return {
+              ...user,
+              score: currentScore - cost,
+              lastUpdated: Date.now(),
+            };
+          });
+
+          if (tx.committed) {
+            committedScore = Number(tx.snapshot.child('score').val()) || 0;
+            break;
+          }
+
+          // Not committed; check true affordability now
           const have = Number((await scoreRef.once('value')).val()) || 0;
-          await logError('server', new Error('Not enough gubs'), {
+          if (have < cost) {
+            await logError('server', new Error('Not enough gubs'), {
+              function: 'purchaseItem',
+              uid,
+              data,
+              score: have,
+              cost,
+              owned: ownedBefore,
+              attempt,
+            });
+            throw new functions.https.HttpsError(
+              'failed-precondition',
+              `Not enough gubs: have ${have}, need ${cost}`,
+            );
+          }
+
+          // Still affordable ⇒ transient conflict; backoff and retry
+          await new Promise((r) => setTimeout(r, 80));
+        }
+
+        if (committedScore === null) {
+          await logError('server', new Error('Score deduction retries exhausted'), {
             function: 'purchaseItem',
             uid,
             data,
-            score: have,
             cost,
             owned: ownedBefore,
           });
           throw new functions.https.HttpsError(
-            'failed-precondition',
-            `Not enough gubs: have ${have}, need ${cost}`,
+            'aborted',
+            'Could not complete purchase, please try again.',
           );
         }
 
-        // Increment the owned count
+        // ---- Increment owned; refund on failure ----
         const ownedTx = await itemRef.transaction((curr) => (Number(curr) || 0) + quantity);
         if (!ownedTx.committed) {
-          // Refund on failure
+          // Refund
           await userRef.transaction((curr) => {
             let user = curr;
             if (typeof user !== 'object' || user === null) {
               user = { score: Number(user) || 0, lastUpdated: Date.now() };
             }
-            return { ...user, score: (Number(user.score) || 0) + cost, lastUpdated: Date.now() };
+            return {
+              ...user,
+              score: (Number(user.score) || 0) + cost,
+              lastUpdated: Date.now(),
+            };
           });
 
           await logError('server', new Error('Purchase rollback'), {
@@ -192,7 +228,6 @@ export const purchaseItem = functions.https.onCall(
           );
         }
 
-        const newScore = Number(scoreTx.snapshot.child('score').val()) || 0;
         const newOwned = Number(ownedTx.snapshot.val()) || 0;
 
         functions.logger.info('purchaseItem.success', {
@@ -200,11 +235,11 @@ export const purchaseItem = functions.https.onCall(
           item,
           quantity,
           cost,
-          score: newScore,
+          score: committedScore,
           owned: newOwned,
         });
 
-        return { score: newScore, owned: newOwned };
+        return { score: committedScore, owned: newOwned };
       } catch (err) {
         await logError('server', err, { function: 'purchaseItem', uid, data });
         throw err;
