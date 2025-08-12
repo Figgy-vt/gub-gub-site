@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import admin from 'firebase-admin';
+
 import { calculateOfflineGubs } from './offline.js';
 import { RATES, COST_MULTIPLIER, SHOP_ITEMS } from './config.js';
 import {
@@ -16,6 +17,12 @@ admin.initializeApp({
   databaseURL: 'https://gub-leaderboard-default-rtdb.firebaseio.com',
 });
 
+// Optional: confirm we’re pointed at the right project/DB
+functions.logger.info('admin.init', {
+  dbURL: admin.app().options.databaseURL,
+  projectId: process.env.GCLOUD_PROJECT,
+});
+
 async function isAdmin(uid) {
   const snap = await admin.database().ref(`${ADMINS_PATH}/${uid}`).once('value');
   return snap.val() === true;
@@ -29,158 +36,184 @@ function withAuth(handler) {
   };
 }
 
-/** Skip sync while a purchase lock is held to avoid txn collisions. */
+/**
+ * Simple per-UID mutex using RTDB.
+ * Tries to acquire locks/<uid>.expires; retries briefly if already locked.
+ */
+async function withUserLock(uid, owner, fn) {
+  const db = admin.database();
+  const lockRef = db.ref(`locks/${uid}`);
+  const TTL_MS = 5000;
+  const MAX_TRIES = 20;
+
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    const now = Date.now();
+    const res = await lockRef.transaction((curr) => {
+      // Acquire if missing or expired
+      if (curr && Number(curr.expires) > now) return; // keep current (fails to commit)
+      return { by: owner, since: now, expires: now + TTL_MS };
+    });
+    if (res.committed) {
+      try {
+        return await fn();
+      } finally {
+        // best-effort unlock
+        lockRef.remove().catch(() => {});
+      }
+    }
+    // small backoff before retrying
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new functions.https.HttpsError('aborted', 'Busy, try again.');
+}
+
+/** ---------------- syncGubs ---------------- */
 export const syncGubs = functions.https.onCall(
   withAuth(async (uid, data) => {
-    try {
-      const { delta, requestOffline } = validateSyncGubs(data);
-      const db = admin.database();
+    return withUserLock(uid, 'syncGubs', async () => {
+      try {
+        const { delta, requestOffline } = validateSyncGubs(data);
+        const db = admin.database();
 
-      const locked = (await db.ref(`locks/purchase/${uid}`).once('value')).val() === true;
-      if (locked) {
-        const scoreSnap = await db.ref(`${LEADERBOARD_PATH}/${uid}/score`).once('value');
-        const score = Number(scoreSnap.val()) || 0;
-        return { score, offlineEarned: 0 };
+        const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
+        const shop =
+          (await db.ref(`${SHOP_PATH}/${uid}`).once('value')).val() || {};
+        const rate = Object.entries(shop).reduce(
+          (sum, [k, v]) => sum + (RATES[k] || 0) * v,
+          0,
+        );
+
+        let offlineEarned = 0;
+        const now = Date.now();
+        const tx = await userRef.transaction((curr) => {
+          let user = curr;
+          // Normalize legacy
+          if (typeof user !== 'object' || user === null) {
+            user = { score: Number(user) || 0 };
+          }
+          const score = Number(user.score) || 0;
+          const lastUpdated = Number(user.lastUpdated) || now;
+          if (requestOffline) {
+            offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
+          }
+          return {
+            ...user,
+            score: score + delta + offlineEarned,
+            lastUpdated: now,
+          };
+        });
+
+        const newScore = Number(tx.snapshot.child('score').val()) || 0;
+
+        functions.logger.info('syncGubs.success', {
+          uid,
+          delta,
+          offlineEarned,
+          newScore,
+        });
+
+        return { score: newScore, offlineEarned };
+      } catch (err) {
+        await logError('server', err, { function: 'syncGubs', uid, data });
+        throw err;
       }
-
-      const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
-      const shop = (await db.ref(`${SHOP_PATH}/${uid}`).once('value')).val() || {};
-      const rate = Object.entries(shop).reduce((sum, [k, v]) => sum + (RATES[k] || 0) * v, 0);
-
-      let offlineEarned = 0;
-      const now = Date.now();
-
-      const result = await userRef.transaction((curr) => {
-        let user = curr;
-        if (typeof user !== 'object' || user === null) user = { score: Number(user) || 0 };
-        const score = Number(user.score) || 0;
-        const lastUpdated = Number(user.lastUpdated) || now;
-        if (requestOffline) offlineEarned = calculateOfflineGubs(rate, lastUpdated, now);
-        return { ...user, score: score + delta + offlineEarned, lastUpdated: now };
-      });
-
-      const newScore = result.snapshot.child('score').val() || 0;
-      return { score: newScore, offlineEarned };
-    } catch (err) {
-      await logError('server', err, { function: 'syncGubs', uid, data });
-      throw err;
-    }
+    });
   }),
 );
 
-/**
- * Purchase with a per-user lock:
- * 1) Acquire /locks/purchase/<uid>
- * 2) Txn on /leaderboard_v3/<uid> to deduct cost (same node as syncGubs)
- * 3) Txn on /shop_v2/<uid>/<item> to increment owned
- * 4) If step 3 fails, refund in a user-level txn
- * 5) Release lock
- */
+/** ---------------- purchaseItem ---------------- */
 export const purchaseItem = functions.https.onCall(
   withAuth(async (uid, data) => {
-    const db = admin.database();
-    const lockRef = db.ref(`locks/purchase/${uid}`);
+    return withUserLock(uid, 'purchaseItem', async () => {
+      let item, quantity;
+      try {
+        ({ item, quantity } = validatePurchaseItem(data));
+        const db = admin.database();
 
-    // Acquire lock
-    const lockTx = await lockRef.transaction((curr) => (curr ? undefined : true));
-    if (!lockTx.committed) {
-      throw new functions.https.HttpsError('aborted', 'Purchase busy, try again.');
-    }
+        const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
+        const scoreRef = userRef.child('score');
+        const itemRef = db.ref(`${SHOP_PATH}/${uid}/${item}`);
 
-    try {
-      const { item, quantity } = validatePurchaseItem(data);
+        // Read owned to compute cost
+        const ownedBefore = Number((await itemRef.once('value')).val()) || 0;
+        const baseCost = SHOP_ITEMS[item];
+        const cost = totalCost(baseCost, ownedBefore, quantity, COST_MULTIPLIER);
 
-      const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
-      const itemRef = db.ref(`${SHOP_PATH}/${uid}/${item}`);
-
-      // Read owned to compute cost
-      const ownedBefore = Number((await itemRef.once('value')).val()) || 0;
-      const baseCost = SHOP_ITEMS[item];
-      const cost = totalCost(baseCost, ownedBefore, quantity, COST_MULTIPLIER);
-
-      // Give any already-started syncGubs txn ~200ms to finish after we took the lock
-      await new Promise((r) => setTimeout(r, 200));
-
-      // Deduct on the SAME NODE as syncGubs, with a few retries
-      async function deductWithRetry(maxTries = 5) {
-        for (let i = 0; i < maxTries; i++) {
-          const tx = await userRef.transaction((curr) => {
-            let user = curr;
-            if (typeof user !== 'object' || user === null) {
-              user = { score: Number(user) || 0, lastUpdated: Date.now() };
-            }
-            const currentScore = Number(user.score) || 0;
-            if (currentScore < cost) return; // abort this attempt if truly unaffordable
-            return { ...user, score: currentScore - cost, lastUpdated: Date.now() };
-          });
-
-          if (tx.committed) {
-            return Number(tx.snapshot.child('score').val()) || 0;
-          }
-
-          // Not committed: if still affordable, wait a tick and retry; else fail fast
-          const have = Number((await userRef.child('score').once('value')).val()) || 0;
-          if (have < cost) {
-            throw new functions.https.HttpsError(
-              'failed-precondition',
-              `Not enough gubs: have ${have}, need ${cost}`,
-            );
-          }
-          await new Promise((r) => setTimeout(r, 80));
-        }
-        await logError('server', new Error('Deduct retries exhausted'), {
-          function: 'purchaseItem',
-          uid,
-          data,
-          cost,
-        });
-        throw new functions.https.HttpsError('aborted', 'Could not complete purchase, please try again.');
-      }
-
-      const newScore = await deductWithRetry();
-
-      // Increment owned; refund if it fails
-      const ownedTx = await itemRef.transaction((curr) => (Number(curr) || 0) + quantity);
-      if (!ownedTx.committed) {
-        await userRef.transaction((curr) => {
+        // Deduct from score (transaction on the user node keeps lastUpdated fresh)
+        const scoreTx = await userRef.transaction((curr) => {
           let user = curr;
           if (typeof user !== 'object' || user === null) {
             user = { score: Number(user) || 0, lastUpdated: Date.now() };
           }
-          return { ...user, score: (Number(user.score) || 0) + cost, lastUpdated: Date.now() };
+          const currentScore = Number(user.score) || 0;
+          if (currentScore < cost) return; // abort
+          return { ...user, score: currentScore - cost, lastUpdated: Date.now() };
         });
-        await logError('server', new Error('Purchase rollback'), {
-          function: 'purchaseItem',
+
+        if (!scoreTx.committed) {
+          // Accurate numbers for the error message
+          const have = Number((await scoreRef.once('value')).val()) || 0;
+          await logError('server', new Error('Not enough gubs'), {
+            function: 'purchaseItem',
+            uid,
+            data,
+            score: have,
+            cost,
+            owned: ownedBefore,
+          });
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            `Not enough gubs: have ${have}, need ${cost}`,
+          );
+        }
+
+        // Increment the owned count
+        const ownedTx = await itemRef.transaction((curr) => (Number(curr) || 0) + quantity);
+        if (!ownedTx.committed) {
+          // Refund on failure
+          await userRef.transaction((curr) => {
+            let user = curr;
+            if (typeof user !== 'object' || user === null) {
+              user = { score: Number(user) || 0, lastUpdated: Date.now() };
+            }
+            return { ...user, score: (Number(user.score) || 0) + cost, lastUpdated: Date.now() };
+          });
+
+          await logError('server', new Error('Purchase rollback'), {
+            function: 'purchaseItem',
+            uid,
+            data,
+            reason: 'owned increment failed',
+            cost,
+          });
+          throw new functions.https.HttpsError(
+            'aborted',
+            'Purchase failed, your gubs were refunded.',
+          );
+        }
+
+        const newScore = Number(scoreTx.snapshot.child('score').val()) || 0;
+        const newOwned = Number(ownedTx.snapshot.val()) || 0;
+
+        functions.logger.info('purchaseItem.success', {
           uid,
-          data,
-          reason: 'owned increment failed',
+          item,
+          quantity,
           cost,
+          score: newScore,
+          owned: newOwned,
         });
-        throw new functions.https.HttpsError('aborted', 'Purchase failed, your gubs were refunded.');
+
+        return { score: newScore, owned: newOwned };
+      } catch (err) {
+        await logError('server', err, { function: 'purchaseItem', uid, data });
+        throw err;
       }
-
-      const newOwned = Number(ownedTx.snapshot.val()) || 0;
-
-      functions.logger.info('purchaseItem.success', {
-        uid,
-        item,
-        quantity,
-        cost,
-        score: newScore,
-        owned: newOwned,
-      });
-
-      return { score: newScore, owned: newOwned };
-    } catch (err) {
-      await logError('server', err, { function: 'purchaseItem', uid, data });
-      throw err;
-    } finally {
-      await lockRef.remove().catch(() => {});
-    }
+    });
   }),
 );
 
-
+/** ---------------- admin helpers ---------------- */
 export const updateUserScore = functions.https.onCall(
   withAuth(async (uid, data) => {
     try {
@@ -198,9 +231,16 @@ export const updateUserScore = functions.https.onCall(
         throw new functions.https.HttpsError('not-found', 'User not found');
       }
       const updates = [];
-      snap.forEach((child) => updates.push(child.ref.update({ score })));
+      snap.forEach((child) => {
+        updates.push(child.ref.update({ score }));
+      });
       await Promise.all(updates);
-      await logAction('admin', { action: 'updateUserScore', admin: uid, username, score });
+      await logAction('admin', {
+        action: 'updateUserScore',
+        admin: uid,
+        username,
+        score,
+      });
       return { success: true };
     } catch (err) {
       await logError('server', err, { function: 'updateUserScore', uid, data });
