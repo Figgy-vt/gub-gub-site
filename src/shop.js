@@ -142,54 +142,41 @@ export function initShop({
       );
     }
 
-    async function attemptPurchase(quantity) {
-      if (gameState.syncPaused) return;
-      gameState.syncPaused = true;
-      try {
-        try {
-          await syncGubsFromServer();
-        } catch (err) {
-          console.error('syncGubsFromServer failed', err);
-          logError(db, {
-            message: err.message,
-            stack: err.stack,
-            context: 'attemptPurchase.sync',
-          });
-          alert('Failed to sync with server');
-          return;
-        }
-        try {
-          const res = await purchaseItemFn({
-            item: item.id,
-            quantity,
-          });
-          if (res.data) {
-            if (typeof res.data.owned === 'number') {
-              owned[item.id] = res.data.owned;
-              document.getElementById(`owned-${item.id}`).textContent =
-                owned[item.id];
-            }
-            if (typeof res.data.score === 'number') {
-              gameState.globalCount = gameState.displayedCount = res.data.score;
-              gameState.unsyncedDelta = 0;
-              renderCounter();
-            }
-          }
-          updatePassiveIncome();
-          updateCostDisplay();
-        } catch (err) {
-          console.error('purchaseItem failed', err);
-          logError(db, {
-            message: err.message,
-            stack: err.stack,
-            context: 'attemptPurchase',
-          });
-          alert(`Purchase failed: ${err.message}`);
-        }
-      } finally {
-        gameState.syncPaused = false;
+async function attemptPurchase(quantity) {
+  if (gameState.syncPaused) return;      // prevent double-click overlap
+  gameState.syncPaused = true;           // <— pause all background sync
+
+  try {
+    await syncGubsFromServer();          // make sure server score is fresh first
+
+    const res = await purchaseItemFn({ item: item.id, quantity });
+    if (res.data) {
+      if (typeof res.data.owned === 'number') {
+        owned[item.id] = res.data.owned;
+        document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
+      }
+      if (typeof res.data.score === 'number') {
+        gameState.globalCount = gameState.displayedCount = res.data.score;
+        gameState.unsyncedDelta = 0;
+        renderCounter();
       }
     }
+
+    updatePassiveIncome();
+    updateCostDisplay();
+  } catch (err) {
+    console.error('purchaseItem failed', err);
+    logError(db, {
+      message: err.message,
+      stack: err.stack,
+      context: 'attemptPurchase',
+    });
+    // (optional) alert(`Purchase failed: ${err.message}`);
+  } finally {
+    gameState.syncPaused = false;        // <— resume background sync
+  }
+}
+
     buy1.addEventListener('click', () => attemptPurchase(1));
     buy10.addEventListener('click', () => attemptPurchase(10));
     buy100.addEventListener('click', () => attemptPurchase(100));
