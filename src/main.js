@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded', () => {
       .signInAnonymously()
       .then(() => {
         initErrorLogging(db);
-        initGameLoop({
+        const destroyGameLoop = initGameLoop({
           db,
           functions,
           auth,
@@ -55,6 +55,14 @@ window.addEventListener('DOMContentLoaded', () => {
           imageState,
         });
         initFeedback({ db, username });
+
+        window.addEventListener('beforeunload', destroyGameLoop);
+        if (import.meta.hot) {
+          import.meta.hot.dispose(() => {
+            window.removeEventListener('beforeunload', destroyGameLoop);
+            destroyGameLoop();
+          });
+        }
       })
       .catch((err) => console.error('Auth Error', err));
 
