@@ -6,7 +6,6 @@ import { initShop } from '../shop.js';
 
 function setupDOM() {
   document.body.innerHTML = `
-    <button id="shopBtn"></button>
     <div id="shopPanel"></div>
     <div id="shopItemsContainer"></div>
     <button id="adminBtn" style="display:none"></button>
