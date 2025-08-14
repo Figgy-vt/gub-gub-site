@@ -143,7 +143,6 @@ export function initShop({
         <button id="buy-${item.id}">Buy</button>
         <button id="buy-${item.id}-x10">x10</button>
         <button id="buy-${item.id}-x100">x100</button>
-        <div id="error-${item.id}" style="color:red;display:none;font-size:0.8em;"></div>
       </div>
     `;
     shopContainer.appendChild(div);
@@ -155,8 +154,6 @@ export function initShop({
     const buy10 = div.querySelector(`#buy-${item.id}-x10`);
     const buy100 = div.querySelector(`#buy-${item.id}-x100`);
     const costSpan = div.querySelector(`#cost-${item.id}`);
-    const errorEl = div.querySelector(`#error-${item.id}`);
-    let errorTimeoutId;
 
     function updateCostDisplay() {
       costSpan.textContent = abbreviateNumber(
@@ -220,27 +217,12 @@ export function initShop({
 
         updatePassiveIncome();
         updateCostDisplay();
-        if (errorEl) {
-          errorEl.textContent = '';
-          errorEl.style.display = 'none';
-          clearTimeout(errorTimeoutId);
-      }
-    } catch (err) {
+      } catch (err) {
         console.error('purchaseItem failed', err);
         if (
-          err?.code === 'failed-precondition' ||
-          /not enough gubs/i.test(err.message)
+          err?.code !== 'failed-precondition' &&
+          !/not enough gubs/i.test(err.message)
         ) {
-          if (errorEl) {
-            errorEl.textContent = "Can't afford it";
-            errorEl.style.display = 'block';
-            clearTimeout(errorTimeoutId);
-            errorTimeoutId = setTimeout(() => {
-              errorEl.textContent = '';
-              errorEl.style.display = 'none';
-            }, 60000);
-          }
-        } else {
           window.alert('Purchase failed');
         }
         logError(db, {
