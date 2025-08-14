@@ -46,6 +46,10 @@ export function initGameLoop({
   let scoreDirty = false;
   let syncPaused = false;
 
+  // NEW: real pause/resume hooks that control the actual sync loop flag
+  function pauseSync() { syncPaused = true; }
+  function resumeSync() { syncPaused = false; }
+
   let syncingPromise = null;
   async function syncGubsFromServer(requestOffline = false) {
     if (syncingPromise) return syncingPromise;
@@ -196,6 +200,7 @@ export function initGameLoop({
     sanitizeUsername,
     playMentionSound,
   });
+
   // Elements for displaying totals and rate
   const gubTotalEl = document.getElementById('gubTotal');
   let passiveRatePerSec = 0;
@@ -245,6 +250,7 @@ export function initGameLoop({
       syncGubsFromServer(true).catch(() => {});
     }
   });
+
   // main gub handler
   const mainGub = document.getElementById('main-gub');
   const clickMe = document.getElementById('clickMe');
@@ -278,6 +284,7 @@ export function initGameLoop({
       150,
     );
   });
+
   const golden = initGoldenGubs({
     getImages: () => imageState.images,
     getGlobalCount: () => globalCount,
@@ -294,38 +301,25 @@ export function initGameLoop({
     },
   });
   golden.scheduleNextGolden();
+
   const gameState = {
-    get globalCount() {
-      return globalCount;
-    },
-    set globalCount(v) {
-      globalCount = v;
-    },
-    get displayedCount() {
-      return displayedCount;
-    },
-    set displayedCount(v) {
-      displayedCount = v;
-    },
-    get unsyncedDelta() {
-      return unsyncedDelta;
-    },
-    set unsyncedDelta(v) {
-      unsyncedDelta = v;
-    },
-    get passiveRatePerSec() {
-      return passiveRatePerSec;
-    },
-    set passiveRatePerSec(v) {
-      passiveRatePerSec = v;
-    },
-    get syncPaused() {
-      return syncPaused;
-    },
-    set syncPaused(v) {
-      syncPaused = v;
-    },
+    get globalCount() { return globalCount; },
+    set globalCount(v) { globalCount = v; },
+
+    get displayedCount() { return displayedCount; },
+    set displayedCount(v) { displayedCount = v; },
+
+    get unsyncedDelta() { return unsyncedDelta; },
+    set unsyncedDelta(v) { unsyncedDelta = v; },
+
+    get passiveRatePerSec() { return passiveRatePerSec; },
+    set passiveRatePerSec(v) { passiveRatePerSec = v; },
+
+    // keep this for compatibility; it reflects the real flag
+    get syncPaused() { return syncPaused; },
+    set syncPaused(v) { syncPaused = v; },
   };
+
   initShop({
     db,
     uid,
@@ -333,6 +327,11 @@ export function initGameLoop({
     updateUserScoreFn,
     deleteUserFn,
     syncGubsFromServer,
+
+    // NEW: give shop real control over the sync loop
+    pauseSync,
+    resumeSync,
+
     gameState,
     renderCounter,
     queueScoreUpdate,
