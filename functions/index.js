@@ -20,7 +20,10 @@ admin.initializeApp({
 });
 
 async function isAdmin(uid) {
-  const snap = await admin.database().ref(`${ADMINS_PATH}/${uid}`).once('value');
+  const snap = await admin
+    .database()
+    .ref(`${ADMINS_PATH}/${uid}`)
+    .once('value');
   return snap.val() === true;
 }
 
@@ -133,7 +136,6 @@ export const purchaseItem = functions.https.onCall(
         const db = admin.database();
 
         const scoreRef = db.ref(`${LEADERBOARD_PATH}/${uid}/score`);
-        const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
         const itemRef = db.ref(`${SHOP_PATH}/${uid}/${item}`);
 
         // Read current state
@@ -145,7 +147,12 @@ export const purchaseItem = functions.https.onCall(
         const currentScore = Number(scoreSnap.val()) || 0;
         const ownedBefore = Number(ownedSnap.val()) || 0;
 
-        const cost = totalCost(SHOP_ITEMS[item], ownedBefore, quantity, COST_MULTIPLIER);
+        const cost = totalCost(
+          SHOP_ITEMS[item],
+          ownedBefore,
+          quantity,
+          COST_MULTIPLIER,
+        );
 
         if (currentScore < cost) {
           await logError('server', new Error('Not enough gubs'), {
@@ -176,7 +183,12 @@ export const purchaseItem = functions.https.onCall(
         await db.ref().update(updates);
 
         functions.logger.info('purchaseItem.success', {
-          uid, item, quantity, cost, score: newScore, owned: newOwned,
+          uid,
+          item,
+          quantity,
+          cost,
+          score: newScore,
+          owned: newOwned,
         });
 
         return { score: newScore, owned: newOwned };

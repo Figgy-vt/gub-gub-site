@@ -54,7 +54,6 @@ export function initShop({
     queueScoreUpdate();
   }
 
-  const shopBtn = document.getElementById('shopBtn');
   const shopPanel = document.getElementById('shopPanel');
   const shopContainer = document.getElementById('shopItemsContainer');
   const adminBtn = document.getElementById('adminBtn');
@@ -110,10 +109,6 @@ export function initShop({
     );
   });
 
-  shopBtn.addEventListener('click', () => {
-    shopPanel.style.display =
-      shopPanel.style.display === 'block' ? 'none' : 'block';
-  });
 
   // Render each shop item
   shopItems.forEach((item) => {
