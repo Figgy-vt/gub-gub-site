@@ -92,6 +92,6 @@ describe('initAudio', () => {
     const audio = initAudio();
     audio.playBuySound();
     expect(lastOscillator.frequency.value).toBe(220);
-    expect(lastGainValue).toBeCloseTo(0.15);
+    expect(lastGainValue).toBeCloseTo(0.1);
   });
 });
