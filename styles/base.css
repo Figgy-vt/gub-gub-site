@@ -396,7 +396,7 @@ body {
   border-radius: 6px;
   font-family: sans-serif;
   display: none;
-  z-index: 10000;
+  z-index: 10002;
   width: 260px;
 }
 #feedbackModal textarea {
