@@ -75,10 +75,12 @@ export function initAudio() {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = "square";
-    osc.frequency.value = 440;
+    // Lower pitch than the previous 440Hz tone for purchase feedback
+    osc.frequency.value = 220;
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    // Reduce volume so the sound is less jarring
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(
       0.001,
       audioCtx.currentTime + 0.1,

@@ -8,8 +8,12 @@ describe('initAudio', () => {
   let AudioBackup;
   let AudioContextBackup;
   let requestAnimationFrameBackup;
+  let lastGainValue;
+  let lastOscillator;
 
   beforeEach(() => {
+    lastGainValue = undefined;
+    lastOscillator = undefined;
     document.body.innerHTML = `
       <input id="volumeSlider" type="range">
       <canvas id="visualizer"></canvas>
@@ -40,8 +44,21 @@ describe('initAudio', () => {
       constructor() { this.state = 'suspended'; this.destination = {}; this.currentTime = 0; }
       createAnalyser() { return new FakeAnalyser(); }
       createMediaElementSource() { return new FakeMediaSource(); }
-      createOscillator() { return { connect() {}, frequency: { value: 0 }, type: '', start() {}, stop() {} }; }
-      createGain() { return { connect() {}, gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} } }; }
+      createOscillator() {
+        const osc = { connect() {}, frequency: { value: 0 }, type: '', start() {}, stop() {} };
+        lastOscillator = osc;
+        return osc;
+      }
+      createGain() {
+        const gainNode = {
+          connect() {},
+          gain: {
+            setValueAtTime: jest.fn((value) => { lastGainValue = value; }),
+            exponentialRampToValueAtTime: jest.fn(),
+          },
+        };
+        return gainNode;
+      }
       resume() { this.state = 'running'; }
     }
     AudioContextBackup = global.AudioContext;
@@ -68,5 +85,13 @@ describe('initAudio', () => {
     slider.dispatchEvent(new Event('input'));
     expect(audio.chaosAudio.volume).toBeCloseTo(0.3);
     expect(localStorage.getItem('gubVolume')).toBe('0.3');
+  });
+
+  it('playBuySound uses a quieter, lower-pitched tone', async () => {
+    const { initAudio } = await import('../audio.js');
+    const audio = initAudio();
+    audio.playBuySound();
+    expect(lastOscillator.frequency.value).toBe(220);
+    expect(lastGainValue).toBeCloseTo(0.15);
   });
 });
