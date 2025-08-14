@@ -191,6 +191,9 @@ body {
 .feral-glow {
   filter: drop-shadow(0 0 10px gold) drop-shadow(0 0 20px gold);
 }
+#shopToggleBtn {
+  display: none;
+}
 @media (max-width: 768px) {
   #discordWrapper {
     bottom: 170px !important; /* move it up above the chat */
@@ -198,6 +201,9 @@ body {
   }
   #golden-counter {
     top: 60px !important; /* push it down under the btnRow */
+  }
+  #shopToggleBtn {
+    display: inline-block;
   }
 }
 
