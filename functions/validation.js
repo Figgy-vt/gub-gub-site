@@ -6,7 +6,12 @@ export function validateSyncGubs(data = {}) {
   if (!Number.isFinite(rawDelta)) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid delta');
   }
-  const delta = Math.max(-1e6, Math.min(1e6, Math.floor(rawDelta)));
+  // Previously we clamped the delta to +/-1e6 to prevent excessive writes.
+  // High rate players now quickly exceed this limit causing their scores to
+  // fall behind as only a portion of their local delta could be synced each
+  // tick.  The database can handle larger updates, so we simply floor the
+  // value without clamping so the full amount is applied in a single call.
+  const delta = Math.floor(rawDelta);
   const requestOffline = Boolean(data.offline);
   return { delta, requestOffline };
 }

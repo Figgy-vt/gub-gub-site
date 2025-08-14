@@ -20,13 +20,14 @@ const {
 } = await import('../validation.js');
 
 describe('validation utilities', () => {
-  test('validateSyncGubs clamps delta and parses offline flag', () => {
+  test('validateSyncGubs floors delta and parses offline flag', () => {
     expect(validateSyncGubs({ delta: 2.5, offline: 1 })).toEqual({
       delta: 2,
       requestOffline: true,
     });
+    // Large deltas should be accepted as-is to allow high rate syncing
     expect(validateSyncGubs({ delta: 1e7 })).toEqual({
-      delta: 1e6,
+      delta: 1e7,
       requestOffline: false,
     });
   });
