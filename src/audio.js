@@ -71,5 +71,21 @@ export function initAudio() {
     osc.stop(audioCtx.currentTime + 0.2);
   }
 
-  return { chaosAudio, audioCtx, playMentionSound, state };
+  function playBuySound() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "square";
+    osc.frequency.value = 440;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      audioCtx.currentTime + 0.1,
+    );
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+  }
+
+  return { chaosAudio, audioCtx, playMentionSound, playBuySound, state };
 }

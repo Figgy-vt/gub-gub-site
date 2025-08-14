@@ -13,7 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const NUM_FLOATERS = isMobile ? 5 : 20;
 
   const audio = initAudio();
-  const { playMentionSound } = audio;
+  const { playMentionSound, playBuySound } = audio;
   // ─── SPECIAL GUB STYLE ───
   const specialStyle = document.createElement('style');
   specialStyle.textContent = `
@@ -52,6 +52,7 @@ window.addEventListener('DOMContentLoaded', () => {
           username,
           sanitizeUsername,
           playMentionSound,
+          playBuySound,
           CLIENT_VERSION,
           imageState,
         });

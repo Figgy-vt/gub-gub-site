@@ -11,6 +11,7 @@ export function initGameLoop({
   username,
   sanitizeUsername,
   playMentionSound,
+  playBuySound = () => {},
   CLIENT_VERSION,
   imageState,
 }) {
@@ -328,6 +329,7 @@ export function initGameLoop({
     passiveWorker,
     logError,
     sanitizeUsername,
+    playBuySound,
   });
 
   return function destroy() {

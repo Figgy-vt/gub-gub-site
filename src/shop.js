@@ -22,6 +22,7 @@ export function initShop({
   passiveWorker,
   logError,
   sanitizeUsername,
+  playBuySound = () => {},
 }) {
   const COST_MULTIPLIER = shopConfig.costMultiplier;
   const shopItems = shopConfig.items;
@@ -168,6 +169,7 @@ export function initShop({
     async function attemptPurchase(quantity) {
       if (purchasing) return;
       purchasing = true;
+      playBuySound();
 
       // disable these buttons while in-flight
       [buy1, buy10, buy100, buyAll].forEach((b) => (b.disabled = true));
