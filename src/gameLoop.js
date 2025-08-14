@@ -46,42 +46,44 @@ export function initGameLoop({
   let scoreDirty = false;
   let syncPaused = false;
 
-  // NEW: real pause/resume hooks that control the actual sync loop flag
+  // explicit pause/resume hooks (shop can use these if needed)
   function pauseSync() { syncPaused = true; }
   function resumeSync() { syncPaused = false; }
 
   let syncingPromise = null;
   async function syncGubsFromServer(requestOffline = false) {
     if (syncingPromise) return syncingPromise;
-    // Only sync whole gubs to avoid dropping fractional amounts
+
     const sendDelta = Math.floor(unsyncedDelta);
-    unsyncedDelta -= sendDelta; // keep remainder locally
+    unsyncedDelta -= sendDelta;
 
     syncingPromise = (async () => {
       try {
-        const res = await syncGubsFn({
-          delta: sendDelta,
-          offline: requestOffline,
-        });
+        // Build payload that supports both keys to match server validator
+        const payload = { delta: sendDelta };
+        if (requestOffline) {
+          payload.requestOffline = true;
+          payload.offline = true;
+        }
+        const res = await syncGubsFn(payload);
 
         if (res.data && typeof res.data.score === 'number') {
           const { score, offlineEarned = 0 } = res.data;
-          // Server stores integer scores, so re-add any local remainder
           globalCount = displayedCount = score + unsyncedDelta;
           renderCounter();
 
           if (requestOffline && !offlineShown && offlineEarned > 0) {
-            offlineMessage.textContent = `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
+            offlineMessage.textContent =
+              `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
             offlineModal.style.display = 'block';
             offlineShown = true;
           }
         } else {
-          // Revert on failure to ensure no loss
+          // revert on failure
           unsyncedDelta += sendDelta;
         }
       } catch (err) {
         unsyncedDelta += sendDelta;
-
         console.error('syncGubs failed', err);
         logError(db, {
           message: err.message,
@@ -117,33 +119,19 @@ export function initGameLoop({
 
   function abbreviateNumber(num) {
     if (num < 1000) return Math.floor(num).toString();
-    const units = [
-      '',
-      'k',
-      'm',
-      'b',
-      't',
-      'quad',
-      'quin',
-      'sext',
-      'sept',
-      'octi',
-      'noni',
-      'deci',
-    ];
+    const units = ['', 'k', 'm', 'b', 't', 'quad', 'quin', 'sext', 'sept', 'octi', 'noni', 'deci'];
     let idx = Math.floor(Math.log10(num) / 3);
     if (idx >= units.length) idx = units.length - 1;
     const scaled = num / Math.pow(1000, idx);
     return scaled.toFixed(2) + units[idx];
   }
 
-  // Load or initialize user's score, migrating any legacy username entries
+  // Load or initialize user's score, migrating legacy username entries
   const userRef = db.ref(`leaderboard_v3/${uid}/score`);
   userRef.once('value').then(async (snap) => {
     if (snap.exists()) {
       globalCount = snap.val() || 0;
     } else {
-      // Try to migrate from old username-based key
       const legacyRef = db.ref(`leaderboard_v3/${username}/score`);
       const legacySnap = await legacyRef.once('value');
       globalCount = legacySnap.val() || 0;
@@ -279,26 +267,19 @@ export function initGameLoop({
     mainGub.classList.add('pop-effect');
 
     clearTimeout(popTimeout);
-    popTimeout = setTimeout(
-      () => mainGub.classList.remove('pop-effect'),
-      150,
-    );
+    popTimeout = setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
   });
 
   const golden = initGoldenGubs({
     getImages: () => imageState.images,
     getGlobalCount: () => globalCount,
     getGubRateMultiplier: () => gubRateMultiplier,
-    setGubRateMultiplier: (v) => {
-      gubRateMultiplier = v;
-    },
+    setGubRateMultiplier: (v) => { gubRateMultiplier = v; },
     mainGub,
     renderCounter,
     gainGubs,
     abbreviateNumber,
-    incrementSessionCount: (amt) => {
-      sessionCount += amt;
-    },
+    incrementSessionCount: (amt) => { sessionCount += amt; },
   });
   golden.scheduleNextGolden();
 
@@ -309,13 +290,12 @@ export function initGameLoop({
     get displayedCount() { return displayedCount; },
     set displayedCount(v) { displayedCount = v; },
 
-    get unsyncedDelta() { return unsyncedDelta; },
+    get unsyncedDelta() { return unsyncedDelta; };
     set unsyncedDelta(v) { unsyncedDelta = v; },
 
     get passiveRatePerSec() { return passiveRatePerSec; },
     set passiveRatePerSec(v) { passiveRatePerSec = v; },
 
-    // keep this for compatibility; it reflects the real flag
     get syncPaused() { return syncPaused; },
     set syncPaused(v) { syncPaused = v; },
   };
@@ -328,7 +308,7 @@ export function initGameLoop({
     deleteUserFn,
     syncGubsFromServer,
 
-    // NEW: give shop real control over the sync loop
+    // Shop can pause/resume the background sync if you wire it up later
     pauseSync,
     resumeSync,
 
