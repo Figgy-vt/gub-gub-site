@@ -35,20 +35,23 @@ function withAuth(handler) {
  * Per-UID mutex using RTDB to serialize server work (prevents sync/purchase overlap).
  * Tuned for snappier releases.
  */
+// replaces the existing withUserLock(...)
 async function withUserLock(uid, owner, fn) {
   const db = admin.database();
-  const lockRef = db.ref(`locks/${uid}`);
-  const TTL_MS = 3000;     // was 8000
-  const MAX_TRIES = 20;    // was 80
-  const BACKOFF_MS = 60;   // was 75
+  // 👇 move locks under a hidden system path
+  const lockRef = db.ref(`/_sys/locks/${uid}`);
+  const TTL_MS = 8000;
+  const MAX_TRIES = 80;
+  const BACKOFF_MS = 75;
 
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
     const now = Date.now();
     const res = await lockRef.transaction((curr) => {
-      // Acquire if missing or expired
-      if (curr && Number(curr.expires) > now) return; // keep existing (no commit)
+      // Acquire if missing or not expired
+      if (curr && Number(curr.expires) > now) return; // keep existing => no commit
       return { by: owner, since: now, expires: now + TTL_MS };
     });
+
     if (res.committed) {
       try {
         return await fn();
@@ -57,9 +60,10 @@ async function withUserLock(uid, owner, fn) {
         lockRef.remove().catch(() => {});
       }
     }
-    // small backoff (with tiny jitter) before retrying
-    await new Promise((r) => setTimeout(r, BACKOFF_MS + Math.floor(Math.random() * 25)));
+
+    await new Promise((r) => setTimeout(r, BACKOFF_MS));
   }
+
   throw new functions.https.HttpsError('aborted', 'Busy, try again.');
 }
 
