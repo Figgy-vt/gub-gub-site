@@ -1,3 +1,6 @@
+import { initChatResize } from "./chat-resize.js";
+import { initChatMentions } from "./chat-mentions.js";
+
 export function escapeHTML(str) {
   return str.replace(
     /[&<>"']/g,
@@ -20,49 +23,9 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
   const mentionSuggestions = document.getElementById("mentionSuggestions");
   const chatBox = document.getElementById("chat");
   const resizeHandle = document.getElementById("chatResizeHandle");
-  const savedChatWidth = localStorage.getItem("chatWidth");
-  const savedChatHeight = localStorage.getItem("chatHeight");
-  if (savedChatWidth) chatBox.style.width = savedChatWidth + "px";
-  if (savedChatHeight) chatBox.style.height = savedChatHeight + "px";
 
-  const saveChatSize = () => {
-    localStorage.setItem("chatWidth", chatBox.offsetWidth);
-    localStorage.setItem("chatHeight", chatBox.offsetHeight);
-  };
-
-  let startX, startY, startWidth, startHeight;
-
-  function initResize(e) {
-    e.preventDefault();
-    const touch = e.touches ? e.touches[0] : e;
-    startX = touch.clientX;
-    startY = touch.clientY;
-    startWidth = chatBox.offsetWidth;
-    startHeight = chatBox.offsetHeight;
-    document.documentElement.addEventListener("mousemove", doResize);
-    document.documentElement.addEventListener("touchmove", doResize);
-    document.documentElement.addEventListener("mouseup", stopResize);
-    document.documentElement.addEventListener("touchend", stopResize);
-  }
-
-  function doResize(e) {
-    const touch = e.touches ? e.touches[0] : e;
-    const newWidth = Math.max(200, startWidth + (touch.clientX - startX));
-    const newHeight = Math.max(100, startHeight - (touch.clientY - startY));
-    chatBox.style.width = newWidth + "px";
-    chatBox.style.height = newHeight + "px";
-  }
-
-  function stopResize() {
-    document.documentElement.removeEventListener("mousemove", doResize);
-    document.documentElement.removeEventListener("touchmove", doResize);
-    document.documentElement.removeEventListener("mouseup", stopResize);
-    document.documentElement.removeEventListener("touchend", stopResize);
-    saveChatSize();
-  }
-
-  resizeHandle.addEventListener("mousedown", initResize);
-  resizeHandle.addEventListener("touchstart", initResize);
+  initChatResize(chatBox, resizeHandle);
+  initChatMentions({ chatInput, mentionSuggestions, allUsers });
 
   const emoteMap = {};
   const HARUPI_SET = "01H6Q79JP80007TK4TYM94A0B4";
@@ -103,77 +66,6 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
     }
     return tokens.join("");
   }
-
-  function updateSuggestions() {
-    const cursor = chatInput.selectionStart;
-    const textBefore = chatInput.value.slice(0, cursor);
-    const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-    if (match) {
-      const prefix = match[1].toLowerCase();
-      const matches = Array.from(allUsers)
-        .filter((u) => u.toLowerCase().startsWith(prefix))
-        .sort();
-      if (matches.length > 0) {
-        mentionSuggestions.innerHTML = matches
-          .slice(0, 5)
-          .map((m) => `<div>${m}</div>`)
-          .join("");
-        mentionSuggestions.style.display = "block";
-      } else {
-        mentionSuggestions.style.display = "none";
-      }
-    } else {
-      mentionSuggestions.style.display = "none";
-    }
-  }
-
-  chatInput.addEventListener("input", updateSuggestions);
-  chatInput.addEventListener("keydown", (e) => {
-    if (
-      (e.key === "Tab" || e.key === " " || e.key === "Enter") &&
-      mentionSuggestions.style.display === "block"
-    ) {
-      e.preventDefault();
-      const first = mentionSuggestions.firstChild;
-      if (first) {
-        const name = first.textContent + " ";
-        const cursor = chatInput.selectionStart;
-        const textBefore = chatInput.value.slice(0, cursor);
-        const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-        if (match) {
-          const start = cursor - match[1].length;
-          chatInput.value =
-            chatInput.value.slice(0, start) +
-            name +
-            chatInput.value.slice(cursor);
-          chatInput.selectionStart = chatInput.selectionEnd =
-            start + name.length;
-        }
-        mentionSuggestions.style.display = "none";
-      }
-    }
-  });
-
-  mentionSuggestions.addEventListener("mousedown", (e) => {
-    if (e.target && e.target.tagName === "DIV") {
-      e.preventDefault();
-      const name = e.target.textContent + " ";
-      const cursor = chatInput.selectionStart;
-      const textBefore = chatInput.value.slice(0, cursor);
-      const match = textBefore.match(/@([A-Za-z0-9_]*)$/);
-      if (match) {
-        const start = cursor - match[1].length;
-        chatInput.value =
-          chatInput.value.slice(0, start) +
-          name +
-          chatInput.value.slice(cursor);
-        chatInput.selectionStart = chatInput.selectionEnd =
-          start + name.length;
-      }
-      mentionSuggestions.style.display = "none";
-      chatInput.focus();
-    }
-  });
 
   const CHAT_MESSAGE_LIMIT = 50;
   const MAX_CHAT_LENGTH = 200;
@@ -241,3 +133,4 @@ export function initChat({ db, username, allUsers, sanitizeUsername, playMention
     mentionSuggestions.style.display = "none";
   });
 }
+
