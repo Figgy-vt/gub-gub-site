@@ -6,19 +6,6 @@ body {
   height: 100vh;
   width: 100vw;
 }
-#wipBanner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  text-align: center;
-  color: red;
-  background: #000;
-  z-index: 10002;
-  font-family: sans-serif;
-  font-weight: bold;
-  padding: 8px 0;
-}
 #gub-wrapper {
   position: absolute;
   top: 50%;
@@ -491,5 +478,5 @@ body {
 
 body.comic-sans,
 body.comic-sans * {
-  font-family: "Comic Sans MS", "Comic Sans", cursive !important;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive !important;
 }
