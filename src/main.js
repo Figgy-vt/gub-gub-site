@@ -36,8 +36,9 @@ window.addEventListener('DOMContentLoaded', () => {
 `;
   document.head.appendChild(specialStyle);
 
-  initUsername((username) => {
-    const { auth, db, functions } = initFirebase();
+  const { auth, db, functions } = initFirebase();
+
+  initUsername(db, (username) => {
     const imageState = { images: [] };
 
     auth

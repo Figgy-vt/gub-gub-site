@@ -20,7 +20,9 @@ export function setVal(path = '', value) {
   let obj = rootState;
   for (let i = 0; i < parts.length - 1; i++) {
     const p = parts[i];
-    obj[p] = obj[p] || {};
+    if (typeof obj[p] !== 'object' || obj[p] === null) {
+      obj[p] = {};
+    }
     obj = obj[p];
   }
   obj[parts[parts.length - 1]] = value;
@@ -53,7 +55,23 @@ export const mockDb = {
         },
       };
     },
-    once: async () => ({ val: () => getVal(path) }),
+    once: async () => ({
+      val: () => {
+        const v = getVal(path);
+        if (v === undefined) {
+          const parentPath = path.split('/').slice(0, -1).join('/');
+          const parentVal = getVal(parentPath);
+          if (typeof parentVal === 'number') return parentVal;
+        }
+        return v;
+      },
+    }),
     push: () => ({ set: async () => {} }),
+    remove: async () => {
+      setVal(path, undefined);
+    },
+    update: async (updates) => {
+      Object.entries(updates).forEach(([p, v]) => setVal(p, v));
+    },
   })),
 };
