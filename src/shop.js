@@ -1,7 +1,6 @@
 import {
   shopConfig,
   currentCost as calcCurrentCost,
-  maxAffordable as calcMaxAffordable,
   totalCost as calcTotalCost,
 } from '../shared/index.js';
 
@@ -144,7 +143,6 @@ export function initShop({
         <button id="buy-${item.id}">Buy</button>
         <button id="buy-${item.id}-x10">x10</button>
         <button id="buy-${item.id}-x100">x100</button>
-        <button id="buy-${item.id}-all">All</button>
         <div id="error-${item.id}" style="color:red;display:none;font-size:0.8em;"></div>
       </div>
     `;
@@ -156,7 +154,6 @@ export function initShop({
     const buy1 = div.querySelector(`#buy-${item.id}`);
     const buy10 = div.querySelector(`#buy-${item.id}-x10`);
     const buy100 = div.querySelector(`#buy-${item.id}-x100`);
-    const buyAll = div.querySelector(`#buy-${item.id}-all`);
     const costSpan = div.querySelector(`#cost-${item.id}`);
     const errorEl = div.querySelector(`#error-${item.id}`);
     let errorTimeoutId;
@@ -190,13 +187,6 @@ export function initShop({
         COST_MULTIPLIER,
       );
       buy100.disabled = gubs < cost100;
-      const maxAll = calcMaxAffordable(
-        item.baseCost,
-        ownedCount,
-        gubs,
-        COST_MULTIPLIER,
-      );
-      buyAll.disabled = maxAll <= 0;
     }
     updateFns.push(updateButtons);
 
@@ -206,7 +196,7 @@ export function initShop({
       playBuySound();
 
       // disable these buttons while in-flight
-      [buy1, buy10, buy100, buyAll].forEach((b) => (b.disabled = true));
+      [buy1, buy10, buy100].forEach((b) => (b.disabled = true));
 
       // pause background sync loop so we don't race the server op
       if (typeof pauseSync === 'function') pauseSync();
@@ -260,7 +250,7 @@ export function initShop({
         });
       } finally {
         if (typeof resumeSync === 'function') resumeSync();
-        [buy1, buy10, buy100, buyAll].forEach((b) => (b.disabled = false));
+        [buy1, buy10, buy100].forEach((b) => (b.disabled = false));
         updateButtons();
         purchasing = false;
       }
@@ -269,15 +259,6 @@ export function initShop({
     buy1.addEventListener('click', () => attemptPurchase(1));
     buy10.addEventListener('click', () => attemptPurchase(10));
     buy100.addEventListener('click', () => attemptPurchase(100));
-    buyAll.addEventListener('click', () => {
-      const qty = calcMaxAffordable(
-        item.baseCost,
-        owned[item.id] || 0,
-        gameState.globalCount,
-        COST_MULTIPLIER,
-      );
-      if (qty > 0) attemptPurchase(qty);
-    });
 
     updateCostDisplay();
     updateButtons();
