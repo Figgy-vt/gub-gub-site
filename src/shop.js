@@ -62,6 +62,14 @@ export function initShop({
   const adminScore = document.getElementById('adminScore');
   const adminUpdate = document.getElementById('adminUpdate');
   const adminDelete = document.getElementById('adminDelete');
+  const shopToggleBtn = document.getElementById('shopToggleBtn');
+  if (shopToggleBtn) {
+    shopToggleBtn.addEventListener('click', () => {
+      const hidden = shopPanel.style.display === 'none';
+      shopPanel.style.display = hidden ? 'block' : 'none';
+      shopToggleBtn.textContent = hidden ? 'Hide Shop' : 'Show Shop';
+    });
+  }
 
   const ADMIN_UIDS = [
     'sGd1ZHR1nvMKKCw9A1O5bwtbFD23',
