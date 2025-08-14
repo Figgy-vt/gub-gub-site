@@ -3,7 +3,7 @@ import * as functions from 'firebase-functions';
 import admin from 'firebase-admin';
 
 import { calculateOfflineGubs } from './offline.js';
-import { RATES, COST_MULTIPLIER, SHOP_ITEMS } from './config.js';
+import { RATES, SHOP_ITEMS, COST_MULTIPLIERS } from './config.js';
 import {
   validateSyncGubs,
   validatePurchaseItem,
@@ -151,7 +151,7 @@ export const purchaseItem = functions.https.onCall(
           SHOP_ITEMS[item],
           ownedBefore,
           quantity,
-          COST_MULTIPLIER,
+          COST_MULTIPLIERS[item],
         );
 
         if (currentScore < cost) {

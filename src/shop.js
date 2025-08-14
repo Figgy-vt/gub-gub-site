@@ -24,7 +24,7 @@ export function initShop({
   sanitizeUsername,
   playBuySound = () => {},
 }) {
-  const COST_MULTIPLIER = shopConfig.costMultiplier;
+  const DEFAULT_COST_MULTIPLIER = shopConfig.costMultiplier;
   const shopItems = shopConfig.items;
   const shopRef = db.ref(`shop_v2/${uid}`);
 
@@ -154,10 +154,11 @@ export function initShop({
     const buy10 = div.querySelector(`#buy-${item.id}-x10`);
     const buy100 = div.querySelector(`#buy-${item.id}-x100`);
     const costSpan = div.querySelector(`#cost-${item.id}`);
+    const itemMultiplier = item.costMultiplier || DEFAULT_COST_MULTIPLIER;
 
     function updateCostDisplay() {
       costSpan.textContent = abbreviateNumber(
-        calcCurrentCost(item.baseCost, owned[item.id] || 0, COST_MULTIPLIER),
+        calcCurrentCost(item.baseCost, owned[item.id] || 0, itemMultiplier),
       );
     }
 
@@ -168,20 +169,20 @@ export function initShop({
       if (purchasing) return;
       const gubs = gameState.globalCount;
       const ownedCount = owned[item.id] || 0;
-      const cost1 = calcCurrentCost(item.baseCost, ownedCount, COST_MULTIPLIER);
+      const cost1 = calcCurrentCost(item.baseCost, ownedCount, itemMultiplier);
       buy1.disabled = gubs < cost1;
       const cost10 = calcTotalCost(
         item.baseCost,
         ownedCount,
         10,
-        COST_MULTIPLIER,
+        itemMultiplier,
       );
       buy10.disabled = gubs < cost10;
       const cost100 = calcTotalCost(
         item.baseCost,
         ownedCount,
         100,
-        COST_MULTIPLIER,
+        itemMultiplier,
       );
       buy100.disabled = gubs < cost100;
     }
@@ -258,8 +259,9 @@ export function initShop({
       if (ownedEl) ownedEl.textContent = owned[item.id];
       const costSpan = document.getElementById(`cost-${item.id}`);
       if (costSpan) {
+        const multiplier = item.costMultiplier || DEFAULT_COST_MULTIPLIER;
         costSpan.textContent = abbreviateNumber(
-          calcCurrentCost(item.baseCost, owned[item.id], COST_MULTIPLIER),
+          calcCurrentCost(item.baseCost, owned[item.id], multiplier),
         );
       }
     });

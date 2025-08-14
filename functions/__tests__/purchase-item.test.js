@@ -87,4 +87,20 @@ describe('purchaseItem', () => {
       ),
     ).rejects.toHaveProperty('code', 'invalid-argument');
   });
+
+  test('applies item-specific cost multipliers', async () => {
+    const uid = 'userSpace';
+    setVal('', {
+      leaderboard_v3: { [uid]: { score: 1000000000 } },
+      shop_v2: { [uid]: { gubspace: 1 } },
+    });
+
+    const result = await purchaseItem(
+      { item: 'gubspace', quantity: 1 },
+      { auth: { uid } },
+    );
+    expect(result).toEqual({ score: 187500000, owned: 2 });
+    expect(rootState.shop_v2[uid].gubspace).toBe(2);
+    expect(rootState.leaderboard_v3[uid].score).toBe(187500000);
+  });
 });

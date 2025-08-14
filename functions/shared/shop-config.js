@@ -31,6 +31,7 @@ export default {
       name: 'Gub Cloning Facility',
       baseCost: 125000000,
       rate: 1250000,
+      costMultiplier: 1.1,
     },
     {
       id: 'gubspace',
@@ -38,6 +39,7 @@ export default {
       baseCost: 625000000,
       rate: 6250000,
       image: 'small_gub_02_Glurp.png',
+      costMultiplier: 1.3,
     },
     {
       id: 'intergalactic',
@@ -45,6 +47,7 @@ export default {
       baseCost: 3125000000,
       rate: 31250000,
       image: 'small_gub_01_gluburple.png',
+      costMultiplier: 1.6,
     },
   ],
 };
