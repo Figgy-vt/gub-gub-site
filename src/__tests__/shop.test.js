@@ -163,5 +163,76 @@ describe('shop purchasing flow', () => {
     expect(buy100.disabled).toBe(true);
     jest.useRealTimers();
   });
+
+  test('keeps higher quantity buttons disabled after purchasing one item', async () => {
+    jest.useFakeTimers();
+    setupDOM();
+    const uid = 'user123';
+    const refs = {};
+    const db = {
+      ref: (path) => {
+        const ref =
+          refs[path] ||
+          (refs[path] = {
+            on: jest.fn(),
+            once: jest
+              .fn()
+              .mockResolvedValue(
+                path === `shop_v2/${uid}`
+                  ? { val: () => ({}) }
+                  : { val: () => null, exists: () => false },
+              ),
+            set: jest.fn(),
+            onDisconnect: () => ({ remove: jest.fn() }),
+            push: jest.fn(() => ({ set: jest.fn() })),
+            orderByChild: jest.fn().mockReturnThis(),
+            equalTo: jest.fn().mockReturnThis(),
+            update: jest.fn(),
+          });
+        return ref;
+      },
+    };
+    const purchaseItemFn = jest.fn(async () => ({ data: { owned: 1, score: 0 } }));
+    const renderCounter = jest.fn();
+    const queueScoreUpdate = jest.fn();
+    const passiveWorker = { postMessage: jest.fn() };
+    const gameState = {
+      globalCount: 100,
+      displayedCount: 100,
+      unsyncedDelta: 0,
+      passiveRatePerSec: 0,
+    };
+    initShop({
+      db,
+      uid,
+      purchaseItemFn,
+      updateUserScoreFn: jest.fn(),
+      deleteUserFn: jest.fn(),
+      gameState,
+      renderCounter,
+      queueScoreUpdate,
+      abbreviateNumber: (n) => String(n),
+      passiveWorker,
+      logError: jest.fn(),
+      sanitizeUsername: (u) => u,
+    });
+    const buy1 = document.getElementById('buy-passiveMaker');
+    const buy10 = document.getElementById('buy-passiveMaker-x10');
+    const buy100 = document.getElementById('buy-passiveMaker-x100');
+
+    jest.advanceTimersByTime(200);
+    expect(buy1.disabled).toBe(false);
+    expect(buy10.disabled).toBe(true);
+    expect(buy100.disabled).toBe(true);
+
+    buy1.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(buy1.disabled).toBe(true);
+    expect(buy10.disabled).toBe(true);
+    expect(buy100.disabled).toBe(true);
+    jest.useRealTimers();
+  });
 });
 
