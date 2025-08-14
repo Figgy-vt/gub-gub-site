@@ -1,3 +1,4 @@
+// functions/index.js
 import * as functions from 'firebase-functions';
 import admin from 'firebase-admin';
 
@@ -36,7 +37,7 @@ function withAuth(handler) {
 }
 
 /**
- * Per-UID mutex in RTDB to serialize server work (prevents syncGubs/purchaseItem collisions).
+ * Simple per-UID mutex using RTDB.
  */
 async function withUserLock(uid, owner, fn) {
   const db = admin.database();
@@ -48,7 +49,6 @@ async function withUserLock(uid, owner, fn) {
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
     const now = Date.now();
     const res = await lockRef.transaction((curr) => {
-      // Acquire if missing or expired
       if (curr && Number(curr.expires) > now) return; // keep existing (no commit)
       return { by: owner, since: now, expires: now + TTL_MS };
     });
@@ -56,8 +56,7 @@ async function withUserLock(uid, owner, fn) {
       try {
         return await fn();
       } finally {
-        // best-effort unlock
-        lockRef.remove().catch(() => {});
+        lockRef.remove().catch(() => {}); // best-effort unlock
       }
     }
     await new Promise((r) => setTimeout(r, BACKOFF_MS));
@@ -83,6 +82,9 @@ export const syncGubs = functions.https.onCall(
 
         let offlineEarned = 0;
         const now = Date.now();
+
+        // Keep this as a transaction (on the user node) but it will not overlap
+        // with purchaseItem thanks to our per-UID lock.
         const tx = await userRef.transaction((curr) => {
           let user = curr;
           if (typeof user !== 'object' || user === null) {
@@ -118,93 +120,78 @@ export const syncGubs = functions.https.onCall(
   }),
 );
 
-/** ---------------- purchaseItem (scoped tx on score only) ---------------- */
+/** -------- purchaseItem (lock + read/verify + multi-path update) -------- */
 export const purchaseItem = functions.https.onCall(
   withAuth(async (uid, data) => {
     return withUserLock(uid, 'purchaseItem', async () => {
-      let item, quantity;
       try {
-        ({ item, quantity } = validatePurchaseItem(data));
+        const { item, quantity } = validatePurchaseItem(data);
         const db = admin.database();
 
         const scoreRef = db.ref(`${LEADERBOARD_PATH}/${uid}/score`);
-        const itemRef  = db.ref(`${SHOP_PATH}/${uid}/${item}`);
+        const userRef = db.ref(`${LEADERBOARD_PATH}/${uid}`);
+        const itemRef = db.ref(`${SHOP_PATH}/${uid}/${item}`);
 
-        // Read owned once to compute the price curve start
-        const ownedBefore = Number((await itemRef.once('value')).val()) || 0;
+        // Read current state
+        const [scoreSnap, ownedSnap] = await Promise.all([
+          scoreRef.once('value'),
+          itemRef.once('value'),
+        ]);
+
+        const currentScore = Number(scoreSnap.val()) || 0;
+        const ownedBefore = Number(ownedSnap.val()) || 0;
+
         const cost = totalCost(SHOP_ITEMS[item], ownedBefore, quantity, COST_MULTIPLIER);
 
         functions.logger.info('purchaseItem.start', {
-          uid, item, quantity, ownedBefore, cost
+          uid, item, quantity, ownedBefore, cost,
         });
 
-        // 1) Deduct score atomically (tx only on the score number)
-        const MAX_TRIES = 8;
-        let newScore = null;
-
-        for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
-          const tx = await scoreRef.transaction((curr) => {
-            const s = Number(curr) || 0;
-            if (s < cost) return;             // abort (insufficient)
-            return s - cost;                  // commit new numeric score
+        if (currentScore < cost) {
+          await logError('server', new Error('Not enough gubs'), {
+            function: 'purchaseItem',
+            uid,
+            data,
+            score: currentScore,
+            cost,
+            owned: ownedBefore,
           });
-
-          if (tx.committed) {
-            newScore = Number(tx.snapshot.val()) || 0;
-            break;
-          }
-
-          // If not committed, check if it's truly affordability vs conflict
-          const have = Number((await scoreRef.once('value')).val()) || 0;
-          if (have < cost) {
-            functions.logger.info('purchaseItem.insufficient', { uid, have, cost });
-            throw new functions.https.HttpsError(
-              'failed-precondition',
-              `Not enough gubs: have ${have}, need ${cost}`
-            );
-          }
-
-          // transient conflict -> brief backoff, then retry
-          await new Promise(r => setTimeout(r, 80));
-        }
-
-        if (newScore === null) {
-          functions.logger.error('purchaseItem.deduct_retries_exhausted', { uid, cost });
           throw new functions.https.HttpsError(
-            'aborted',
-            'Could not complete purchase, please try again.'
+            'failed-precondition',
+            `Not enough gubs: have ${currentScore}, need ${cost}`,
           );
         }
 
-        // 2) Increment owned (tiny tx)
-        const ownedTx = await itemRef.transaction(curr => (Number(curr) || 0) + quantity);
-        if (!ownedTx.committed) {
-          // Refund if owned increment fails for any reason
-          await scoreRef.transaction(curr => (Number(curr) || 0) + cost);
-          functions.logger.error('purchaseItem.owned_increment_failed_refunded', {
-            uid, item, quantity, cost
-          });
-          throw new functions.https.HttpsError(
-            'aborted',
-            'Purchase failed, your gubs were refunded.'
-          );
-        }
+        // Compute new values
+        const now = Date.now();
+        const newScore = currentScore - cost;
+        const newOwned = ownedBefore + quantity;
 
-        const owned = Number(ownedTx.snapshot.val()) || 0;
+        // Single atomic multi-location update (no transactions here)
+        const updates = {};
+        updates[`${LEADERBOARD_PATH}/${uid}/score`] = newScore;
+        updates[`${LEADERBOARD_PATH}/${uid}/lastUpdated`] = now;
+        updates[`${SHOP_PATH}/${uid}/${item}`] = newOwned;
+
+        await db.ref().update(updates);
 
         functions.logger.info('purchaseItem.success', {
-          uid, item, quantity, cost, score: newScore, owned
+          uid, item, quantity, cost, score: newScore, owned: newOwned,
         });
 
-        return { score: newScore, owned };
+        return { score: newScore, owned: newOwned };
       } catch (err) {
         await logError('server', err, { function: 'purchaseItem', uid, data });
-        throw err;
+        // Surface a user-friendly message when possible
+        if (err instanceof functions.https.HttpsError) throw err;
+        throw new functions.https.HttpsError(
+          'aborted',
+          'Could not complete purchase, please try again.',
+        );
       }
     });
-  })
+  }),
 );
-
 
 /** ---------------- admin helpers ---------------- */
 export const updateUserScore = functions.https.onCall(
