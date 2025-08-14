@@ -24,9 +24,10 @@ export function initGameLoop({
   const offlineModal = document.getElementById('offlineModal');
   const offlineMessage = document.getElementById('offlineMessage');
   const offlineClose = document.getElementById('offlineClose');
-  offlineClose.addEventListener('click', () => {
+  const offlineCloseHandler = () => {
     offlineModal.style.display = 'none';
-  });
+  };
+  offlineClose.addEventListener('click', offlineCloseHandler);
 
   initPresenceAndLeaderboard({
     db,
@@ -103,7 +104,7 @@ export function initGameLoop({
     scoreDirty = true;
   }
 
-  setInterval(() => {
+  const scoreInterval = setInterval(() => {
     if (scoreDirty && !syncPaused) {
       scoreDirty = false;
       syncGubsFromServer().catch(() => {});
@@ -111,7 +112,7 @@ export function initGameLoop({
   }, 1000);
 
   // Regularly pull server-side gub totals even if no local actions
-  setInterval(() => {
+  const syncInterval = setInterval(() => {
     if (!syncPaused) {
       syncGubsFromServer().catch(() => {});
     }
@@ -128,6 +129,43 @@ export function initGameLoop({
 
   // Load or initialize user's score, migrating legacy username entries
   const userRef = db.ref(`leaderboard_v3/${uid}/score`);
+  const leaderboardRef = db
+    .ref('leaderboard_v3')
+    .orderByChild('score')
+    .limitToLast(10);
+
+  function userValueListener(s) {
+    const v = s.val();
+    if (typeof v === 'number') {
+      const total = v + unsyncedDelta;
+      globalCount = displayedCount = total;
+      scoreDirty = unsyncedDelta !== 0;
+      renderCounter();
+    }
+  }
+
+  function leaderboardListener(snap) {
+    const list = [];
+    snap.forEach((child) => {
+      const data = child.val() || {};
+      const user = sanitizeUsername(data.username || '');
+      list.push({ user, score: data.score || 0 });
+      allUsers.add(user);
+    });
+    list.sort((a, b) => b.score - a.score);
+    const lbEl = document.getElementById('leaderboard');
+    lbEl.innerHTML = '';
+    const title = document.createElement('strong');
+    title.textContent = 'Leaderboard (Top 10)';
+    lbEl.appendChild(title);
+    lbEl.appendChild(document.createElement('br'));
+    list.forEach((e, i) => {
+      const line = document.createElement('div');
+      line.textContent = `${i + 1}. ${e.user}: ${abbreviateNumber(e.score)}`;
+      lbEl.appendChild(line);
+    });
+  }
+
   userRef.once('value').then(async (snap) => {
     if (snap.exists()) {
       globalCount = snap.val() || 0;
@@ -144,41 +182,10 @@ export function initGameLoop({
     syncGubsFromServer(true).catch(() => {});
 
     // Keep local score in sync with external/manual updates
-    userRef.on('value', (s) => {
-      const v = s.val();
-      if (typeof v === 'number') {
-        const total = v + unsyncedDelta;
-        globalCount = displayedCount = total;
-        scoreDirty = unsyncedDelta !== 0;
-        renderCounter();
-      }
-    });
+    userRef.on('value', userValueListener);
 
     // Real-time leaderboard updates (top 10 only)
-    db.ref('leaderboard_v3')
-      .orderByChild('score')
-      .limitToLast(10)
-      .on('value', (snap) => {
-        const list = [];
-        snap.forEach((child) => {
-          const data = child.val() || {};
-          const user = sanitizeUsername(data.username || '');
-          list.push({ user, score: data.score || 0 });
-          allUsers.add(user);
-        });
-        list.sort((a, b) => b.score - a.score);
-        const lbEl = document.getElementById('leaderboard');
-        lbEl.innerHTML = '';
-        const title = document.createElement('strong');
-        title.textContent = 'Leaderboard (Top 10)';
-        lbEl.appendChild(title);
-        lbEl.appendChild(document.createElement('br'));
-        list.forEach((e, i) => {
-          const line = document.createElement('div');
-          line.textContent = `${i + 1}. ${e.user}: ${abbreviateNumber(e.score)}`;
-          lbEl.appendChild(line);
-        });
-      });
+    leaderboardRef.on('value', leaderboardListener);
   });
 
   initChat({
@@ -232,12 +239,13 @@ export function initGameLoop({
     queueScoreUpdate();
   }
 
-  document.addEventListener('visibilitychange', () => {
+  const visibilityHandler = () => {
     if (!document.hidden) {
       passiveWorker.postMessage({ type: 'reset' });
       syncGubsFromServer(true).catch(() => {});
     }
-  });
+  };
+  document.addEventListener('visibilitychange', visibilityHandler);
 
   // main gub handler
   const mainGub = document.getElementById('main-gub');
@@ -247,7 +255,7 @@ export function initGameLoop({
   }
   let popTimeout;
 
-  mainGub.addEventListener('click', (e) => {
+  const mainGubHandler = (e) => {
     clickMe.style.display = 'none';
     sessionStorage.setItem('gubClicked', 'true');
     const clickGain = gubRateMultiplier;
@@ -268,7 +276,8 @@ export function initGameLoop({
 
     clearTimeout(popTimeout);
     popTimeout = setTimeout(() => mainGub.classList.remove('pop-effect'), 150);
-  });
+  };
+  mainGub.addEventListener('click', mainGubHandler);
 
   const golden = initGoldenGubs({
     getImages: () => imageState.images,
@@ -320,4 +329,16 @@ export function initGameLoop({
     logError,
     sanitizeUsername,
   });
+
+  return function destroy() {
+    clearInterval(scoreInterval);
+    clearInterval(syncInterval);
+    clearTimeout(popTimeout);
+    passiveWorker.terminate();
+    offlineClose.removeEventListener('click', offlineCloseHandler);
+    document.removeEventListener('visibilitychange', visibilityHandler);
+    mainGub.removeEventListener('click', mainGubHandler);
+    userRef.off('value', userValueListener);
+    leaderboardRef.off('value', leaderboardListener);
+  };
 }
