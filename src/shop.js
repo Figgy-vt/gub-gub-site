@@ -121,21 +121,33 @@ export function initShop({
   // Render each shop item
   shopItems.forEach((item) => {
     const div = document.createElement('div');
+    div.className = 'shop-item';
     div.innerHTML = `
-      <strong>${item.name}</strong>${
-        item.caption ? ` <span style="color:red;font-size:0.8em;">${item.caption}</span>` : ''
-      }<br>
-      Cost: <span id="cost-${item.id}"></span> Gubs<br>
-      Rate: ${abbreviateNumber(item.rate)} Gub/s<br>
-      Owned: <span id="owned-${item.id}">0</span><br>
-      <button id="buy-${item.id}">Buy</button>
-      <button id="buy-${item.id}-x10">x10</button>
-      <button id="buy-${item.id}-x100">x100</button>
-      <button id="buy-${item.id}-all">All</button>
-      <div id="error-${item.id}" style="color:red;display:none;font-size:0.8em;"></div>
-      <hr style="border-color:#444">
+      ${
+        item.image
+          ? `<img src="${item.image}" alt="${item.name}" class="shop-item-image">`
+          : ''
+      }
+      <div class="shop-item-details">
+        <strong>${item.name}</strong>${
+          item.caption
+            ? ` <span style="color:red;font-size:0.8em;">${item.caption}</span>`
+            : ''
+        }<br>
+        Cost: <span id="cost-${item.id}"></span> Gubs<br>
+        Rate: ${abbreviateNumber(item.rate)} Gub/s<br>
+        Owned: <span id="owned-${item.id}">0</span><br>
+        <button id="buy-${item.id}">Buy</button>
+        <button id="buy-${item.id}-x10">x10</button>
+        <button id="buy-${item.id}-x100">x100</button>
+        <button id="buy-${item.id}-all">All</button>
+        <div id="error-${item.id}" style="color:red;display:none;font-size:0.8em;"></div>
+      </div>
     `;
     shopContainer.appendChild(div);
+    const hr = document.createElement('hr');
+    hr.style.borderColor = '#444';
+    shopContainer.appendChild(hr);
 
     const buy1 = div.querySelector(`#buy-${item.id}`);
     const buy10 = div.querySelector(`#buy-${item.id}-x10`);

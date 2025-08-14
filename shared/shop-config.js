@@ -37,12 +37,14 @@ export default {
       name: 'Gub Space Program',
       baseCost: 625000000,
       rate: 6250000,
+      image: 'small_gub_02_Glurp.png',
     },
     {
       id: 'intergalactic',
       name: 'Intergalactic Gub',
       baseCost: 3125000000,
       rate: 31250000,
+      image: 'small_gub_01_gluburple.png',
     },
   ],
 };

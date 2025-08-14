@@ -231,6 +231,19 @@ body {
   margin-bottom: 0.5em;
 }
 
+#shopItemsContainer .shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+#shopItemsContainer .shop-item img {
+  width: 32px;
+  height: 32px;
+}
+
 #adminPanel {
   position: absolute;
   top: 90px;
