@@ -232,9 +232,8 @@ export function initShop({
         });
       } finally {
         if (typeof resumeSync === 'function') resumeSync();
-        [buy1, buy10, buy100].forEach((b) => (b.disabled = false));
-        updateButtons();
         purchasing = false;
+        updateButtons();
       }
     }
 
