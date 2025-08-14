@@ -79,8 +79,8 @@ export function initAudio() {
     osc.frequency.value = 220;
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-    // Reduce volume so the sound is less jarring
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    // Further reduce volume so the purchase sound is softer
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(
       0.001,
       audioCtx.currentTime + 0.1,
