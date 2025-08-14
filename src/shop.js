@@ -156,6 +156,7 @@ export function initShop({
     const buyAll = div.querySelector(`#buy-${item.id}-all`);
     const costSpan = div.querySelector(`#cost-${item.id}`);
     const errorEl = div.querySelector(`#error-${item.id}`);
+    let errorTimeoutId;
 
     function updateCostDisplay() {
       costSpan.textContent = abbreviateNumber(
@@ -199,6 +200,7 @@ export function initShop({
         if (errorEl) {
           errorEl.textContent = '';
           errorEl.style.display = 'none';
+          clearTimeout(errorTimeoutId);
         }
       } catch (err) {
         console.error('purchaseItem failed', err);
@@ -209,6 +211,11 @@ export function initShop({
           if (errorEl) {
             errorEl.textContent = "Can't afford it";
             errorEl.style.display = 'block';
+            clearTimeout(errorTimeoutId);
+            errorTimeoutId = setTimeout(() => {
+              errorEl.textContent = '';
+              errorEl.style.display = 'none';
+            }, 60000);
           }
         } else {
           window.alert('Purchase failed');
