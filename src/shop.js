@@ -10,7 +10,11 @@ export function initShop({
   purchaseItemFn,
   updateUserScoreFn,
   deleteUserFn,
-  syncGubsFromServer, // kept in signature but no longer used
+
+  // NEW: passed from gameLoop so purchases don't race the sync loop
+  pauseSync,
+  resumeSync,
+
   gameState,
   renderCounter,
   queueScoreUpdate,
@@ -22,6 +26,7 @@ export function initShop({
   const COST_MULTIPLIER = shopConfig.costMultiplier;
   const shopItems = shopConfig.items;
   const shopRef = db.ref(`shop_v2/${uid}`);
+
   const owned = {
     passiveMaker: 0,
     guberator: 0,
@@ -43,10 +48,7 @@ export function initShop({
       0,
     );
     gameState.passiveRatePerSec = perSecondTotal;
-    passiveWorker.postMessage({
-      type: 'rate',
-      value: gameState.passiveRatePerSec,
-    });
+    passiveWorker.postMessage({ type: 'rate', value: gameState.passiveRatePerSec });
     renderCounter();
     queueScoreUpdate();
   }
@@ -114,20 +116,18 @@ export function initShop({
   shopItems.forEach((item) => {
     const div = document.createElement('div');
     div.innerHTML = `
-    <strong>${item.name}</strong>${
-      item.caption
-        ? ` <span style="color:red;font-size:0.8em;">${item.caption}</span>`
-        : ''
-    }<br>
-    Cost: <span id="cost-${item.id}"></span> Gubs<br>
-    Rate: ${abbreviateNumber(item.rate)} Gub/s<br>
-    Owned: <span id="owned-${item.id}">0</span><br>
-    <button id="buy-${item.id}">Buy</button>
-    <button id="buy-${item.id}-x10">x10</button>
-    <button id="buy-${item.id}-x100">x100</button>
-    <button id="buy-${item.id}-all">All</button>
-    <hr style="border-color:#444">
-  `;
+      <strong>${item.name}</strong>${
+        item.caption ? ` <span style="color:red;font-size:0.8em;">${item.caption}</span>` : ''
+      }<br>
+      Cost: <span id="cost-${item.id}"></span> Gubs<br>
+      Rate: ${abbreviateNumber(item.rate)} Gub/s<br>
+      Owned: <span id="owned-${item.id}">0</span><br>
+      <button id="buy-${item.id}">Buy</button>
+      <button id="buy-${item.id}-x10">x10</button>
+      <button id="buy-${item.id}-x100">x100</button>
+      <button id="buy-${item.id}-all">All</button>
+      <hr style="border-color:#444">
+    `;
     shopContainer.appendChild(div);
 
     const buy1 = div.querySelector(`#buy-${item.id}`);
@@ -142,18 +142,26 @@ export function initShop({
       );
     }
 
-    // ---- EDITED: removed pre-purchase sync to avoid collision with server txn/lock ----
+    // prevent double-submits per-item
+    let purchasing = false;
+
     async function attemptPurchase(quantity) {
-      if (gameState.syncPaused) return; // prevent overlap
-      gameState.syncPaused = true;
+      if (purchasing) return;
+      purchasing = true;
+
+      // disable buttons for this item while processing
+      [buy1, buy10, buy100, buyAll].forEach((b) => (b.disabled = true));
+
+      // pause the background sync loop to avoid racing the server txn
+      if (typeof pauseSync === 'function') pauseSync();
 
       try {
         const res = await purchaseItemFn({ item: item.id, quantity });
+
         if (res.data) {
           if (typeof res.data.owned === 'number') {
             owned[item.id] = res.data.owned;
-            document.getElementById(`owned-${item.id}`).textContent =
-              owned[item.id];
+            document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
           }
           if (typeof res.data.score === 'number') {
             gameState.globalCount = gameState.displayedCount = res.data.score;
@@ -161,6 +169,7 @@ export function initShop({
             renderCounter();
           }
         }
+
         updatePassiveIncome();
         updateCostDisplay();
       } catch (err) {
@@ -170,10 +179,11 @@ export function initShop({
           stack: err.stack,
           context: 'attemptPurchase',
         });
-        // Optional UX:
-        // alert(`Purchase failed: ${err.message}`);
+        // You could show a toast/UI message here if you want
       } finally {
-        gameState.syncPaused = false;
+        if (typeof resumeSync === 'function') resumeSync();
+        [buy1, buy10, buy100, buyAll].forEach((b) => (b.disabled = false));
+        purchasing = false;
       }
     }
 
@@ -189,9 +199,11 @@ export function initShop({
       );
       if (qty > 0) attemptPurchase(qty);
     });
+
     updateCostDisplay();
   });
 
+  // Initial load of owned counts
   shopRef.once('value').then((snapshot) => {
     const stored = snapshot.val() || {};
     shopItems.forEach((item) => {
