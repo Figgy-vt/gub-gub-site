@@ -18,11 +18,6 @@ admin.initializeApp({
   databaseURL: 'https://gub-leaderboard-default-rtdb.firebaseio.com',
 });
 
-functions.logger.info('admin.init', {
-  dbURL: admin.app().options.databaseURL,
-  projectId: process.env.GCLOUD_PROJECT,
-});
-
 async function isAdmin(uid) {
   const snap = await admin.database().ref(`${ADMINS_PATH}/${uid}`).once('value');
   return snap.val() === true;
@@ -37,18 +32,20 @@ function withAuth(handler) {
 }
 
 /**
- * Simple per-UID mutex using RTDB.
+ * Per-UID mutex using RTDB to serialize server work (prevents sync/purchase overlap).
+ * Tuned for snappier releases.
  */
 async function withUserLock(uid, owner, fn) {
   const db = admin.database();
   const lockRef = db.ref(`locks/${uid}`);
-  const TTL_MS = 8000;
-  const MAX_TRIES = 80;
-  const BACKOFF_MS = 75;
+  const TTL_MS = 3000;     // was 8000
+  const MAX_TRIES = 20;    // was 80
+  const BACKOFF_MS = 60;   // was 75
 
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
     const now = Date.now();
     const res = await lockRef.transaction((curr) => {
+      // Acquire if missing or expired
       if (curr && Number(curr.expires) > now) return; // keep existing (no commit)
       return { by: owner, since: now, expires: now + TTL_MS };
     });
@@ -56,10 +53,12 @@ async function withUserLock(uid, owner, fn) {
       try {
         return await fn();
       } finally {
-        lockRef.remove().catch(() => {}); // best-effort unlock
+        // best-effort unlock
+        lockRef.remove().catch(() => {});
       }
     }
-    await new Promise((r) => setTimeout(r, BACKOFF_MS));
+    // small backoff (with tiny jitter) before retrying
+    await new Promise((r) => setTimeout(r, BACKOFF_MS + Math.floor(Math.random() * 25)));
   }
   throw new functions.https.HttpsError('aborted', 'Busy, try again.');
 }
@@ -83,8 +82,7 @@ export const syncGubs = functions.https.onCall(
         let offlineEarned = 0;
         const now = Date.now();
 
-        // Keep this as a transaction (on the user node) but it will not overlap
-        // with purchaseItem thanks to our per-UID lock.
+        // Transaction on the user node; the per-UID lock prevents overlap with purchaseItem.
         const tx = await userRef.transaction((curr) => {
           let user = curr;
           if (typeof user !== 'object' || user === null) {
@@ -143,10 +141,6 @@ export const purchaseItem = functions.https.onCall(
 
         const cost = totalCost(SHOP_ITEMS[item], ownedBefore, quantity, COST_MULTIPLIER);
 
-        functions.logger.info('purchaseItem.start', {
-          uid, item, quantity, ownedBefore, cost,
-        });
-
         if (currentScore < cost) {
           await logError('server', new Error('Not enough gubs'), {
             function: 'purchaseItem',
@@ -167,7 +161,7 @@ export const purchaseItem = functions.https.onCall(
         const newScore = currentScore - cost;
         const newOwned = ownedBefore + quantity;
 
-        // Single atomic multi-location update (no transactions here)
+        // Single atomic multi-location update
         const updates = {};
         updates[`${LEADERBOARD_PATH}/${uid}/score`] = newScore;
         updates[`${LEADERBOARD_PATH}/${uid}/lastUpdated`] = now;
@@ -182,7 +176,6 @@ export const purchaseItem = functions.https.onCall(
         return { score: newScore, owned: newOwned };
       } catch (err) {
         await logError('server', err, { function: 'purchaseItem', uid, data });
-        // Surface a user-friendly message when possible
         if (err instanceof functions.https.HttpsError) throw err;
         throw new functions.https.HttpsError(
           'aborted',
