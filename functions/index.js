@@ -13,6 +13,7 @@ import {
 import { totalCost } from './shared/cost.js';
 import { logError, logAction } from './logging.js';
 import { ADMINS_PATH, LEADERBOARD_PATH, SHOP_PATH } from './paths.js';
+const LOCKS_BASE = '_sys/runtime/locks_v1';
 
 admin.initializeApp({
   databaseURL: 'https://gub-leaderboard-default-rtdb.firebaseio.com',
@@ -32,23 +33,23 @@ function withAuth(handler) {
 }
 
 /**
- * Per-UID mutex using RTDB to serialize server work (prevents sync/purchase overlap).
- * Tuned for snappier releases.
+ * Simple per-UID mutex using RTDB, stored under _sys/runtime/locks_v1/<uid>
+ * so it stays out of your way in the console UI.
  */
-// replaces the existing withUserLock(...)
 async function withUserLock(uid, owner, fn) {
   const db = admin.database();
-  // 👇 move locks under a hidden system path
-  const lockRef = db.ref(`/_sys/locks/${uid}`);
+  const lockRef = db.ref(`${LOCKS_BASE}/${uid}`);
   const TTL_MS = 8000;
   const MAX_TRIES = 80;
+
+  // If you want jitter back, swap this for a jittery delay
   const BACKOFF_MS = 75;
 
   for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
     const now = Date.now();
     const res = await lockRef.transaction((curr) => {
-      // Acquire if missing or not expired
-      if (curr && Number(curr.expires) > now) return; // keep existing => no commit
+      // Acquire if missing or expired
+      if (curr && Number(curr.expires) > now) return; // keep existing (no commit)
       return { by: owner, since: now, expires: now + TTL_MS };
     });
 
@@ -61,6 +62,7 @@ async function withUserLock(uid, owner, fn) {
       }
     }
 
+    // Small backoff before retrying
     await new Promise((r) => setTimeout(r, BACKOFF_MS));
   }
 
