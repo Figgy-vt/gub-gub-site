@@ -46,15 +46,15 @@ describe('syncGubs', () => {
     ).rejects.toHaveProperty('code', 'invalid-argument');
   });
 
-  test('clamps large delta', async () => {
+  test('syncs large delta without clamping', async () => {
     const uid = 'user3';
     setVal('', {
       leaderboard_v3: { [uid]: { score: 0, lastUpdated: 0 } },
       shop_v2: {},
     });
     const res = await syncGubs({ delta: 1e7 }, { auth: { uid } });
-    expect(res).toEqual({ score: 1e6, offlineEarned: 0 });
-    expect(rootState.leaderboard_v3[uid].score).toBe(1e6);
+    expect(res).toEqual({ score: 1e7, offlineEarned: 0 });
+    expect(rootState.leaderboard_v3[uid].score).toBe(1e7);
   });
 
   test('handles legacy numeric leaderboard entries', async () => {
