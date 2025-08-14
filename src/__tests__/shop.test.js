@@ -212,21 +212,22 @@ describe('shop purchasing flow', () => {
     });
     const buy1 = document.getElementById('buy-passiveMaker');
     const buy10 = document.getElementById('buy-passiveMaker-x10');
-    const buyAll = document.getElementById('buy-passiveMaker-all');
+    const buy100 = document.getElementById('buy-passiveMaker-x100');
     jest.advanceTimersByTime(200);
     expect(buy1.disabled).toBe(true);
     expect(buy10.disabled).toBe(true);
-    expect(buyAll.disabled).toBe(true);
+    expect(buy100.disabled).toBe(true);
 
     gameState.globalCount = 150;
     jest.advanceTimersByTime(200);
     expect(buy1.disabled).toBe(false);
     expect(buy10.disabled).toBe(true);
-    expect(buyAll.disabled).toBe(false);
+    expect(buy100.disabled).toBe(true);
 
     gameState.globalCount = 3000;
     jest.advanceTimersByTime(200);
     expect(buy10.disabled).toBe(false);
+    expect(buy100.disabled).toBe(true);
     jest.useRealTimers();
   });
 });
