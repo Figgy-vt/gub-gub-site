@@ -129,6 +129,7 @@ export function initShop({
       <button id="buy-${item.id}-x10">x10</button>
       <button id="buy-${item.id}-x100">x100</button>
       <button id="buy-${item.id}-all">All</button>
+      <div id="error-${item.id}" style="color:red;display:none;font-size:0.8em;"></div>
       <hr style="border-color:#444">
     `;
     shopContainer.appendChild(div);
@@ -138,6 +139,7 @@ export function initShop({
     const buy100 = div.querySelector(`#buy-${item.id}-x100`);
     const buyAll = div.querySelector(`#buy-${item.id}-all`);
     const costSpan = div.querySelector(`#cost-${item.id}`);
+    const errorEl = div.querySelector(`#error-${item.id}`);
 
     function updateCostDisplay() {
       costSpan.textContent = abbreviateNumber(
@@ -177,8 +179,23 @@ export function initShop({
 
         updatePassiveIncome();
         updateCostDisplay();
+        if (errorEl) {
+          errorEl.textContent = '';
+          errorEl.style.display = 'none';
+        }
       } catch (err) {
         console.error('purchaseItem failed', err);
+        if (
+          err?.code === 'failed-precondition' ||
+          /not enough gubs/i.test(err.message)
+        ) {
+          if (errorEl) {
+            errorEl.textContent = "Can't afford it";
+            errorEl.style.display = 'block';
+          }
+        } else {
+          window.alert('Purchase failed');
+        }
         logError(db, {
           message: err.message,
           stack: err.stack,
