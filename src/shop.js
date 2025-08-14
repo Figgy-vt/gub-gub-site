@@ -11,7 +11,7 @@ export function initShop({
   updateUserScoreFn,
   deleteUserFn,
 
-  // NEW: passed from gameLoop so purchases don't race the sync loop
+  // Provided by gameLoop to avoid racing the sync loop during purchases
   pauseSync,
   resumeSync,
 
@@ -27,6 +27,7 @@ export function initShop({
   const shopItems = shopConfig.items;
   const shopRef = db.ref(`shop_v2/${uid}`);
 
+  // local cache of owned counts (populated from DB on load)
   const owned = {
     passiveMaker: 0,
     guberator: 0,
@@ -44,7 +45,7 @@ export function initShop({
 
   function updatePassiveIncome() {
     const perSecondTotal = shopItems.reduce(
-      (sum, item) => sum + owned[item.id] * item.rate,
+      (sum, item) => sum + (owned[item.id] || 0) * item.rate,
       0,
     );
     gameState.passiveRatePerSec = perSecondTotal;
@@ -67,6 +68,7 @@ export function initShop({
     'sGd1ZHR1nvMKKCw9A1O5bwtbFD23',
     'YHtvs4JyAtS3SUtNAUJuPMm3ac22',
   ];
+
   db.ref('admins/' + uid)
     .once('value')
     .then((snap) => {
@@ -113,6 +115,7 @@ export function initShop({
       shopPanel.style.display === 'block' ? 'none' : 'block';
   });
 
+  // Render each shop item
   shopItems.forEach((item) => {
     const div = document.createElement('div');
     div.innerHTML = `
@@ -138,21 +141,21 @@ export function initShop({
 
     function updateCostDisplay() {
       costSpan.textContent = abbreviateNumber(
-        calcCurrentCost(item.baseCost, owned[item.id], COST_MULTIPLIER),
+        calcCurrentCost(item.baseCost, owned[item.id] || 0, COST_MULTIPLIER),
       );
     }
 
-    // prevent double-submits per-item
+    // Prevent double-submits per item
     let purchasing = false;
 
     async function attemptPurchase(quantity) {
       if (purchasing) return;
       purchasing = true;
 
-      // disable buttons for this item while processing
+      // disable these buttons while in-flight
       [buy1, buy10, buy100, buyAll].forEach((b) => (b.disabled = true));
 
-      // pause the background sync loop to avoid racing the server txn
+      // pause background sync loop so we don't race the server op
       if (typeof pauseSync === 'function') pauseSync();
 
       try {
@@ -161,9 +164,11 @@ export function initShop({
         if (res.data) {
           if (typeof res.data.owned === 'number') {
             owned[item.id] = res.data.owned;
-            document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
+            const ownedEl = document.getElementById(`owned-${item.id}`);
+            if (ownedEl) ownedEl.textContent = owned[item.id];
           }
           if (typeof res.data.score === 'number') {
+            // Trust server score; clear local delta and refresh UI
             gameState.globalCount = gameState.displayedCount = res.data.score;
             gameState.unsyncedDelta = 0;
             renderCounter();
@@ -179,7 +184,6 @@ export function initShop({
           stack: err.stack,
           context: 'attemptPurchase',
         });
-        // You could show a toast/UI message here if you want
       } finally {
         if (typeof resumeSync === 'function') resumeSync();
         [buy1, buy10, buy100, buyAll].forEach((b) => (b.disabled = false));
@@ -193,7 +197,7 @@ export function initShop({
     buyAll.addEventListener('click', () => {
       const qty = calcMaxAffordable(
         item.baseCost,
-        owned[item.id],
+        owned[item.id] || 0,
         gameState.globalCount,
         COST_MULTIPLIER,
       );
@@ -208,7 +212,8 @@ export function initShop({
     const stored = snapshot.val() || {};
     shopItems.forEach((item) => {
       owned[item.id] = stored[item.id] || 0;
-      document.getElementById(`owned-${item.id}`).textContent = owned[item.id];
+      const ownedEl = document.getElementById(`owned-${item.id}`);
+      if (ownedEl) ownedEl.textContent = owned[item.id];
       const costSpan = document.getElementById(`cost-${item.id}`);
       if (costSpan) {
         costSpan.textContent = abbreviateNumber(
