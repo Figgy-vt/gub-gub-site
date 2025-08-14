@@ -290,7 +290,7 @@ export function initGameLoop({
     get displayedCount() { return displayedCount; },
     set displayedCount(v) { displayedCount = v; },
 
-    get unsyncedDelta() { return unsyncedDelta; };
+    get unsyncedDelta() { return unsyncedDelta; },
     set unsyncedDelta(v) { unsyncedDelta = v; },
 
     get passiveRatePerSec() { return passiveRatePerSec; },
