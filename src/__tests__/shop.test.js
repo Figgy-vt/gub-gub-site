@@ -75,6 +75,7 @@ describe('shop purchasing flow', () => {
       sanitizeUsername: (u) => u,
     });
     const buyBtn = document.getElementById('buy-passiveMaker');
+    expect(buyBtn.textContent).toBe('x1');
     buyBtn.click();
     await Promise.resolve();
     await Promise.resolve();
