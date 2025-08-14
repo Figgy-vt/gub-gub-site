@@ -5,7 +5,7 @@ export function sanitizeUsername(name) {
     .slice(0, 20);
 }
 
-export function initUsername(onReady) {
+export function initUsername(db, onReady) {
   let username = sanitizeUsername(localStorage.getItem('gubUser'));
 
   function showUsernamePrompt() {
@@ -13,9 +13,23 @@ export function initUsername(onReady) {
     const input = document.getElementById('usernameInput');
     const submit = document.getElementById('usernameSubmit');
     overlay.style.display = 'flex';
-    function accept() {
+    async function accept() {
       const u = sanitizeUsername(input.value);
       if (u.length >= 3) {
+        try {
+          const snap = await db
+            .ref('leaderboard_v3')
+            .orderByChild('username')
+            .equalTo(u)
+            .once('value');
+          if (snap.exists()) {
+            alert('Username already taken');
+            return;
+          }
+        } catch (err) {
+          console.error('Username check failed', err);
+          return;
+        }
         username = u;
         localStorage.setItem('gubUser', username);
         overlay.style.display = 'none';
