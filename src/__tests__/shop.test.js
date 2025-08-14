@@ -160,5 +160,74 @@ describe('shop purchasing flow', () => {
     expect(errorEl.style.display).toBe('none');
     expect(errorEl.textContent).toBe('');
   });
+
+  test('disables buy buttons when gubs are insufficient', () => {
+    jest.useFakeTimers();
+    setupDOM();
+    const uid = 'user123';
+    const refs = {};
+    const db = {
+      ref: (path) => {
+        const ref =
+          refs[path] ||
+          (refs[path] = {
+            on: jest.fn(),
+            once: jest
+              .fn()
+              .mockResolvedValue(
+                path === `shop_v2/${uid}`
+                  ? { val: () => ({}) }
+                  : { val: () => null, exists: () => false },
+              ),
+            set: jest.fn(),
+            onDisconnect: () => ({ remove: jest.fn() }),
+            push: jest.fn(() => ({ set: jest.fn() })),
+            orderByChild: jest.fn().mockReturnThis(),
+            equalTo: jest.fn().mockReturnThis(),
+            update: jest.fn(),
+          });
+        return ref;
+      },
+    };
+    const passiveWorker = { postMessage: jest.fn() };
+    const gameState = {
+      globalCount: 50,
+      displayedCount: 50,
+      unsyncedDelta: 0,
+      passiveRatePerSec: 0,
+    };
+    initShop({
+      db,
+      uid,
+      purchaseItemFn: jest.fn(),
+      updateUserScoreFn: jest.fn(),
+      deleteUserFn: jest.fn(),
+      gameState,
+      renderCounter: jest.fn(),
+      queueScoreUpdate: jest.fn(),
+      abbreviateNumber: (n) => String(n),
+      passiveWorker,
+      logError: jest.fn(),
+      sanitizeUsername: (u) => u,
+    });
+    const buy1 = document.getElementById('buy-passiveMaker');
+    const buy10 = document.getElementById('buy-passiveMaker-x10');
+    const buyAll = document.getElementById('buy-passiveMaker-all');
+    jest.advanceTimersByTime(200);
+    expect(buy1.disabled).toBe(true);
+    expect(buy10.disabled).toBe(true);
+    expect(buyAll.disabled).toBe(true);
+
+    gameState.globalCount = 150;
+    jest.advanceTimersByTime(200);
+    expect(buy1.disabled).toBe(false);
+    expect(buy10.disabled).toBe(true);
+    expect(buyAll.disabled).toBe(false);
+
+    gameState.globalCount = 3000;
+    jest.advanceTimersByTime(200);
+    expect(buy10.disabled).toBe(false);
+    jest.useRealTimers();
+  });
 });
 
