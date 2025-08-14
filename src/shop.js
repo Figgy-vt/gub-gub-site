@@ -2,6 +2,7 @@ import {
   shopConfig,
   currentCost as calcCurrentCost,
   maxAffordable as calcMaxAffordable,
+  totalCost as calcTotalCost,
 } from '../shared/index.js';
 
 export function initShop({
@@ -27,6 +28,8 @@ export function initShop({
   const COST_MULTIPLIER = shopConfig.costMultiplier;
   const shopItems = shopConfig.items;
   const shopRef = db.ref(`shop_v2/${uid}`);
+
+  const updateFns = [];
 
   // local cache of owned counts (populated from DB on load)
   const owned = {
@@ -167,6 +170,36 @@ export function initShop({
     // Prevent double-submits per item
     let purchasing = false;
 
+    function updateButtons() {
+      if (purchasing) return;
+      const gubs = gameState.globalCount;
+      const ownedCount = owned[item.id] || 0;
+      const cost1 = calcCurrentCost(item.baseCost, ownedCount, COST_MULTIPLIER);
+      buy1.disabled = gubs < cost1;
+      const cost10 = calcTotalCost(
+        item.baseCost,
+        ownedCount,
+        10,
+        COST_MULTIPLIER,
+      );
+      buy10.disabled = gubs < cost10;
+      const cost100 = calcTotalCost(
+        item.baseCost,
+        ownedCount,
+        100,
+        COST_MULTIPLIER,
+      );
+      buy100.disabled = gubs < cost100;
+      const maxAll = calcMaxAffordable(
+        item.baseCost,
+        ownedCount,
+        gubs,
+        COST_MULTIPLIER,
+      );
+      buyAll.disabled = maxAll <= 0;
+    }
+    updateFns.push(updateButtons);
+
     async function attemptPurchase(quantity) {
       if (purchasing) return;
       purchasing = true;
@@ -201,8 +234,8 @@ export function initShop({
           errorEl.textContent = '';
           errorEl.style.display = 'none';
           clearTimeout(errorTimeoutId);
-        }
-      } catch (err) {
+      }
+    } catch (err) {
         console.error('purchaseItem failed', err);
         if (
           err?.code === 'failed-precondition' ||
@@ -228,6 +261,7 @@ export function initShop({
       } finally {
         if (typeof resumeSync === 'function') resumeSync();
         [buy1, buy10, buy100, buyAll].forEach((b) => (b.disabled = false));
+        updateButtons();
         purchasing = false;
       }
     }
@@ -246,7 +280,12 @@ export function initShop({
     });
 
     updateCostDisplay();
+    updateButtons();
   });
+
+  setInterval(() => {
+    updateFns.forEach((fn) => fn());
+  }, 100);
 
   // Initial load of owned counts
   shopRef.once('value').then((snapshot) => {
@@ -263,5 +302,6 @@ export function initShop({
       }
     });
     updatePassiveIncome();
+    updateFns.forEach((fn) => fn());
   });
 }
