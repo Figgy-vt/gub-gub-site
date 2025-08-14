@@ -35,7 +35,7 @@ body {
 
 #btnRow {
   position: absolute;
-  top: 50px;
+  top: 10px;
   left: 10px;
   display: flex;
   gap: 5px;
@@ -55,7 +55,7 @@ body {
 
 #perfMenu {
   position: absolute;
-  top: 90px;
+  top: 50px;
   left: 10px;
   z-index: 9998;
   background: #222;
@@ -197,13 +197,13 @@ body {
     right: 10px !important; /* keep it flush to the right edge */
   }
   #golden-counter {
-    top: 100px !important; /* push it down under the banner and btnRow */
+    top: 60px !important; /* push it down under the btnRow */
   }
 }
 
 #topRight {
   position: absolute;
-  top: 80px;
+  top: 40px;
   right: 10px;
   display: flex;
   gap: 0;
@@ -226,7 +226,7 @@ body {
 
 #shopPanel {
   position: absolute;
-  top: 130px;
+  top: 90px;
   right: 10px;
   display: none;
   background: #222;
@@ -246,7 +246,7 @@ body {
 
 #adminPanel {
   position: absolute;
-  top: 130px;
+  top: 90px;
   right: 10px;
   display: none;
   background: #222;
@@ -323,7 +323,7 @@ body {
 }
 #golden-counter {
   position: absolute;
-  top: 50px;
+  top: 10px;
   right: 10px;
   z-index: 10000;
   color: white;
