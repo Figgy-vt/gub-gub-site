@@ -217,11 +217,11 @@ export function initShop({
         }<br>
         Cost: <span id="cost-${item.id}"></span> Gubs<br>
         Rate: ${abbreviateNumber(item.rate)} Gub/s<br>
-        Owned: <span id="owned-${item.id}">0</span><br>
         <button id="buy-${item.id}">x1</button>
         <button id="buy-${item.id}-x10">x10</button>
         <button id="buy-${item.id}-x100">x100</button>
       </div>
+      <span id="owned-${item.id}" class="owned-count">0</span>
     `;
     shopContainer.appendChild(div);
     const hr = document.createElement('hr');
