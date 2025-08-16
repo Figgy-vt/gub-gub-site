@@ -142,13 +142,17 @@ export function initShop({
     div.innerHTML = `
       <img src="${upg.image}" alt="${upg.name}">
       <div class="upgrade-tooltip">
-        <strong>${upg.name}</strong><br>
+        <strong>${upg.name} <span class="upgrade-cost">${abbreviateNumber(
+          upg.cost,
+        )} Gubs</span></strong><br>
         ${upg.modifier}<br>
-        Cost: ${abbreviateNumber(upg.cost)} Gubs<br>
         <span class="desc">${upg.description}</span>
       </div>
     `;
     upgradesContainer.appendChild(div);
+
+    const costSpan = div.querySelector('.upgrade-cost');
+    if (costSpan) costSpan.style.color = 'red';
 
     async function attemptPurchase() {
       if (div.classList.contains('disabled')) return;
@@ -195,6 +199,7 @@ export function initShop({
       const affordable =
         unlocked && gameState.globalCount >= upg.cost && !ownedUpgrades[upg.id];
       div.classList.toggle('disabled', !affordable);
+      if (costSpan) costSpan.style.color = affordable ? 'green' : 'red';
     }
 
     updateFns.push(updateState);

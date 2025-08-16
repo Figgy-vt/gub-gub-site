@@ -326,6 +326,11 @@ body {
   color: #ccc;
 }
 
+.upgrade-tooltip .upgrade-cost {
+  font-size: 0.8em;
+  margin-left: 4px;
+}
+
 #shopItemsContainer .shop-item {
   display: flex;
   align-items: center;
