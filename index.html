@@ -119,20 +119,23 @@
     <div id="bottom-ui">
       <div id="leaderboard"><strong>Leaderboard</strong><br />Loading…</div>
       <div id="chat-row">
-        <div id="chat">
-          <div id="chatResizeHandle"></div>
-          <div id="messages"></div>
-          <div id="mentionSuggestions"></div>
-          <form id="chatForm">
-            <input
-              id="chatInput"
-              type="text"
-              placeholder="Type a message…"
-              autocomplete="off"
-              maxlength="200"
-            />
-            <button type="submit">Send</button>
-          </form>
+        <div id="chats">
+          <div id="chat">
+            <div id="chatResizeHandle"></div>
+            <div id="messages"></div>
+            <div id="mentionSuggestions"></div>
+            <form id="chatForm">
+              <input
+                id="chatInput"
+                type="text"
+                placeholder="Type a message…"
+                autocomplete="off"
+                maxlength="200"
+              />
+              <button type="submit">Send</button>
+            </form>
+          </div>
+          <div id="twitchChat"></div>
         </div>
         <div id="online-users">Online: …</div>
       </div>
