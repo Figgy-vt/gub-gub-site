@@ -5,7 +5,13 @@ export default {
     { id: 'guberator', name: 'Guberator', baseCost: 500, rate: 5 },
     { id: 'gubmill', name: 'Gubmill', baseCost: 2000, rate: 20 },
     { id: 'gubsolar', name: 'Solar Gub Panels', baseCost: 10000, rate: 100 },
-    { id: 'gubfactory', name: 'Gubactory', baseCost: 50000, rate: 500 },
+    {
+      id: 'gubfactory',
+      name: 'Gubactory',
+      baseCost: 50000,
+      rate: 500,
+      image: 'small_gub_03_Gorpa.png',
+    },
     { id: 'gubhydro', name: 'Hydro Gub Plant', baseCost: 250000, rate: 2500 },
     {
       id: 'gubnuclear',
