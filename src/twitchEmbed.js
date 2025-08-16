@@ -3,6 +3,41 @@ export function initTwitchEmbed() {
   const twitchBox = document.getElementById('twitchPlayer');
   twitchBox.style.display = 'block';
   twitchBox.style.visibility = 'hidden';
+
+  // restore saved position or default to top-right
+  const savedTop = localStorage.getItem('twitchPlayerTop');
+  const savedLeft = localStorage.getItem('twitchPlayerLeft');
+  twitchBox.style.top = savedTop || '0px';
+  twitchBox.style.left =
+    savedLeft || `${window.innerWidth - twitchBox.offsetWidth - 10}px`;
+
+  // make the player draggable and persist position
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  let dragging = false;
+
+  twitchBox.addEventListener('mousedown', (e) => {
+    dragging = true;
+    dragOffsetX = e.clientX - twitchBox.offsetLeft;
+    dragOffsetY = e.clientY - twitchBox.offsetTop;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const left = e.clientX - dragOffsetX;
+    const top = e.clientY - dragOffsetY;
+    twitchBox.style.left = `${left}px`;
+    twitchBox.style.top = `${top}px`;
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    localStorage.setItem('twitchPlayerLeft', twitchBox.style.left);
+    localStorage.setItem('twitchPlayerTop', twitchBox.style.top);
+  });
+
   const twitchEmbed = new Twitch.Embed('twitchPlayer', {
     width: '100%',
     height: '100%',
@@ -18,6 +53,16 @@ export function initTwitchEmbed() {
     twitchPlayer.setMuted(true);
   });
   let twitchShown = false;
+
+  // load standalone twitch chat if container exists
+  const twitchChatBox = document.getElementById('twitchChat');
+  if (twitchChatBox) {
+    const chatFrame = document.createElement('iframe');
+    chatFrame.src = `https://www.twitch.tv/embed/harupi/chat?parent=${location.hostname}`;
+    chatFrame.setAttribute('frameborder', '0');
+    chatFrame.setAttribute('scrolling', 'no');
+    twitchChatBox.appendChild(chatFrame);
+  }
 
   function toggle() {
     if (!twitchShown) {
@@ -36,4 +81,3 @@ export function initTwitchEmbed() {
 
   return { toggle };
 }
-

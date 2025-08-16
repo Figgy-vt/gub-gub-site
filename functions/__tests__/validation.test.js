@@ -40,11 +40,13 @@ describe('validation utilities', () => {
   });
 
   test('validatePurchaseItem validates item and quantity', () => {
-    expect(validatePurchaseItem({ item: 'passiveMaker', quantity: 2 })).toEqual({
-      item: 'passiveMaker',
-      quantity: 2,
-      dryRun: false,
-    });
+    expect(validatePurchaseItem({ item: 'passiveMaker', quantity: 2 })).toEqual(
+      {
+        item: 'passiveMaker',
+        quantity: 2,
+        dryRun: false,
+      },
+    );
     expect(
       validatePurchaseItem({ item: 'passiveMaker', dryRun: true }),
     ).toEqual({ item: 'passiveMaker', quantity: 1, dryRun: true });
@@ -58,9 +60,10 @@ describe('validation utilities', () => {
       upgrade: 'upg1',
       dryRun: false,
     });
-    expect(
-      validatePurchaseUpgrade({ upgrade: 'upg1', dryRun: true }),
-    ).toEqual({ upgrade: 'upg1', dryRun: true });
+    expect(validatePurchaseUpgrade({ upgrade: 'upg1', dryRun: true })).toEqual({
+      upgrade: 'upg1',
+      dryRun: true,
+    });
     expect(() => validatePurchaseUpgrade({ upgrade: 'nope' })).toThrow(
       'Unknown upgrade',
     );
