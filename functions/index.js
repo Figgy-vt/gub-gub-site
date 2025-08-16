@@ -138,7 +138,10 @@ export const purchaseItem = functions.https.onCall(
   withAuth(async (uid, data) => {
     return withUserLock(uid, 'purchaseItem', async () => {
       try {
-        const { item, quantity } = validatePurchaseItem(data);
+        const { item, quantity, dryRun } = validatePurchaseItem(data);
+        if (dryRun) {
+          return { ok: true };
+        }
         const db = admin.database();
 
         const scoreRef = db.ref(`${LEADERBOARD_PATH}/${uid}/score`);
@@ -215,7 +218,10 @@ export const purchaseUpgrade = functions.https.onCall(
   withAuth(async (uid, data) => {
     return withUserLock(uid, 'purchaseUpgrade', async () => {
       try {
-        const { upgrade } = validatePurchaseUpgrade(data);
+        const { upgrade, dryRun } = validatePurchaseUpgrade(data);
+        if (dryRun) {
+          return { ok: true };
+        }
         const db = admin.database();
 
         const scoreRef = db.ref(`${LEADERBOARD_PATH}/${uid}/score`);

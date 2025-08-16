@@ -18,6 +18,7 @@ export function validateSyncGubs(data = {}) {
 
 export function validatePurchaseItem(data = {}) {
   const item = data.item;
+  const dryRun = Boolean(data.dryRun);
   if (!SHOP_ITEMS[item]) {
     throw new functions.https.HttpsError('invalid-argument', 'Unknown item');
   }
@@ -30,21 +31,22 @@ export function validatePurchaseItem(data = {}) {
     );
   }
   const quantity = Math.floor(numQuantity);
-  if (quantity < 1 || quantity > 1000) {
+  if (quantity < 0 || quantity > 1000 || (!dryRun && quantity < 1)) {
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Quantity must be between 1 and 1000',
     );
   }
-  return { item, quantity };
+  return { item, quantity, dryRun };
 }
 
 export function validatePurchaseUpgrade(data = {}) {
   const upgrade = data.upgrade;
-  if (!UPGRADES[upgrade]) {
+  const dryRun = Boolean(data.dryRun);
+  if (!UPGRADES[upgrade] && !dryRun) {
     throw new functions.https.HttpsError('invalid-argument', 'Unknown upgrade');
   }
-  return { upgrade };
+  return { upgrade, dryRun };
 }
 
 export function validateUsername(rawUsername) {

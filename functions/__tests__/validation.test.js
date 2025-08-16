@@ -14,6 +14,7 @@ jest.unstable_mockModule('firebase-functions', () => ({
 const {
   validateSyncGubs,
   validatePurchaseItem,
+  validatePurchaseUpgrade,
   validateUsername,
   validateAdminUpdate,
   validateAdminDelete,
@@ -39,14 +40,29 @@ describe('validation utilities', () => {
   });
 
   test('validatePurchaseItem validates item and quantity', () => {
-    expect(validatePurchaseItem({ item: 'passiveMaker', quantity: 2 })).toEqual(
-      {
-        item: 'passiveMaker',
-        quantity: 2,
-      },
-    );
+    expect(validatePurchaseItem({ item: 'passiveMaker', quantity: 2 })).toEqual({
+      item: 'passiveMaker',
+      quantity: 2,
+      dryRun: false,
+    });
+    expect(
+      validatePurchaseItem({ item: 'passiveMaker', dryRun: true }),
+    ).toEqual({ item: 'passiveMaker', quantity: 1, dryRun: true });
     expect(() => validatePurchaseItem({ item: 'nope', quantity: 1 })).toThrow(
       'Unknown item',
+    );
+  });
+
+  test('validatePurchaseUpgrade handles dryRun', () => {
+    expect(validatePurchaseUpgrade({ upgrade: 'upg1' })).toEqual({
+      upgrade: 'upg1',
+      dryRun: false,
+    });
+    expect(
+      validatePurchaseUpgrade({ upgrade: 'upg1', dryRun: true }),
+    ).toEqual({ upgrade: 'upg1', dryRun: true });
+    expect(() => validatePurchaseUpgrade({ upgrade: 'nope' })).toThrow(
+      'Unknown upgrade',
     );
   });
 

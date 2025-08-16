@@ -50,6 +50,23 @@ export function initShop({
   };
   const ownedUpgrades = {};
 
+  // Warm cloud functions to avoid cold-start delay on first purchase
+  function warmupPurchases() {
+    if (shopItems[0]) {
+      Promise.resolve(
+        purchaseItemFn({ item: shopItems[0].id, dryRun: true }),
+      ).catch(() => {});
+    }
+    if (upgrades[0]) {
+      Promise.resolve(
+        purchaseUpgradeFn({ upgrade: upgrades[0].id, dryRun: true }),
+      ).catch(() => {});
+    }
+  }
+  warmupPurchases();
+  const warmInterval = setInterval(warmupPurchases, 5 * 60 * 1000);
+  if (warmInterval && typeof warmInterval.unref === 'function') warmInterval.unref();
+
   function updatePassiveIncome() {
     const perSecondTotal = shopItems.reduce((sum, item) => {
       let rate = item.rate;
