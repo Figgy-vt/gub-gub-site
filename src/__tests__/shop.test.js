@@ -307,7 +307,7 @@ describe('shop purchasing flow', () => {
     expect(gameState.globalCount).toBe(190000);
   });
 
-  test('upgrade hidden until requirement met', async () => {
+  test('upgrades hidden until requirement met except first', async () => {
     setupDOM();
     const uid = 'user456';
     const refs = {};
@@ -355,7 +355,9 @@ describe('shop purchasing flow', () => {
     });
     await Promise.resolve();
     await Promise.resolve();
-    const upgEl = document.getElementById('upgrade-upg1');
-    expect(upgEl.classList.contains('hidden')).toBe(true);
+    const upg1El = document.getElementById('upgrade-upg1');
+    const upg2El = document.getElementById('upgrade-upg2');
+    expect(upg1El.classList.contains('hidden')).toBe(false);
+    expect(upg2El.classList.contains('hidden')).toBe(true);
   });
 });

@@ -134,9 +134,10 @@ export function initShop({
   });
 
   // Render upgrades bar
-  upgrades.forEach((upg) => {
+  upgrades.forEach((upg, idx) => {
     const div = document.createElement('div');
-    div.className = 'upgrade-item hidden disabled';
+    div.className = 'upgrade-item disabled';
+    if (idx > 0) div.classList.add('hidden');
     div.id = `upgrade-${upg.id}`;
     div.innerHTML = `
       <img src="${upg.image}" alt="${upg.name}">
@@ -188,7 +189,7 @@ export function initShop({
 
     function updateState() {
       const unlocked = (owned[upg.target] || 0) >= (upg.unlockAt || 0);
-      div.classList.toggle('hidden', !unlocked);
+      div.classList.toggle('hidden', !unlocked && idx > 0);
       const affordable =
         unlocked && gameState.globalCount >= upg.cost && !ownedUpgrades[upg.id];
       div.classList.toggle('disabled', !affordable);
