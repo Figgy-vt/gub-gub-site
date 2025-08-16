@@ -283,12 +283,12 @@ body {
 }
 
 .upgrade-item.disabled {
-  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .upgrade-item.disabled img {
   filter: grayscale(1);
+  opacity: 0.5;
 }
 
 .upgrade-item.owned img {
