@@ -150,6 +150,7 @@ export function initShop({
     upgradesContainer.appendChild(div);
 
     async function attemptPurchase() {
+      if (div.classList.contains('disabled')) return;
       if (ownedUpgrades[upg.id]) return;
       if (gameState.globalCount < upg.cost) return;
       playBuySound();
