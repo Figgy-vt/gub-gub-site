@@ -39,8 +39,9 @@ export function initTwitchEmbed() {
   });
 
   const twitchEmbed = new Twitch.Embed('twitchPlayer', {
-    width: '200%',
-    height: '200%',
+    // Match the wrapper size; wrapper CSS is scaled to 200%
+    width: '100%',
+    height: '100%',
     channel: 'harupi',
     layout: 'video-with-chat',
     parent: [location.hostname],

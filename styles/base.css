@@ -435,9 +435,10 @@ body {
 #twitchPlayer {
   position: absolute;
   top: 0;
-  left: calc(100vw - 860px);
-  width: 850px;
-  height: 300px;
+  /* Updated for 200% stream size */
+  left: calc(100vw - 1710px);
+  width: 1700px;
+  height: 600px;
   z-index: 20000;
   display: none;
   overflow: hidden;
