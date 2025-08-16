@@ -305,6 +305,8 @@ describe('shop purchasing flow', () => {
     expect(purchaseUpgradeFn).toHaveBeenCalledWith({ upgrade: 'upg1' });
     expect(upgEl.classList.contains('owned')).toBe(true);
     expect(gameState.globalCount).toBe(190000);
+    const costSpan = upgEl.querySelector('.upgrade-cost');
+    expect(costSpan.textContent).toBe('Purchased');
   });
 
   test('upgrades hidden until requirement met except first', async () => {
