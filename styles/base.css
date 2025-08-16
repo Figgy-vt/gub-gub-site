@@ -320,6 +320,16 @@ body {
   flex-shrink: 0;
 }
 
+#shopItemsContainer .shop-item-details {
+  flex: 1;
+}
+
+#shopItemsContainer .owned-count {
+  margin-left: auto;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
 #adminPanel {
   position: absolute;
   top: 90px;
