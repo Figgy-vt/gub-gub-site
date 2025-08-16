@@ -13,3 +13,6 @@ export const COST_MULTIPLIERS = Object.fromEntries(
     item.costMultiplier || DEFAULT_COST_MULTIPLIER,
   ]),
 );
+export const UPGRADES = Object.fromEntries(
+  (shopConfig.upgrades || []).map((u) => [u.id, u]),
+);

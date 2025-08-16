@@ -8,6 +8,7 @@ function setupDOM() {
   document.body.innerHTML = `
     <div id="shopPanel"></div>
     <div id="shopItemsContainer"></div>
+    <div id="upgradesBar"></div>
     <button id="adminBtn" style="display:none"></button>
     <div id="adminPanel"></div>
     <input id="adminUsername" />
@@ -63,6 +64,7 @@ describe('shop purchasing flow', () => {
       db,
       uid,
       purchaseItemFn,
+      purchaseUpgradeFn: jest.fn(),
       updateUserScoreFn: jest.fn(),
       deleteUserFn: jest.fn(),
       syncGubsFromServer,
@@ -74,6 +76,7 @@ describe('shop purchasing flow', () => {
       logError: jest.fn(),
       sanitizeUsername: (u) => u,
     });
+    await Promise.resolve();
     const buyBtn = document.getElementById('buy-passiveMaker');
     expect(buyBtn.textContent).toBe('x1');
     buyBtn.click();
@@ -85,7 +88,9 @@ describe('shop purchasing flow', () => {
     });
     expect(document.getElementById('owned-passiveMaker').textContent).toBe('1');
     expect(gameState.globalCount).toBe(100);
-    expect(document.getElementById('cost-passiveMaker').textContent).toBe('114');
+    expect(document.getElementById('cost-passiveMaker').textContent).toBe(
+      '114',
+    );
     expect(passiveWorker.postMessage).toHaveBeenCalledWith({
       type: 'rate',
       value: 1,
@@ -133,6 +138,7 @@ describe('shop purchasing flow', () => {
       db,
       uid,
       purchaseItemFn: jest.fn(),
+      purchaseUpgradeFn: jest.fn(),
       updateUserScoreFn: jest.fn(),
       deleteUserFn: jest.fn(),
       gameState,
@@ -192,7 +198,9 @@ describe('shop purchasing flow', () => {
         return ref;
       },
     };
-    const purchaseItemFn = jest.fn(async () => ({ data: { owned: 1, score: 0 } }));
+    const purchaseItemFn = jest.fn(async () => ({
+      data: { owned: 1, score: 0 },
+    }));
     const renderCounter = jest.fn();
     const queueScoreUpdate = jest.fn();
     const passiveWorker = { postMessage: jest.fn() };
@@ -206,6 +214,7 @@ describe('shop purchasing flow', () => {
       db,
       uid,
       purchaseItemFn,
+      purchaseUpgradeFn: jest.fn(),
       updateUserScoreFn: jest.fn(),
       deleteUserFn: jest.fn(),
       gameState,
@@ -234,5 +243,119 @@ describe('shop purchasing flow', () => {
     expect(buy100.disabled).toBe(true);
     jest.useRealTimers();
   });
-});
 
+  test('buying an upgrade marks it owned', async () => {
+    setupDOM();
+    const uid = 'user123';
+    const refs = {};
+    const db = {
+      ref: (path) => {
+        const ref =
+          refs[path] ||
+          (refs[path] = {
+            on: jest.fn(),
+            once: jest.fn().mockResolvedValue(
+              path === `shop_v2/${uid}`
+                ? { val: () => ({ passiveMaker: 25 }) }
+                : { val: () => ({}), exists: () => false },
+            ),
+            set: jest.fn(),
+            onDisconnect: () => ({ remove: jest.fn() }),
+            push: jest.fn(() => ({ set: jest.fn() })),
+            orderByChild: jest.fn().mockReturnThis(),
+            equalTo: jest.fn().mockReturnThis(),
+            update: jest.fn(),
+          });
+        return ref;
+      },
+    };
+    const purchaseUpgradeFn = jest.fn(async () => ({
+      data: { owned: true, score: 190000 },
+    }));
+    const renderCounter = jest.fn();
+    const queueScoreUpdate = jest.fn();
+    const passiveWorker = { postMessage: jest.fn() };
+    const gameState = {
+      globalCount: 200000,
+      displayedCount: 200000,
+      unsyncedDelta: 0,
+      passiveRatePerSec: 0,
+    };
+    initShop({
+      db,
+      uid,
+      purchaseItemFn: jest.fn(),
+      purchaseUpgradeFn,
+      updateUserScoreFn: jest.fn(),
+      deleteUserFn: jest.fn(),
+      gameState,
+      renderCounter,
+      queueScoreUpdate,
+      abbreviateNumber: (n) => String(n),
+      passiveWorker,
+      logError: jest.fn(),
+      sanitizeUsername: (u) => u,
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    const upgEl = document.getElementById('upgrade-upg1');
+    upgEl.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(purchaseUpgradeFn).toHaveBeenCalledWith({ upgrade: 'upg1' });
+    expect(upgEl.classList.contains('owned')).toBe(true);
+    expect(gameState.globalCount).toBe(190000);
+  });
+
+  test('upgrade hidden until requirement met', async () => {
+    setupDOM();
+    const uid = 'user456';
+    const refs = {};
+    const db = {
+      ref: (path) => {
+        const ref =
+          refs[path] ||
+          (refs[path] = {
+            on: jest.fn(),
+            once: jest.fn().mockResolvedValue(
+              path === `shop_v2/${uid}`
+                ? { val: () => ({ passiveMaker: 0 }) }
+                : { val: () => ({}), exists: () => false },
+            ),
+            set: jest.fn(),
+            onDisconnect: () => ({ remove: jest.fn() }),
+            push: jest.fn(() => ({ set: jest.fn() })),
+            orderByChild: jest.fn().mockReturnThis(),
+            equalTo: jest.fn().mockReturnThis(),
+            update: jest.fn(),
+          });
+        return ref;
+      },
+    };
+    const gameState = {
+      globalCount: 0,
+      displayedCount: 0,
+      unsyncedDelta: 0,
+      passiveRatePerSec: 0,
+    };
+    initShop({
+      db,
+      uid,
+      purchaseItemFn: jest.fn(),
+      purchaseUpgradeFn: jest.fn(),
+      updateUserScoreFn: jest.fn(),
+      deleteUserFn: jest.fn(),
+      gameState,
+      renderCounter: jest.fn(),
+      queueScoreUpdate: jest.fn(),
+      abbreviateNumber: (n) => String(n),
+      passiveWorker: { postMessage: jest.fn() },
+      logError: jest.fn(),
+      sanitizeUsername: (u) => u,
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    const upgEl = document.getElementById('upgrade-upg1');
+    expect(upgEl.classList.contains('hidden')).toBe(true);
+  });
+});

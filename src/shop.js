@@ -8,6 +8,7 @@ export function initShop({
   db,
   uid,
   purchaseItemFn,
+  purchaseUpgradeFn,
   updateUserScoreFn,
   deleteUserFn,
 
@@ -26,7 +27,9 @@ export function initShop({
 }) {
   const DEFAULT_COST_MULTIPLIER = shopConfig.costMultiplier;
   const shopItems = shopConfig.items;
+  const upgrades = shopConfig.upgrades || [];
   const shopRef = db.ref(`shop_v2/${uid}`);
+  const upgradeRef = db.ref(`upgrades_v1/${uid}`);
 
   const updateFns = [];
 
@@ -45,20 +48,30 @@ export function initShop({
     gubspace: 0,
     intergalactic: 0,
   };
+  const ownedUpgrades = {};
 
   function updatePassiveIncome() {
-    const perSecondTotal = shopItems.reduce(
-      (sum, item) => sum + (owned[item.id] || 0) * item.rate,
-      0,
-    );
+    const perSecondTotal = shopItems.reduce((sum, item) => {
+      let rate = item.rate;
+      upgrades.forEach((u) => {
+        if (u.target === item.id && ownedUpgrades[u.id]) {
+          rate *= u.multiplier;
+        }
+      });
+      return sum + (owned[item.id] || 0) * rate;
+    }, 0);
     gameState.passiveRatePerSec = perSecondTotal;
-    passiveWorker.postMessage({ type: 'rate', value: gameState.passiveRatePerSec });
+    passiveWorker.postMessage({
+      type: 'rate',
+      value: gameState.passiveRatePerSec,
+    });
     renderCounter();
     queueScoreUpdate();
   }
 
   const shopPanel = document.getElementById('shopPanel');
   const shopContainer = document.getElementById('shopItemsContainer');
+  const upgradesContainer = document.getElementById('upgradesBar');
   const adminBtn = document.getElementById('adminBtn');
   const adminPanel = document.getElementById('adminPanel');
   const adminUser = document.getElementById('adminUsername');
@@ -120,6 +133,70 @@ export function initShop({
     );
   });
 
+  // Render upgrades bar
+  upgrades.forEach((upg) => {
+    const div = document.createElement('div');
+    div.className = 'upgrade-item hidden disabled';
+    div.id = `upgrade-${upg.id}`;
+    div.innerHTML = `
+      <img src="${upg.image}" alt="${upg.name}">
+      <div class="upgrade-tooltip">
+        <strong>${upg.name}</strong><br>
+        ${upg.modifier}<br>
+        <span class="desc">${upg.description}</span>
+      </div>
+    `;
+    upgradesContainer.appendChild(div);
+
+    async function attemptPurchase() {
+      if (ownedUpgrades[upg.id]) return;
+      if (gameState.globalCount < upg.cost) return;
+      playBuySound();
+      if (typeof pauseSync === 'function') pauseSync();
+      try {
+        const res = await purchaseUpgradeFn({ upgrade: upg.id });
+        if (res.data) {
+          if (res.data.owned) {
+            ownedUpgrades[upg.id] = true;
+            div.classList.add('owned');
+          }
+          if (typeof res.data.score === 'number') {
+            gameState.globalCount = gameState.displayedCount = res.data.score;
+            gameState.unsyncedDelta = 0;
+            renderCounter();
+          }
+        }
+        updatePassiveIncome();
+      } catch (err) {
+        console.error('purchaseUpgrade failed', err);
+        if (
+          err?.code !== 'failed-precondition' &&
+          !/not enough gubs/i.test(err.message)
+        ) {
+          window.alert('Purchase failed');
+        }
+        logError(db, {
+          message: err.message,
+          stack: err.stack,
+          context: 'purchaseUpgrade',
+        });
+      } finally {
+        if (typeof resumeSync === 'function') resumeSync();
+        updateState();
+      }
+    }
+
+    function updateState() {
+      const unlocked = (owned[upg.target] || 0) >= (upg.unlockAt || 0);
+      div.classList.toggle('hidden', !unlocked);
+      const affordable =
+        unlocked && gameState.globalCount >= upg.cost && !ownedUpgrades[upg.id];
+      div.classList.toggle('disabled', !affordable);
+    }
+
+    updateFns.push(updateState);
+    div.addEventListener('click', attemptPurchase);
+  });
 
   // Render each shop item
   shopItems.forEach((item) => {
@@ -250,22 +327,32 @@ export function initShop({
     updateFns.forEach((fn) => fn());
   }, 100);
 
-  // Initial load of owned counts
-  shopRef.once('value').then((snapshot) => {
-    const stored = snapshot.val() || {};
-    shopItems.forEach((item) => {
-      owned[item.id] = stored[item.id] || 0;
-      const ownedEl = document.getElementById(`owned-${item.id}`);
-      if (ownedEl) ownedEl.textContent = owned[item.id];
-      const costSpan = document.getElementById(`cost-${item.id}`);
-      if (costSpan) {
-        const multiplier = item.costMultiplier || DEFAULT_COST_MULTIPLIER;
-        costSpan.textContent = abbreviateNumber(
-          calcCurrentCost(item.baseCost, owned[item.id], multiplier),
-        );
-      }
-    });
-    updatePassiveIncome();
-    updateFns.forEach((fn) => fn());
-  });
+  // Initial load of owned counts and upgrades
+  Promise.all([shopRef.once('value'), upgradeRef.once('value')]).then(
+    ([shopSnap, upgradeSnap]) => {
+      const stored = shopSnap.val() || {};
+      shopItems.forEach((item) => {
+        owned[item.id] = stored[item.id] || 0;
+        const ownedEl = document.getElementById(`owned-${item.id}`);
+        if (ownedEl) ownedEl.textContent = owned[item.id];
+        const costSpan = document.getElementById(`cost-${item.id}`);
+        if (costSpan) {
+          const multiplier = item.costMultiplier || DEFAULT_COST_MULTIPLIER;
+          costSpan.textContent = abbreviateNumber(
+            calcCurrentCost(item.baseCost, owned[item.id], multiplier),
+          );
+        }
+      });
+      const upgStored = upgradeSnap.val() || {};
+      upgrades.forEach((upg) => {
+        if (upgStored[upg.id]) {
+          ownedUpgrades[upg.id] = true;
+          const div = document.getElementById(`upgrade-${upg.id}`);
+          if (div) div.classList.add('owned');
+        }
+      });
+      updatePassiveIncome();
+      updateFns.forEach((fn) => fn());
+    },
+  );
 }
