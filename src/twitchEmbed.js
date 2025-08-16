@@ -42,7 +42,7 @@ export function initTwitchEmbed() {
     width: '100%',
     height: '100%',
     channel: 'harupi',
-    layout: 'video',
+    layout: 'video-with-chat',
     parent: [location.hostname],
     autoplay: false,
     muted: true,
@@ -53,16 +53,6 @@ export function initTwitchEmbed() {
     twitchPlayer.setMuted(true);
   });
   let twitchShown = false;
-
-  // load standalone twitch chat if container exists
-  const twitchChatBox = document.getElementById('twitchChat');
-  if (twitchChatBox) {
-    const chatFrame = document.createElement('iframe');
-    chatFrame.src = `https://www.twitch.tv/embed/harupi/chat?parent=${location.hostname}`;
-    chatFrame.setAttribute('frameborder', '0');
-    chatFrame.setAttribute('scrolling', 'no');
-    twitchChatBox.appendChild(chatFrame);
-  }
 
   function toggle() {
     if (!twitchShown) {
