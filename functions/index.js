@@ -3,16 +3,22 @@ import * as functions from 'firebase-functions';
 import admin from 'firebase-admin';
 
 import { calculateOfflineGubs } from './offline.js';
-import { RATES, SHOP_ITEMS, COST_MULTIPLIERS } from './config.js';
+import { RATES, SHOP_ITEMS, COST_MULTIPLIERS, UPGRADES } from './config.js';
 import {
   validateSyncGubs,
   validatePurchaseItem,
+  validatePurchaseUpgrade,
   validateAdminUpdate,
   validateAdminDelete,
 } from './validation.js';
 import { totalCost } from './shared/cost.js';
 import { logError, logAction } from './logging.js';
-import { ADMINS_PATH, LEADERBOARD_PATH, SHOP_PATH } from './paths.js';
+import {
+  ADMINS_PATH,
+  LEADERBOARD_PATH,
+  SHOP_PATH,
+  UPGRADES_PATH,
+} from './paths.js';
 const LOCKS_BASE = '_sys/runtime/locks_v1';
 
 admin.initializeApp({
@@ -194,6 +200,88 @@ export const purchaseItem = functions.https.onCall(
         return { score: newScore, owned: newOwned };
       } catch (err) {
         await logError('server', err, { function: 'purchaseItem', uid, data });
+        if (err instanceof functions.https.HttpsError) throw err;
+        throw new functions.https.HttpsError(
+          'aborted',
+          'Could not complete purchase, please try again.',
+        );
+      }
+    });
+  }),
+);
+
+/** -------- purchaseUpgrade (single-purchase upgrades) -------- */
+export const purchaseUpgrade = functions.https.onCall(
+  withAuth(async (uid, data) => {
+    return withUserLock(uid, 'purchaseUpgrade', async () => {
+      try {
+        const { upgrade } = validatePurchaseUpgrade(data);
+        const db = admin.database();
+
+        const scoreRef = db.ref(`${LEADERBOARD_PATH}/${uid}/score`);
+        const upgradeRef = db.ref(`${UPGRADES_PATH}/${uid}/${upgrade}`);
+
+        const itemPath = `${SHOP_PATH}/${uid}/${UPGRADES[upgrade].target}`;
+        const itemRef = db.ref(itemPath);
+        const [scoreSnap, ownedSnap, itemSnap] = await Promise.all([
+          scoreRef.once('value'),
+          upgradeRef.once('value'),
+          itemRef.once('value'),
+        ]);
+
+        const currentScore = Number(scoreSnap.val()) || 0;
+        const alreadyOwned = ownedSnap.val() === true;
+        const ownedCount = Number(itemSnap.val()) || 0;
+        if (alreadyOwned) {
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Upgrade already owned',
+          );
+        }
+        const { cost, unlockAt = 0 } = UPGRADES[upgrade];
+        if (ownedCount < unlockAt) {
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            `Need ${unlockAt} ${UPGRADES[upgrade].target} to unlock`,
+          );
+        }
+        if (currentScore < cost) {
+          await logError('server', new Error('Not enough gubs'), {
+            function: 'purchaseUpgrade',
+            uid,
+            data,
+            score: currentScore,
+            cost,
+          });
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            `Not enough gubs: have ${currentScore}, need ${cost}`,
+          );
+        }
+
+        const newScore = currentScore - cost;
+        const now = Date.now();
+        const updates = {};
+        updates[`${LEADERBOARD_PATH}/${uid}/score`] = newScore;
+        updates[`${LEADERBOARD_PATH}/${uid}/lastUpdated`] = now;
+        updates[`${UPGRADES_PATH}/${uid}/${upgrade}`] = true;
+
+        await db.ref().update(updates);
+
+        functions.logger.info('purchaseUpgrade.success', {
+          uid,
+          upgrade,
+          cost,
+          score: newScore,
+        });
+
+        return { score: newScore, owned: true };
+      } catch (err) {
+        await logError('server', err, {
+          function: 'purchaseUpgrade',
+          uid,
+          data,
+        });
         if (err instanceof functions.https.HttpsError) throw err;
         throw new functions.https.HttpsError(
           'aborted',

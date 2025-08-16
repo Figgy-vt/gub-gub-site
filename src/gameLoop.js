@@ -17,6 +17,7 @@ export function initGameLoop({
 }) {
   const syncGubsFn = functions.httpsCallable('syncGubs');
   const purchaseItemFn = functions.httpsCallable('purchaseItem');
+  const purchaseUpgradeFn = functions.httpsCallable('purchaseUpgrade');
   const updateUserScoreFn = functions.httpsCallable('updateUserScore');
   const deleteUserFn = functions.httpsCallable('deleteUser');
   const uid = auth.currentUser.uid;
@@ -49,8 +50,12 @@ export function initGameLoop({
   let syncPaused = false;
 
   // explicit pause/resume hooks (shop can use these if needed)
-  function pauseSync() { syncPaused = true; }
-  function resumeSync() { syncPaused = false; }
+  function pauseSync() {
+    syncPaused = true;
+  }
+  function resumeSync() {
+    syncPaused = false;
+  }
 
   let syncingPromise = null;
   async function syncGubsFromServer(requestOffline = false) {
@@ -75,8 +80,7 @@ export function initGameLoop({
           renderCounter();
 
           if (requestOffline && !offlineShown && offlineEarned > 0) {
-            offlineMessage.textContent =
-              `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
+            offlineMessage.textContent = `You earned ${abbreviateNumber(offlineEarned)} gubs while you were away!`;
             offlineModal.style.display = 'block';
             offlineShown = true;
           }
@@ -121,7 +125,20 @@ export function initGameLoop({
 
   function abbreviateNumber(num) {
     if (num < 1000) return Math.floor(num).toString();
-    const units = ['', 'k', 'm', 'b', 't', 'quad', 'quin', 'sext', 'sept', 'octi', 'noni', 'deci'];
+    const units = [
+      '',
+      'k',
+      'm',
+      'b',
+      't',
+      'quad',
+      'quin',
+      'sext',
+      'sept',
+      'octi',
+      'noni',
+      'deci',
+    ];
     let idx = Math.floor(Math.log10(num) / 3);
     if (idx >= units.length) idx = units.length - 1;
     const scaled = num / Math.pow(1000, idx);
@@ -284,36 +301,61 @@ export function initGameLoop({
     getImages: () => imageState.images,
     getGlobalCount: () => globalCount,
     getGubRateMultiplier: () => gubRateMultiplier,
-    setGubRateMultiplier: (v) => { gubRateMultiplier = v; },
+    setGubRateMultiplier: (v) => {
+      gubRateMultiplier = v;
+    },
     mainGub,
     renderCounter,
     gainGubs,
     abbreviateNumber,
-    incrementSessionCount: (amt) => { sessionCount += amt; },
+    incrementSessionCount: (amt) => {
+      sessionCount += amt;
+    },
   });
   golden.scheduleNextGolden();
 
   const gameState = {
-    get globalCount() { return globalCount; },
-    set globalCount(v) { globalCount = v; },
+    get globalCount() {
+      return globalCount;
+    },
+    set globalCount(v) {
+      globalCount = v;
+    },
 
-    get displayedCount() { return displayedCount; },
-    set displayedCount(v) { displayedCount = v; },
+    get displayedCount() {
+      return displayedCount;
+    },
+    set displayedCount(v) {
+      displayedCount = v;
+    },
 
-    get unsyncedDelta() { return unsyncedDelta; },
-    set unsyncedDelta(v) { unsyncedDelta = v; },
+    get unsyncedDelta() {
+      return unsyncedDelta;
+    },
+    set unsyncedDelta(v) {
+      unsyncedDelta = v;
+    },
 
-    get passiveRatePerSec() { return passiveRatePerSec; },
-    set passiveRatePerSec(v) { passiveRatePerSec = v; },
+    get passiveRatePerSec() {
+      return passiveRatePerSec;
+    },
+    set passiveRatePerSec(v) {
+      passiveRatePerSec = v;
+    },
 
-    get syncPaused() { return syncPaused; },
-    set syncPaused(v) { syncPaused = v; },
+    get syncPaused() {
+      return syncPaused;
+    },
+    set syncPaused(v) {
+      syncPaused = v;
+    },
   };
 
   initShop({
     db,
     uid,
     purchaseItemFn,
+    purchaseUpgradeFn,
     updateUserScoreFn,
     deleteUserFn,
     syncGubsFromServer,

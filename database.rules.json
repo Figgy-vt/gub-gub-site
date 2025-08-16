@@ -56,6 +56,15 @@
         }
       }
     },
+    "upgrades_v1": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false,
+        "$upgrade": {
+          ".validate": "newData.val() === true"
+        }
+      }
+    },
     "feedback": {
       ".read": true,
       "$id": {

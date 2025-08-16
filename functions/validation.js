@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import { SHOP_ITEMS } from './config.js';
+import { SHOP_ITEMS, UPGRADES } from './config.js';
 
 export function validateSyncGubs(data = {}) {
   const rawDelta = data.delta;
@@ -37,6 +37,14 @@ export function validatePurchaseItem(data = {}) {
     );
   }
   return { item, quantity };
+}
+
+export function validatePurchaseUpgrade(data = {}) {
+  const upgrade = data.upgrade;
+  if (!UPGRADES[upgrade]) {
+    throw new functions.https.HttpsError('invalid-argument', 'Unknown upgrade');
+  }
+  return { upgrade };
 }
 
 export function validateUsername(rawUsername) {
