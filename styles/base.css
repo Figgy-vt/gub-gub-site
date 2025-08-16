@@ -231,6 +231,8 @@ body {
   font-weight: bold; /* extra emphasis */
   margin-top: 0;
   margin-bottom: 0.5em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #444;
 }
 
 #upgradesBar {
@@ -240,6 +242,8 @@ body {
   display: flex;
   gap: 4px;
   padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #444;
   z-index: 1;
 }
 
