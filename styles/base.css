@@ -216,13 +216,15 @@ body {
   top: 60px;
   right: 10px;
   bottom: 80px;
-  display: block;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
   background: #222;
   color: #fff;
   padding: 8px;
   border-radius: 6px;
   z-index: 10001;
-  overflow-y: auto;
+  overflow: visible;
 }
 #shopPanel h4 {
   font-size: 2rem; /* makes it roughly 32px tall */
@@ -239,6 +241,11 @@ body {
   gap: 4px;
   padding-bottom: 8px;
   z-index: 1;
+}
+
+#shopItemsContainer {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .upgrade-item {
