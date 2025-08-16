@@ -139,12 +139,11 @@ export function initShop({
     div.className = 'upgrade-item disabled';
     if (idx > 0) div.classList.add('hidden');
     div.id = `upgrade-${upg.id}`;
+    const costText = abbreviateNumber(upg.cost);
     div.innerHTML = `
       <img src="${upg.image}" alt="${upg.name}">
       <div class="upgrade-tooltip">
-        <strong>${upg.name} <span class="upgrade-cost">${abbreviateNumber(
-          upg.cost,
-        )} Gubs</span></strong><br>
+        <strong>${upg.name}<span class="upgrade-cost">${costText}</span></strong><br>
         ${upg.modifier}<br>
         <span class="desc">${upg.description}</span>
       </div>
@@ -166,6 +165,10 @@ export function initShop({
           if (res.data.owned) {
             ownedUpgrades[upg.id] = true;
             div.classList.add('owned');
+            if (costSpan) {
+          costSpan.textContent = 'Purchased';
+          costSpan.style.color = 'red';
+            }
           }
           if (typeof res.data.score === 'number') {
             gameState.globalCount = gameState.displayedCount = res.data.score;
@@ -199,7 +202,15 @@ export function initShop({
       const affordable =
         unlocked && gameState.globalCount >= upg.cost && !ownedUpgrades[upg.id];
       div.classList.toggle('disabled', !affordable);
-      if (costSpan) costSpan.style.color = affordable ? 'green' : 'red';
+      if (costSpan) {
+        if (ownedUpgrades[upg.id]) {
+          costSpan.style.color = 'red';
+          costSpan.textContent = 'Purchased';
+        } else {
+          costSpan.style.color = affordable ? 'green' : 'red';
+          costSpan.textContent = costText;
+        }
+      }
     }
 
     updateFns.push(updateState);
@@ -356,7 +367,14 @@ export function initShop({
         if (upgStored[upg.id]) {
           ownedUpgrades[upg.id] = true;
           const div = document.getElementById(`upgrade-${upg.id}`);
-          if (div) div.classList.add('owned');
+          if (div) {
+            div.classList.add('owned');
+            const costSpan = div.querySelector('.upgrade-cost');
+            if (costSpan) {
+              costSpan.textContent = 'Purchased';
+              costSpan.style.color = 'red';
+            }
+          }
         }
       });
       updatePassiveIncome();
