@@ -144,6 +144,7 @@ export function initShop({
       <div class="upgrade-tooltip">
         <strong>${upg.name}</strong><br>
         ${upg.modifier}<br>
+        Cost: ${abbreviateNumber(upg.cost)} Gubs<br>
         <span class="desc">${upg.description}</span>
       </div>
     `;
