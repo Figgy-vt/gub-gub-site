@@ -1,13 +1,31 @@
 #game {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
   color: #fff;
 }
 
+#assets {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+#assets img {
+  width: 80px;
+  cursor: grab;
+}
+
 #character {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 300px;
   height: 300px;
 }
@@ -25,14 +43,13 @@
   position: relative;
 }
 
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+#download {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.control {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
+.layer {
+  cursor: grab;
 }
