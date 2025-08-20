@@ -17,7 +17,7 @@
 }
 
 #assets img {
-  width: 580px;
+  width: 80px;
   cursor: grab;
 }
 
@@ -26,8 +26,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 800px;
-  height: 800px;
+  width: 300px;
+  height: 300px;
 }
 
 #character img {
@@ -51,6 +51,6 @@
   transform: translateX(-50%);
 }
 
-.layer {
+#character img:not(#base) {
   cursor: grab;
 }
