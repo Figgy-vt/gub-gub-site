@@ -55,7 +55,9 @@ document.getElementById('download').addEventListener('click', () => {
   document.querySelectorAll('#character img:not(#base)').forEach((img) => {
     const x = (parseFloat(img.style.left) || 0) * scaleX;
     const y = (parseFloat(img.style.top) || 0) * scaleY;
-    ctx.drawImage(img, x, y, img.naturalWidth, img.naturalHeight);
+    const width = img.width * scaleX;
+    const height = img.height * scaleY;
+    ctx.drawImage(img, x, y, width, height);
   });
   const link = document.createElement('a');
   link.download = 'gub-dress-up.png';
