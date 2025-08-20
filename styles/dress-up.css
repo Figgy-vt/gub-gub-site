@@ -17,7 +17,7 @@
 }
 
 #assets img {
-  width: 80px;
+  width: 580px;
   cursor: grab;
 }
 
@@ -26,8 +26,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 300px;
-  height: 300px;
+  width: 800px;
+  height: 800px;
 }
 
 #character img {
@@ -41,6 +41,7 @@
 
 #character img#base {
   position: relative;
+  pointer-events: none;
 }
 
 #download {
