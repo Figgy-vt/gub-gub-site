@@ -46,9 +46,6 @@ document.querySelectorAll('#assets img').forEach((asset) => {
 
 document.getElementById('download').addEventListener('click', () => {
   const canvas = document.createElement('canvas');
-  canvas.width = base.naturalWidth;
-  canvas.height = base.naturalHeight;
-  const ctx = canvas.getContext('2d');
 
   const containerWidth = base.clientWidth;
   const containerHeight = base.clientHeight;
@@ -73,14 +70,47 @@ document.getElementById('download').addEventListener('click', () => {
   const scaleX = naturalWidth / renderWidth;
   const scaleY = naturalHeight / renderHeight;
 
-  ctx.drawImage(base, 0, 0, naturalWidth, naturalHeight);
-  document.querySelectorAll('#character img:not(#base)').forEach((img) => {
-    const x = (parseFloat(img.style.left) - offsetX) * scaleX;
-    const y = (parseFloat(img.style.top) - offsetY) * scaleY;
-    const width = parseFloat(img.style.width) * scaleX;
-    const height = parseFloat(img.style.height) * scaleY;
-    ctx.drawImage(img, x, y, width, height);
+  const positions = Array.from(document.querySelectorAll('#character img')).map(
+    (img) => {
+      if (img === base) {
+        return {
+          img,
+          x: 0,
+          y: 0,
+          width: naturalWidth,
+          height: naturalHeight,
+        };
+      }
+      const x = (parseFloat(img.style.left) - offsetX) * scaleX;
+      const y = (parseFloat(img.style.top) - offsetY) * scaleY;
+      const width = parseFloat(img.style.width) * scaleX;
+      const height = parseFloat(img.style.height) * scaleY;
+      return { img, x, y, width, height };
+    },
+  );
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  positions.forEach(({ x, y, width, height }) => {
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + width);
+    maxY = Math.max(maxY, y + height);
   });
+
+  canvas.width = maxX - minX;
+  canvas.height = maxY - minY;
+  const ctx = canvas.getContext('2d');
+
+  ctx.drawImage(base, -minX, -minY, naturalWidth, naturalHeight);
+  positions
+    .filter(({ img }) => img !== base)
+    .forEach(({ img, x, y, width, height }) => {
+      ctx.drawImage(img, x - minX, y - minY, width, height);
+    });
   const link = document.createElement('a');
   link.download = 'gub-dress-up.png';
   link.href = canvas.toDataURL();
