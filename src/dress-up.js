@@ -43,11 +43,13 @@ document.getElementById('download').addEventListener('click', () => {
   canvas.width = base.naturalWidth;
   canvas.height = base.naturalHeight;
   const ctx = canvas.getContext('2d');
-  ctx.drawImage(base, 0, 0);
+  const scaleX = base.naturalWidth / base.width;
+  const scaleY = base.naturalHeight / base.height;
+  ctx.drawImage(base, 0, 0, base.naturalWidth, base.naturalHeight);
   document.querySelectorAll('#character img:not(#base)').forEach((img) => {
-    const x = parseFloat(img.style.left) || 0;
-    const y = parseFloat(img.style.top) || 0;
-    ctx.drawImage(img, x, y);
+    const x = (parseFloat(img.style.left) || 0) * scaleX;
+    const y = (parseFloat(img.style.top) || 0) * scaleY;
+    ctx.drawImage(img, x, y, img.naturalWidth, img.naturalHeight);
   });
   const link = document.createElement('a');
   link.download = 'gub-dress-up.png';
