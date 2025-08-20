@@ -1,62 +1,62 @@
-const layers = {
-  hat: {
-    options: [
-      '../small_gub_01_gluburple.png',
-      '../small_gub_02_Glurp.png',
-      '../small_gub_03_Gorpa.png'
-    ],
-    index: 0,
-    element: document.getElementById('hat')
-  },
-  tie: {
-    options: [
-      '../small_gub_04_GubsUp.png',
-      '../small_gub_05_GubShy.png',
-      '../small_gub_06_GubsComfy.png'
-    ],
-    index: 0,
-    element: document.getElementById('tie')
-  },
-  shoes: {
-    options: [
-      '../small_gub_07_gubpoint.png',
-      '../small_gub_08_gubmote1.png',
-      '../small_gub_09_gubgub.png'
-    ],
-    index: 0,
-    element: document.getElementById('shoes')
-  },
-  accessory: {
-    options: [
-      '../small_gub_10_gubfinger.png',
-      '../small_gub_11_Grizz.png'
-    ],
-    index: 0,
-    element: document.getElementById('accessory')
-  }
-};
+const character = document.getElementById('character');
 
-function updateLayer(name) {
-  const layer = layers[name];
-  if (layer.options.length) {
-    layer.element.src = layer.options[layer.index];
-  }
+function makeDraggable(el) {
+  el.addEventListener('mousedown', (e) => {
+    const shiftX = e.clientX - el.getBoundingClientRect().left;
+    const shiftY = e.clientY - el.getBoundingClientRect().top;
+
+    function moveAt(clientX, clientY) {
+      const rect = character.getBoundingClientRect();
+      el.style.left = `${clientX - rect.left - shiftX}px`;
+      el.style.top = `${clientY - rect.top - shiftY}px`;
+    }
+
+    function onMouseMove(event) {
+      moveAt(event.clientX, event.clientY);
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener(
+      'mouseup',
+      () => {
+        document.removeEventListener('mousemove', onMouseMove);
+      },
+      { once: true }
+    );
+  });
 }
 
-Object.keys(layers).forEach(updateLayer);
+document.querySelectorAll('#assets img').forEach((asset) => {
+  asset.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', asset.src);
+  });
+});
 
-document.querySelectorAll('.control').forEach((ctrl) => {
-  const name = ctrl.dataset.layer;
-  ctrl.querySelector('.prev').addEventListener('click', () => {
-    const layer = layers[name];
-    layer.index = (layer.index - 1 + layer.options.length) % layer.options.length;
-    updateLayer(name);
+character.addEventListener('dragover', (e) => {
+  e.preventDefault();
+});
+
+character.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const src = e.dataTransfer.getData('text/plain');
+  if (!src) return;
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.className = 'layer';
+  img.draggable = false;
+
+  const rect = character.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  img.addEventListener('load', () => {
+    img.style.left = `${x - img.width / 2}px`;
+    img.style.top = `${y - img.height / 2}px`;
   });
-  ctrl.querySelector('.next').addEventListener('click', () => {
-    const layer = layers[name];
-    layer.index = (layer.index + 1) % layer.options.length;
-    updateLayer(name);
-  });
+
+  makeDraggable(img);
+  character.appendChild(img);
 });
 
 document.getElementById('download').addEventListener('click', () => {
@@ -66,14 +66,14 @@ document.getElementById('download').addEventListener('click', () => {
   canvas.height = base.naturalHeight;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(base, 0, 0);
-  ['hat', 'tie', 'shoes', 'accessory'].forEach((id) => {
-    const img = document.getElementById(id);
-    if (img && img.src) {
-      ctx.drawImage(img, 0, 0);
-    }
+  document.querySelectorAll('#character .layer').forEach((img) => {
+    const x = parseFloat(img.style.left) || 0;
+    const y = parseFloat(img.style.top) || 0;
+    ctx.drawImage(img, x, y);
   });
   const link = document.createElement('a');
   link.download = 'gub-dress-up.png';
   link.href = canvas.toDataURL();
   link.click();
 });
+
