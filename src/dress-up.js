@@ -28,7 +28,12 @@ function makeDraggable(el) {
 
 document.querySelectorAll('#assets img').forEach((asset) => {
   asset.addEventListener('dragstart', (e) => {
+    if (asset.dataset.used === 'true') {
+      e.preventDefault();
+      return;
+    }
     e.dataTransfer.setData('text/plain', asset.src);
+    e.dataTransfer.setDragImage(asset, asset.width / 2, asset.height / 2);
   });
 });
 
@@ -40,6 +45,7 @@ character.addEventListener('drop', (e) => {
   e.preventDefault();
   const src = e.dataTransfer.getData('text/plain');
   if (!src) return;
+  if (character.querySelector(`img.layer[src="${src}"]`)) return;
 
   const img = document.createElement('img');
   img.src = src;
@@ -57,6 +63,13 @@ character.addEventListener('drop', (e) => {
 
   makeDraggable(img);
   character.appendChild(img);
+
+  const asset = document.querySelector(`#assets img[src="${src}"]`);
+  if (asset) {
+    asset.dataset.used = 'true';
+    asset.style.opacity = '0.5';
+    asset.draggable = false;
+  }
 });
 
 document.getElementById('download').addEventListener('click', () => {
