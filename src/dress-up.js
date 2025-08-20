@@ -1,13 +1,20 @@
 const character = document.getElementById('character');
+const base = document.getElementById('base');
 
 function makeDraggable(el) {
   el.addEventListener('mousedown', (e) => {
-    const rect = el.getBoundingClientRect();
-    const shiftX = e.clientX - rect.left;
-    const shiftY = e.clientY - rect.top;
+    let rect = el.getBoundingClientRect();
+    let shiftX = e.clientX - rect.left;
+    let shiftY = e.clientY - rect.top;
 
     if (el.parentElement !== character) {
       character.appendChild(el);
+      const scale = base.width / base.naturalWidth;
+      el.style.width = `${el.naturalWidth * scale}px`;
+      el.style.height = `${el.naturalHeight * scale}px`;
+      rect = el.getBoundingClientRect();
+      shiftX = e.clientX - rect.left;
+      shiftY = e.clientY - rect.top;
     }
 
     function moveAt(clientX, clientY) {
@@ -38,7 +45,6 @@ document.querySelectorAll('#assets img').forEach((asset) => {
 });
 
 document.getElementById('download').addEventListener('click', () => {
-  const base = document.getElementById('base');
   const canvas = document.createElement('canvas');
   canvas.width = base.naturalWidth;
   canvas.height = base.naturalHeight;
