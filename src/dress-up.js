@@ -49,14 +49,36 @@ document.getElementById('download').addEventListener('click', () => {
   canvas.width = base.naturalWidth;
   canvas.height = base.naturalHeight;
   const ctx = canvas.getContext('2d');
-  const scaleX = base.naturalWidth / base.width;
-  const scaleY = base.naturalHeight / base.height;
-  ctx.drawImage(base, 0, 0, base.naturalWidth, base.naturalHeight);
+
+  const containerWidth = base.clientWidth;
+  const containerHeight = base.clientHeight;
+  const naturalWidth = base.naturalWidth;
+  const naturalHeight = base.naturalHeight;
+  const containerAspect = containerWidth / containerHeight;
+  const naturalAspect = naturalWidth / naturalHeight;
+
+  let renderWidth = containerWidth;
+  let renderHeight = containerHeight;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (naturalAspect > containerAspect) {
+    renderHeight = containerWidth / naturalAspect;
+    offsetY = (containerHeight - renderHeight) / 2;
+  } else {
+    renderWidth = containerHeight * naturalAspect;
+    offsetX = (containerWidth - renderWidth) / 2;
+  }
+
+  const scaleX = naturalWidth / renderWidth;
+  const scaleY = naturalHeight / renderHeight;
+
+  ctx.drawImage(base, 0, 0, naturalWidth, naturalHeight);
   document.querySelectorAll('#character img:not(#base)').forEach((img) => {
-    const x = (parseFloat(img.style.left) || 0) * scaleX;
-    const y = (parseFloat(img.style.top) || 0) * scaleY;
-    const width = img.width * scaleX;
-    const height = img.height * scaleY;
+    const x = (parseFloat(img.style.left) - offsetX) * scaleX;
+    const y = (parseFloat(img.style.top) - offsetY) * scaleY;
+    const width = parseFloat(img.style.width) * scaleX;
+    const height = parseFloat(img.style.height) * scaleY;
     ctx.drawImage(img, x, y, width, height);
   });
   const link = document.createElement('a');
