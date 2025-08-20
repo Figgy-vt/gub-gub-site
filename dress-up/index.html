@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gub Dress Up</title>
+    <link rel="stylesheet" href="../styles/base.css" />
+    <link rel="stylesheet" href="../styles/dress-up.css" />
+  </head>
+  <body>
+    <h1>Dress Up Gub</h1>
+    <div id="game">
+      <div id="character">
+        <img id="base" src="../gub_wicked.png" alt="gub" />
+        <img id="hat" class="layer" alt="hat" />
+        <img id="tie" class="layer" alt="tie" />
+        <img id="shoes" class="layer" alt="shoes" />
+        <img id="accessory" class="layer" alt="accessory" />
+      </div>
+      <div class="controls">
+        <div class="control" data-layer="hat">
+          <button class="prev">Prev Hat</button>
+          <button class="next">Next Hat</button>
+        </div>
+        <div class="control" data-layer="tie">
+          <button class="prev">Prev Tie</button>
+          <button class="next">Next Tie</button>
+        </div>
+        <div class="control" data-layer="shoes">
+          <button class="prev">Prev Shoes</button>
+          <button class="next">Next Shoes</button>
+        </div>
+        <div class="control" data-layer="accessory">
+          <button class="prev">Prev Accessory</button>
+          <button class="next">Next Accessory</button>
+        </div>
+      </div>
+      <button id="download">Download Outfit</button>
+    </div>
+    <script type="module" src="../src/dress-up.js"></script>
+  </body>
+</html>

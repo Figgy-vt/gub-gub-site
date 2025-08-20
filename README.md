@@ -2,6 +2,10 @@
 
 For gub the doge
 
+## Dress Up
+
+Try the simple dress-up game at [gub.cam/dress-up](https://gub.cam/dress-up).
+
 ## Error logging
 
 Client-side errors and Cloud Function exceptions are stored in the Firebase
